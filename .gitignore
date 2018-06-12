@@ -1,0 +1,5 @@
+*.swp
+/junk
+/thr0/media
+/thr0/media*
+*/catalog.json

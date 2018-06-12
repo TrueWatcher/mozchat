@@ -1,0 +1,36 @@
+MediaRecorder
+
+
+FF
+59.0.2
+
+video/webm support +  exampleMdi_2.html:42
+audio/webm support -  exampleMdi_2.html:42
+video/webm;codecs=vp8 support +  exampleMdi_2.html:42
+video/webm;codecs=daala support -  exampleMdi_2.html:42
+video/webm;codecs=h264 support -  exampleMdi_2.html:42
+audio/webm;codecs=opus support -  exampleMdi_2.html:42
+video/mpeg support -  exampleMdi_2.html:42
+audio/ogg;codecs=opus support +  exampleMdi_2.html:42
+audio/mpeg3 support -  exampleMdi_2.html:42
+audio/mpeg support -  exampleMdi_2.html:42
+audio/midi support -  exampleMdi_2.html:42
+audio/wav support -  exampleMdi_2.html:42
+audio/flac support -
+
+Chromium
+64.0.3282.167 (Official Build) Built on Ubuntu
+
+video/webm support +
+audio/webm support +
+video/webm;codecs=vp8 support +
+video/webm;codecs=daala support -
+video/webm;codecs=h264 support +
+audio/webm;codecs=opus support +
+video/mpeg support -
+audio/ogg;codecs=opus support -
+audio/mpeg3 support -
+audio/mpeg support -
+audio/midi support -
+audio/wav support -
+audio/flac support -
