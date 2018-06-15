@@ -1,12 +1,14 @@
 "use strict";
 function PlayerBox() {
   var viewP={}, timerP={}, ajaxerP={}, player={}, serialPlayer={}, _this=this;
-  var catalog=[], catalogTime=0, ticks=0, userParams={};
+  var catalog=[], catalogTime=0, ticks=0, userParams={}, serverParams={};
   var mediaFolder="media";
   
-  this.init=function() {
+  this.init=function(fromServer) {
+    serverParams=fromServer;
     viewP=new ViewP();
     viewP.clearMessage();
+    viewP.applyServerParams(serverParams);
     _this.applyParams();
     
     ajaxerP=new Utils.Ajaxer("download.php", getResponseP, {});
@@ -149,6 +151,23 @@ function ViewP() {
   var _this=this;
   var lineColors={l:"#ffd", p:"#fdd", g:"#ddd", n:""};
   var user="";
+  
+  this.applyServerParams=function(sp) {
+    if(sp.pollFactor) {
+      var chr=document.querySelector('input[name="refreshRad"][value="'+sp.pollFactor+'"]');
+      if(chr) { chr.checked="checked"; }
+    }
+    if(sp.hasOwnProperty("playNew")) { 
+      if(sp.playNew === "0" || sp.playNew === 0 || sp.playNew === false) playNewChkb.checked="";
+      else playNewChkb.checked=sp.playNew;
+    }
+    if(sp.hasOwnProperty("skipMine")) { 
+      if(sp.skipMine === "0" || sp.skipMine === 0 || sp.skipMine === false) {
+        skipMineChkb.checked="";
+      }
+      else { skipMineChkb.checked=sp.skipMine; }
+    }
+  }
   
   this.getParams=function() {
     user=userInput.value;// needed for DELETE links

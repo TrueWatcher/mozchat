@@ -63,8 +63,36 @@ class Inventory {
     return $bytestotal;
   }
   
+  function makeName($ext,$inc="0") { return time().$inc.".".$ext; }
+
+  function newName($ext) {
+    $inc=0;
+    $n=$this->makeName($ext,$inc);
+    while($this->getLine($n)) {
+      $inc+=1;
+      $n=$this->makeName($ext,$inc);
+    }
+    return $n;
+  }
+  
+  function pickUploadedBlob($newName,$input,$pr) {
+    // overcheck
+    if(file_exists($this->mediaFolder."/".$newName)) throw new DataException("File ".$newName." already exists");
+    $r=move_uploaded_file($_FILES['blob']['tmp_name'], $this->mediaFolder."/".$newName);
+    if( ! $r) throw new DataException("Moving failed");
+    $clipBytes=filesize($this->mediaFolder."/".$newName);
+    $dt=date("M_d_H:i:s",time());
+    $this->addLine(
+      $newName, $input["user"], $dt, $input["mime"], $input["duration"], $clipBytes, time()+$pr->g("lifetimeMediaSec"), $input["description"]
+    );
+    //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
+    $overdraft=$this->getTotalBytes()-$pr->g("maxMediaFolderBytes");
+    if($overdraft > 0) $inv->freeSomeRoom($overdraft);
+    return $clipBytes;
+  }
+  
   // user,realm,blob,mime,ext,duration
-  function addClip($fileName,$author,$dateTime,$mime,$duration,$bytes,$expire,$description) {
+  function addLine($fileName,$author,$dateTime,$mime,$duration,$bytes,$expire,$description) {
     if($duration == 0) $duration="1";
     $e=[$fileName,$author,$dateTime,$mime,$duration,$bytes,$expire,$description];
     $this->data[]=$e;
@@ -132,7 +160,7 @@ class Inventory {
     return $resData;
   }
   
-  function getLine($id) {
+  function getLineById($id) {
     if(empty($id)) return false;
     //print_r($this->data);
     foreach($this->data as $e) {
@@ -143,14 +171,25 @@ class Inventory {
     return false;
   }
   
+  function getLine($fileName) {
+    if(empty($fileName)) return false;
+    //print_r($this->data);
+    foreach($this->data as $e) {
+      $ee=array_combine($this->keys,$e);
+      //print_r($ee);
+      if($ee["fileName"] == $fileName) { return $ee; }
+    }
+    return false;
+  }
+  
   static function idFromName($fn) { return explode(".",$fn) [0]; }
   
-  function deleteLine($id) {
-    if(empty($id)) return false;
+  function deleteLine($fileName) {
+    if(empty($fileName)) return false;
     $res=[];
     foreach($this->data as $e) {
       $ee=array_combine($this->keys,$e);
-      if(self::idFromName($ee["fileName"]) != $id) { $res[]=$e; }
+      if($ee["fileName"] != $fileName) { $res[]=$e; }
     }
     $this->data=$res;
     file_put_contents($this->targetPath.self::$myFileName, json_encode($this->data));
@@ -158,4 +197,6 @@ class Inventory {
   
   function getMediaPath() { return $this->mediaFolder."/"; }
 
-}
+}// end Inventory
+
+function b2kb($bytes) { return ceil($bytes/1000).'kB'; }

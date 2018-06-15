@@ -2,8 +2,10 @@
 /**
  * Handles AJAX uploads
  */
-
-class DataException extends Exception {};
+$pathBias="";
+require_once("scripts/AssocArrayWrapper.php");
+require_once("scripts/MyExceptions.php");
+require_once("scripts/registries.php");
 require_once("scripts/Inventory.php");
  
 header('Content-type: text/plain; charset=utf-8');//application/json
@@ -14,32 +16,31 @@ header('Content-type: text/plain; charset=utf-8');//application/json
 //print(implode(",",array_keys($_REQUEST)));
 //print(implode(",",array_keys($_FILES)));
 
-define("MAX_BLOB_BYTES",50000);
-define("MAX_DIR_BYTES",200000);
-define("TIME_TO_KEEP_S",60);
-
 $input=$_POST;
 try {
-  checkFields($input);
-  checkBlob($_FILES);
-  list($mediaPath,$clipName)=chooseName($input["realm"],$input["user"],$input["ext"]);
-  $targetPath=$input["realm"]."/";
-  
-  $inv=new Inventory();
-  $inv->init($targetPath);
-  $inv->removeExpired();
-  
-  $r=move_uploaded_file($_FILES['blob']['tmp_name'], $mediaPath.$clipName);
-  if( ! $r) throw new Exception("Moving failed");
-  $clipBytes=filesize($mediaPath.$clipName);    
-  $inv->addClip(
-    $clipName, $input["user"], time(), $input["mime"], $input["duration"], $clipBytes, time()+TIME_TO_KEEP_S, $input["description"]
-  );
-  //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
-  $overdraft=$inv->getTotalBytes()-MAX_DIR_BYTES;
-  if($overdraft > 0) $inv->freeSomeRoom($overdraft);
-  //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
-  print('{"alert":"'.'Got a record of '.ceil($clipBytes/1000).'KB"}');
+  checkUserRealm($pathBias,$input);
+  $targetPath=$pathBias.$input["realm"]."/";
+  $iniParams=IniParams::read($targetPath);
+  $pr=PageRegistry::getInstance( 0, PageRegistry::getDefaultsUpload() );
+  //$pr->overrideValuesBy($pageEntryParams["PageRegistry"]);
+  $pr->overrideValuesBy($iniParams["common"]);
+  //$pr->overrideValuesBy($iniParams["inventory"]);
+  //$pr->dump();  
+  if( ! isset($input["act"])) throw new DataException("Missing ACT");
+  $act=$input["act"];
+
+  if($act == "uploadBlob") {
+    checkFields($input);
+    checkBlob($_FILES,$pr);
+    $inv=new Inventory();
+    $inv->init($targetPath);
+    $inv->removeExpired();
+    $n=$inv->newName($input["ext"]);
+    $r=$inv->pickUploadedBlob($n,$input,$pr);
+    //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
+    print('{"alert":"'.'Got a record of '.b2kb($r).'"}');
+  }
+  else throw new DataException("Unknown command=$act!");
   
 } catch (DataException $de) {
   print('{"error":"'.$de->getMessage().'"}');
@@ -53,34 +54,26 @@ function checkExt($ext) {
   
 function checkFields($input) {
   $r=true;
-  if( ! isset($input["user"]) || ! isset($input["realm"]) ) $r="Missing USER or REALM";
-  else if( ! isset($input["mime"]) || ! isset($input["ext"]) ) $r="Missing MIME or EXT";
+  if( ! isset($input["mime"]) || ! isset($input["ext"]) ) $r="Missing MIME or EXT";
   else if( ! checkExt($input["ext"])) $r="Unknown EXT=".$input["ext"]."!";
   if($r !== true) throw new DataException($r);
 }
 
-function checkBlob($files) {
+function checkBlob($files,$pr) {
   $r=true;
   if( ! isset($files["blob"])) $r="Missing the file";
-  else if( $files["blob"]["size"] > MAX_BLOB_BYTES ) $r="File is bigger than ".MAX_BLOB_BYTES;
+  else if( $files["blob"]["size"] > $pr->g("maxBlobBytes") ) $r="File is bigger than ".b2kb($pr->g("maxBlobBytes"));
   if($r !== true) throw new DataException($r);
 }
 
-function makeName($user,$ext,$inc="0") {
-  return $user."_".time().$inc.".".$ext;
+function checkUserRealm($pathBias,$input) {
+  $r=true;
+  if( ! isset($input["user"]) || ! isset($input["realm"]) ) $r="Missing USER or REALM";
+  else if( ! file_exists($pathBias.$input["realm"]) || ! is_dir($pathBias.$input["realm"])) $r="Thread folder not found";
+  if($r !== true) throw new DataException($r);
 }
 
-function chooseName($realm,$user,$ext) {
-  $pathBias="";
-  $mediaFolderName="media";
-  $mediaPath=$realm."/".$mediaFolderName."/";
-  if( ! file_exists($pathBias.$realm) || ! is_dir($pathBias.$realm)) throw new DataException ("Thread folder ".$pathBias.$realm." not found");
-  $n=makeName($user,$ext);
-  if(file_exists($mediaPath.$n)) $n=makeName($user,$ext,"1");
-  if(file_exists($mediaPath.$n)) $n=makeName($user,$ext,"2");
-  if(file_exists($mediaPath.$n)) throw new DataException("File ".$n." already exists");
-  return [$mediaPath,$n];
-}
+
 
 
 

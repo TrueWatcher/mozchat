@@ -6,15 +6,20 @@
 </head>
 <body>
 
+<form action="?" method="GET">
 <fieldset id="accountPanel">
-  <input type="text" id="userInput" placeholder="Your name" value="Me" />
-  <input type="text" id="realmInput" placeholder="Thread" value="thr0" />
-  <input type="button" id="exitBtn" value="Exit" />
+  <p id="accountTopAlertP"></p>
+  <input type="text" id="userInput" placeholder="Your name" name="user" value="Me" />
+  <input type="text" id="realmInput" placeholder="Thread" name="realm" value="thr0" />
+  <input type="submit" id="exitBtn" value="Register" />
+  <p id="accountBottomAlertP"></p>
 </fieldset>
+</form>
 
 <fieldset id="recorderPanel">
-  Server limits: size <input type="text" id="maxSizeInp" style="width : 4em; border:none;" />KB, lifetime <input type="text" id="lifetimeInp" style="width : 8em; border:none;" />
+  Server limits: clip size <input type="text" id="maxSizeInp" style="width : 4em; border:none;" />, lifetime <input type="text" id="lifetimeInp" style="width : 8em; border:none;" />, folder size <input type="text" id="folderSizeInp" style="width : 8em; border:none;" />
   <br />
+  audio<input type="radio" name="audioOrVideoRad" value="a" checked="checked" /> or video<input type="radio" name="audioOrVideoRad" value="v" />&nbsp;
   Chunk:
   <input type="radio" name="chunkRad" value="1" />1s&nbsp;
   <input type="radio" name="chunkRad" value="2" checked="checked" />2s&nbsp;
@@ -48,7 +53,7 @@
     Play new clips<input type="checkbox" id="playNewChkb" checked="checked" />,
     only from others<input type="checkbox" id="skipMineChkb" checked="checked" />
     &nbsp;&nbsp;
-    <input type="button" id="stopAfterBtn" value="Stop after currrent" />
+    <input type="button" id="stopAfterBtn" value="Stop after current" />
   </div>
   <table id="medialistT">
   </table>
@@ -68,13 +73,21 @@
 
 //Utils.dumpArray("a string");
 //console.log(Utils.dumpArray({qwerty:"qwerty",f:false,arr:["a",2,3],emptyArr:[],notEmpty:![]}));
+var serverParams='<?php print(json_encode($serverParams)) ?>';
+serverParams=JSON.parse(serverParams);
 
-var recorderBox=new RecorderBox();
-recorderBox.init();
+if(serverParams.state == "zero") {
+  recorderPanel.style.display="none";
+  playerPanel.style.display="none";
+  accountTopAlertP.innerHTML="Please introduce yourself and choose your thread";
+}
+else {
+  var recorderBox=new RecorderBox();
+  recorderBox.init(serverParams);
 
-var playerBox=new PlayerBox();
-playerBox.init();
-
+  var playerBox=new PlayerBox();
+  playerBox.init(serverParams);
+}
 
 </script>
 

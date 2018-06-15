@@ -19,7 +19,7 @@ try{
   switch($act){
   case "delete":
     if( ! isset($input["id"])) throw new DataException("Missing ID");
-    $id=explode(".",$input["id"]) [0]; 
+    //$id=explode(".",$input["id"]) [0]; 
     $inv=new Inventory();
     $inv->init($targetPath);
     $l=$inv->getLine($id);
@@ -38,7 +38,7 @@ try{
   case "dir":    
     if(isset($input["since"])) {
       $catalog=$targetPath.Inventory::getMyFileName();
-      if(filemtime($catalog) <= $input["since"]) {
+      if(filemtime($catalog) < $input["since"]) {
         $r=304;
         break;
       }

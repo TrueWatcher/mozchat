@@ -4,7 +4,9 @@ function RecorderBox() {
   var blobPlus={}, userParams={}, serverParams={};
   var recordingTime=0, lastRecordedTime=0, timingOn=0;
   
-  this.init=function() {
+  this.init=function(fromServer) {
+    serverParams=fromServer;
+    
     var found=Utils.checkBrowser();
     console.log(Utils.dumpArray(found));
     if(found.outcome !== true) {
@@ -19,6 +21,7 @@ function RecorderBox() {
     }
     
     viewR=new ViewR();
+    viewR.applyServerParams(serverParams);
     userParams=viewR.getParams();
     console.log(Utils.dumpArray(userParams));
     
@@ -75,11 +78,13 @@ function RecorderBox() {
       //alert("No data");
       return;
     }
-    var audio=new Audio(blobPlus.localUrl);
-    audio.controls="controls";
+    var a=new Audio(blobPlus.localUrl);//
+    //var a = document.createElement('video');
+    //a.src=blobPlus.localUrl;
+    a.controls="controls";
     if(playerRoom.hasChildNodes()) playerRoom.innerHTML="";
-    playerRoom.appendChild(audio);
-    audio.play();
+    playerRoom.appendChild(a);
+    a.play();
   };
   
   _this.uploadStoredBlob=function() { uploadBlobAndData(blobPlus); };
@@ -99,12 +104,12 @@ function RecorderBox() {
 
   function uploadBlobAndData(blobPlusData) {
     //var userParams=viewR.getParams();
-    if(serverParams.maxUploadBytes && (blobPlusData.size > serverParams.maxUploadBytes)) {
-      viewR.showMessage("Error! You have "+Utils.b2kb(blobPlusData.size)+", server allows only "+Utils.b2kb(serverParams.maxUploadBytes));
+    if(serverParams.maxBlobBytes && (blobPlusData.size > serverParams.maxBlobBytes)) {
+      viewR.showMessage("Error! You have "+Utils.b2kb(blobPlusData.size)+", server allows only "+Utils.b2kb(serverParams.maxBlobBytes));
       return;
     }
     var stuff=new FormData();
-    stuff.append("act","upload");
+    stuff.append("act","uploadBlob");
     stuff.append("user",userParams.user);
     stuff.append("realm",userParams.realm);
     stuff.append("description",userParams.description);
@@ -121,7 +126,7 @@ function RecorderBox() {
     else viewR.showMessage(resp.alert || Utils.dumpArray(resp) || "<empty>");
   }
   
-  this.setServerParams=function(s) { serverParams=s; };
+  //this.setServerParams=function(s) { serverParams=s; };
   
 }
 
@@ -141,7 +146,7 @@ function RecorderMR(receiveBlob,indicate) {
   _this.onOff=function() { return false; };
   
   this.init=function() {
-    var constraints = { audio: true };
+    var constraints = { audio: true };//, video: true
     navigator.mediaDevices.getUserMedia(constraints).then(operate).catch(logError);
     var rm=Utils.checkRecorderMime();
     mime=rm.chosenMime; 
@@ -258,6 +263,21 @@ function ViewR() {
   
   _this.showMessage=function(m) { recorderAlertP.innerHTML=m; };
   _this.clearMessage=function(m) { recorderAlertP.innerHTML=""; };
+  
+  _this.applyServerParams=function(sp) {
+    maxSizeInp.value=Utils.b2kb(sp.maxBlobBytes);
+    lifetimeInp.value=sp.lifetimeMediaSec+"s";
+    folderSizeInp.value=Utils.b2kb(sp.maxMediaFolderBytes);
+    if(sp.chunkSize) {
+      chunkInp.value=sp.chunkSize;
+      var chr=document.querySelector('input[name="chunkRad"][value="custom"]');
+      chr.checked="checked";
+    }
+    if(sp.onRecorded) {
+      chr=document.querySelector('input[name="onrecordedRad"][value="'+sp.onRecorded+'"]');
+      if(chr) { chr.checked="checked"; }
+    }
+  }
   
   _this.getParams=function() {
     var chunkSizeS=document.querySelector('input[name="chunkRad"]:checked').value;
