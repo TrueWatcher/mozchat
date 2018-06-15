@@ -33,7 +33,7 @@ try {
     checkFields($input);
     checkBlob($_FILES,$pr);
     $inv=new Inventory();
-    $inv->init($targetPath);
+    $inv->init($targetPath,$pr->g("mediaFolder"));
     $inv->removeExpired();
     $n=$inv->newName($input["ext"]);
     $r=$inv->pickUploadedBlob($n,$input,$pr);

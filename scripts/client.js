@@ -19,57 +19,64 @@ Utils.checkBrowser=function() {
   };
 };
 
-Utils.checkRecorderMime=function() {
-  var mimesAudio = [
-    "audio/webm", "audio/webm\;codecs=opus", "audio/ogg\;codecs=opus", "audio/mpeg3", "audio/mpeg", "audio/midi", "audio/wav", "audio/flac"
-  ];
-  var mimesVideo= [
-    "video/webm", "video/webm\;codecs=vp8", "video/webm\;codecs=daala", "video/webm\;codecs=h264", "video/mpeg"
-  ];
-  var recorderMimesAudio=[],recorderMimesVideo=[],t;
+Utils.checkRecorderMime=function(audioOrVideo) {
+  if(audioOrVideo != "audio" && audioOrVideo != "video") throw new Error("Wrong argument="+audioOrVideo+"!");
+  var mimes =  {
+    audio : [
+      "audio/webm", "audio/webm\;codecs=opus", "audio/ogg\;codecs=opus", "audio/mpeg3", "audio/mpeg", "audio/midi", "audio/wav", "audio/flac"
+    ],
+    video : [
+      "video/webm", "video/webm\;codecs=vp8", "video/webm\;codecs=daala", "video/webm\;codecs=h264", "video/mpeg"
+    ]
+  };
+  var recorderMimes = { audio:[], video:[] }, t;
   var te,ext,chosenMime=false,chosenExtension=false;
   var outcome="?";
   
-  for(t in mimesAudio) { if (MediaRecorder.isTypeSupported(mimesAudio[t])) recorderMimesAudio.push(mimesAudio[t]); }
-  for(t in mimesVideo) { if (MediaRecorder.isTypeSupported(mimesVideo[t])) recorderMimesVideo.push(mimesVideo[t]); }
-  te=new Utils.TypesExtensions();
-  for(t in recorderMimesAudio) { 
-    ext=te.mime2ext(recorderMimesAudio[t]);
+  for(t in mimes.audio) { if (MediaRecorder.isTypeSupported(mimes.audio[t])) recorderMimes.audio.push(mimes.audio[t]); }
+  for(t in mimes.video) { if (MediaRecorder.isTypeSupported(mimes.video[t])) recorderMimes.video.push(mimes.video[t]); }
+  te=new Utils.TypesExtensions(audioOrVideo);
+  for(t in recorderMimes[audioOrVideo]) { 
+    ext=te.mime2ext(recorderMimes[audioOrVideo][t]);
     if(ext) {
-      chosenMime=recorderMimesAudio[t];
+      chosenMime=recorderMimes[audioOrVideo][t];
       chosenExtension=ext;
       break;
     }      
   }
   
-  if( ! recorderMimesAudio.length) outcome="Empty mime types list";
+  if( ! recorderMimes[audioOrVideo].length) outcome="Empty mime types list";
   else if( ! chosenMime) outcome="Unknown mime types";
   else outcome=true;
   
   return {
-    recorderMimesAudio:recorderMimesAudio,
-    recorderMimesVideo:recorderMimesVideo,
+    recorderMimes:recorderMimes,
     chosenMime:chosenMime,
     chosenExtension:chosenExtension,
     outcome:outcome
   };
 };
 
-Utils.TypesExtensions=function() {
+Utils.TypesExtensions=function(audioOrVideo) {
   var te={
-    "oga":"audio/ogg\;codecs=opus", "webm": "audio/webm\;codecs=opus", "wav":"audio/wav"
+    audio : {
+      "oga":"audio/ogg\;codecs=opus", "webm": "audio/webm\;codecs=opus", "wav":"audio/wav"
+    },
+    video : {
+      "webm":"video/webm;codecs=vp8"
+    }
   };
   
   this.mime2ext=function(mime) {
     var ext;
-    for(ext in te) {
-      if(te.hasOwnProperty(ext) && te[ext] === mime ) return ext;
+    for(ext in te[audioOrVideo]) {
+      if( te[audioOrVideo].hasOwnProperty(ext) && te[audioOrVideo][ext] === mime ) return ext;
     }
     return false;
   };
   
   this.ext2mime=function(ext) {
-    if(te.hasOwnProperty(ext)) return te[ext];
+    if( te[audioOrVideo].hasOwnProperty(ext) ) return te[audioOrVideo][ext];
     return false;
   };
 };
@@ -149,4 +156,19 @@ Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
   }
   
 };// end Ajaxer
+
+Utils.getRadio=function(name) {
+  return document.querySelector('input[name="'+name+'"]:checked').value;  
+};
+
+Utils.setRadio=function(name,value) {
+  var btn=document.querySelector('input[name="'+name+'"][value="'+value+'"]');
+  if(btn) btn.checked="checked";
+};
+
+Utils.setCheckbox=function(id,value) {
+  var el=document.getElementById(id);
+  if(value === "0" || value === 0 || value === false) el.checked="";
+  else el.checked="checked";
+};
 

@@ -10,8 +10,9 @@
 <fieldset id="accountPanel">
   <p id="accountTopAlertP"></p>
   <input type="text" id="userInput" placeholder="Your name" name="user" value="Me" />
-  <input type="text" id="realmInput" placeholder="Thread" name="realm" value="thr0" />
+  <input type="text" id="realmInput" placeholder="Thread" name="realm" />
   <input type="submit" id="exitBtn" value="Register" />
+  <a href="?">Exit</a>
   <p id="accountBottomAlertP"></p>
 </fieldset>
 </form>
@@ -19,7 +20,11 @@
 <fieldset id="recorderPanel">
   Server limits: clip size <input type="text" id="maxSizeInp" style="width : 4em; border:none;" />, lifetime <input type="text" id="lifetimeInp" style="width : 8em; border:none;" />, folder size <input type="text" id="folderSizeInp" style="width : 8em; border:none;" />
   <br />
-  audio<input type="radio" name="audioOrVideoRad" value="a" checked="checked" /> or video<input type="radio" name="audioOrVideoRad" value="v" />&nbsp;
+  <span id="audioOrVideoS">
+    audio<input type="radio" name="audioOrVideoRad" value="audio" checked="checked" />
+    or video<input type="radio" name="audioOrVideoRad" value="video" />
+  </span>  
+  &nbsp;
   Chunk:
   <input type="radio" name="chunkRad" value="1" />1s&nbsp;
   <input type="radio" name="chunkRad" value="2" checked="checked" />2s&nbsp;
@@ -57,6 +62,9 @@
   </div>
   <table id="medialistT">
   </table>
+  <p>
+    Free:<span id="folderFreeS" width="10em"></span>, net downloaded:<span id="folderFreeS" width="10em"></span>
+  </p>
   <p id="playerAlertP">Javascript required</p>
 </fieldset>
 
@@ -82,6 +90,9 @@ if(serverParams.state == "zero") {
   accountTopAlertP.innerHTML="Please introduce yourself and choose your thread";
 }
 else {
+  userInput.value=serverParams.user;
+  realmInput.value=serverParams.realm;
+
   var recorderBox=new RecorderBox();
   recorderBox.init(serverParams);
 

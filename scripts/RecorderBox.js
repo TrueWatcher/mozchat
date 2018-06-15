@@ -13,12 +13,12 @@ function RecorderBox() {
       //console.log(Utils.dumpArray(found));
       throw new Error(found.outcome);
     }    
-    var rm=Utils.checkRecorderMime();
+    /*var rm=Utils.checkRecorderMime();
     console.log(Utils.dumpArray(rm));
     if(rm.outcome !== true) {
       //console.log(Utils.dumpArray(found));
       throw new Error(rm.outcome);
-    }
+    }*/
     
     viewR=new ViewR();
     viewR.applyServerParams(serverParams);
@@ -28,11 +28,11 @@ function RecorderBox() {
     ajaxerR=new Utils.Ajaxer("upload.php", getResponseR, viewR.uploadIndicator);
     
     recorder=new RecorderMR(onBlobReady, viewR.setIndicator);//allowLocalDownload);
-    recorder.init();
+    recorder.init(userParams);
     
     setInterval(_this.onTick, 1000);
     
-    viewR.setHandlers(_this.recorderToggle, _this.playLocally, _this.uploadStoredBlob);
+    viewR.setHandlers(_this.recorderInit, _this.recorderOn, _this.recorderOff, _this.recorderToggle, _this.playLocally, _this.uploadStoredBlob);
   };
   
   _this.onTick=function() {
@@ -40,9 +40,17 @@ function RecorderBox() {
     recordingTime+=1;
     viewR.showTiming(recordingTime);
     if(recordingTime < userParams.chunkSizeS) return;
-    if(userParams.onrecorded == "stop") _this.recorderOff();
+    if(userParams.onrecorded == "stop") {
+      _this.recorderOff();
+    }
     else if(userParams.onrecorded == "upload") _this.recorderRestart();
   };
+  
+  _this.recorderInit=function() { 
+    _this.recorderOff();
+    userParams=viewR.getParams();
+    recorder.init(userParams);
+  }
   
   _this.recorderOff=function() {
     recorder.onOff(0);
@@ -74,13 +82,17 @@ function RecorderBox() {
   };
   
   _this.playLocally=function() {    
+    var a;
     if( ! blobPlus.localUrl) { 
       //alert("No data");
       return;
     }
-    var a=new Audio(blobPlus.localUrl);//
-    //var a = document.createElement('video');
-    //a.src=blobPlus.localUrl;
+    if(userParams.audioOrVideo == "audio") a=new Audio();//
+    else if(userParams.audioOrVideo == "video") {
+      a = document.createElement('video');
+    }
+    else throw new Error("Wrong AUDIOORVIDEO="+userParams.audioOrVideo);
+    a.src=blobPlus.localUrl;
     a.controls="controls";
     if(playerRoom.hasChildNodes()) playerRoom.innerHTML="";
     playerRoom.appendChild(a);
@@ -125,9 +137,7 @@ function RecorderBox() {
     if(resp.error) viewR.showMessage("Error! "+resp.error);
     else viewR.showMessage(resp.alert || Utils.dumpArray(resp) || "<empty>");
   }
-  
-  //this.setServerParams=function(s) { serverParams=s; };
-  
+
 }
 
 function RecorderMR(receiveBlob,indicate) {  
@@ -145,10 +155,11 @@ function RecorderMR(receiveBlob,indicate) {
   
   _this.onOff=function() { return false; };
   
-  this.init=function() {
-    var constraints = { audio: true };//, video: true
+  this.init=function(userParams) {
+    var constraints={ audio: true }, aov=userParams.audioOrVideo, rm;
+    if(aov == "video") constraints.video=true;
     navigator.mediaDevices.getUserMedia(constraints).then(operate).catch(logError);
-    var rm=Utils.checkRecorderMime();
+    rm=Utils.checkRecorderMime(aov);
     mime=rm.chosenMime; 
     ext=rm.chosenExtension;
   };
@@ -268,39 +279,54 @@ function ViewR() {
     maxSizeInp.value=Utils.b2kb(sp.maxBlobBytes);
     lifetimeInp.value=sp.lifetimeMediaSec+"s";
     folderSizeInp.value=Utils.b2kb(sp.maxMediaFolderBytes);
+    if(sp.allowVideo) {
+      audioOrVideoS.style.display="";
+      Utils.setRadio("audioOrVideoRad","video");
+    }
+    else { audioOrVideoS.style.display="none"; }
     if(sp.chunkSize) {
       chunkInp.value=sp.chunkSize;
-      var chr=document.querySelector('input[name="chunkRad"][value="custom"]');
-      chr.checked="checked";
+      Utils.setRadio("chunkRad","custom");
     }
-    if(sp.onRecorded) {
-      chr=document.querySelector('input[name="onrecordedRad"][value="'+sp.onRecorded+'"]');
-      if(chr) { chr.checked="checked"; }
-    }
+    if(sp.onRecorded) { Utils.setRadio("onrecordedRad",sp.onRecorded); }
   }
   
   _this.getParams=function() {
-    var chunkSizeS=document.querySelector('input[name="chunkRad"]:checked').value;
+    var chunkSizeS=Utils.getRadio("chunkRad");
     if(chunkSizeS == "custom") {
       var c=chunkSizeS=parseInt(chunkInp.value,10);
       //alert(chunkInp.value+"/"+c);
       if( ( ! c ) || (c != c) ) {// empty or nan
-        var first=document.querySelector('input[name="chunkRad"][value="1"]');
-        first.checked="checked";
         chunkSizeS=1;
+        Utils.setRadio("chunkRad",1);
       }
     }
     
     return {
       user : userInput.value,
       realm : realmInput.value,
-      onrecorded : document.querySelector('input[name="onrecordedRad"]:checked').value,
+      audioOrVideo : Utils.getRadio("audioOrVideoRad"),
+      onrecorded : Utils.getRadio("onrecordedRad"),
       description : decriptionInput.value,
       chunkSizeS : chunkSizeS
     };
   };
   
-  _this.setHandlers=function(toggleRecorder,playLocally,uploadStoredBlob) {
+  _this.setHandlers=function(initRecorder, recorderOn, recorderOff, toggleRecorder, playLocally, uploadStoredBlob) {
+    var firstKeyDown=1;
+    audioOrVideoS.onclick=initRecorder;
+    document.onkeydown=function(event) { 
+      if(firstKeyDown && event.keyCode == 32) {
+        recorderOn();
+        firstKeyDown=0;
+      }
+    };
+    document.onkeyup=function(event) { 
+      if(event.keyCode == 32) {
+        recorderOff(); 
+        firstKeyDown=1;
+      }
+    };
     recordBtn.onclick=toggleRecorder;
     playHereBtn.onclick=playLocally;
     uploadStoredBtn.onclick=uploadStoredBlob;

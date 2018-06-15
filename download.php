@@ -1,19 +1,27 @@
 <?php
 /**
- * Handles AJAX uploads
+ * Handles AJAX queries from playerBox
  */
-
-class DataException extends Exception {};
-
+$pathBias="";
+require_once("scripts/AssocArrayWrapper.php");
+require_once("scripts/MyExceptions.php");
+require_once("scripts/registries.php");
 require_once("scripts/Inventory.php");
  
 header('Content-type: text/plain; charset=utf-8');//application/json
 
 $input=$_REQUEST;
 $r=[];
-try{
+try {
   checkFields($input);
-  $targetPath=$input["realm"]."/";
+  $targetPath=$pathBias.$input["realm"]."/";
+  $iniParams=IniParams::read($targetPath);
+  $pr=PageRegistry::getInstance( 0, PageRegistry::getDefaultsUpload() );
+  //$pr->overrideValuesBy($pageEntryParams["PageRegistry"]);
+  $pr->overrideValuesBy($iniParams["common"]);
+  //$pr->overrideValuesBy($iniParams["inventory"]);
+  //$pr->dump();  
+  //if( ! isset($input["act"])) throw new DataException("Missing ACT");
   $act=$input["act"];
   
   switch($act){
@@ -21,7 +29,8 @@ try{
     if( ! isset($input["id"])) throw new DataException("Missing ID");
     //$id=explode(".",$input["id"]) [0]; 
     $inv=new Inventory();
-    $inv->init($targetPath);
+    $inv->init($targetPath,$pr->g("mediaFolder"));
+    $id=$input["id"];
     $l=$inv->getLine($id);
     if( ! $l) throw new DataException("No data about this file");
     if($l["author"] != $input["user"]) throw new DataException("You are not permitted");
@@ -32,11 +41,12 @@ try{
     $list=$inv->getCatalog();
     $r["list"]=$list;
     $r["timestamp"]=time();
+    $r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
     $r["alert"]="Clip deleted";
     break;
   
   case "dir":    
-    if(isset($input["since"])) {
+    if(isset($input["since"]) && $input["since"]) {
       $catalog=$targetPath.Inventory::getMyFileName();
       if(filemtime($catalog) < $input["since"]) {
         $r=304;
@@ -44,11 +54,12 @@ try{
       }
     }
     $inv=new Inventory();
-    $inv->init($targetPath);
+    $inv->init($targetPath,$pr->g("mediaFolder"));
     //$list=$inv->getCatalogWithoutExpired();
     $list=$inv->getCatalog();
     $r["list"]=$list;
     $r["timestamp"]=time();
+    $r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
     break;
   
   

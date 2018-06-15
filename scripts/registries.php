@@ -82,9 +82,11 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "timeShiftHrs"=>0,
       "lang"=>"en",
       //"skipPlayerAuth"=>0,// if set, allowPlayerNameInInput must be set also
+      "mediaFolder"=>"media",
       "maxBlobBytes"=>50000,
       "maxMediaFolderBytes"=>400000,
       "lifetimeMediaSec"=>300,
+      "allowVideo"=>0,
       "onRecorded"=>"stop",
       "chunkSize"=>2,
       "pollFactor"=>10,
@@ -106,6 +108,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "lang"=>"en",
       //"allowAuthByRequestId"=>1,// Credentials
       //"allowPlayerNameInInput"=>1,// Credentials
+      "mediaFolder"=>"media",
       "maxBlobBytes"=>50000,
       "maxMediaFolderBytes"=>400000,
       "lifetimeMediaSec"=>300

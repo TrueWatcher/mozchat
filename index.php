@@ -20,7 +20,7 @@ try {
     "state"=>"operational", "user"=>$input["user"], "realm"=>$input["realm"]
   ];
   $serverParams=$pr->exportByList( [
-    "maxBlobBytes", "maxMediaFolderBytes", "lifetimeMediaSec", "chunkSize", "onRecorded", "pollFactor", "playNew", "skipMine"
+    "maxBlobBytes", "maxMediaFolderBytes", "lifetimeMediaSec", "allowVideo", "chunkSize", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder"
   ] , $serverParams);
 
   include("scripts/templates/client.php");

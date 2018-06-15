@@ -11,10 +11,12 @@ class Inventory {
   
   static function getMyFileName() { return self::$myFileName; }
   
-  function init($tp) {
-    $mediaFolder=$tp.$this->mediaFolderName;
-    if( ! file_exists($mediaFolder) || ! is_dir($mediaFolder)) throw new DataException ("Target folder ".$mediaFolder." not found");
+  function init($tp,$mfn) {
+    $mediaFolder=$tp.$mfn;
+    if( ! file_exists($mediaFolder)) mkdir($mediaFolder);
+    //|| ! is_dir($mediaFolder)) throw new DataException ("Target folder ".$mediaFolder." not found");
     $this->targetPath=$tp;
+    $this->mediaFolderName=$mfn;
     $this->mediaFolder=$mediaFolder;
     $myFile=$tp.self::$myFileName;
     $filesFound=scandir($mediaFolder);
@@ -36,7 +38,10 @@ class Inventory {
   private function checkCatalog($scanned) {
     $scannedLength=count($scanned);
     $myLength=count($this->data);
-    if($myLength != $scannedLength) throw new DataException("Inventory has $myLength records, the folder has $scannedLength files");
+    if($myLength != $scannedLength) { 
+      var_dump($scanned);
+      throw new DataException("Inventory has $myLength records, the folder has $scannedLength files"); 
+    }
     foreach($this->data as $e) {
       $ee=array_combine($this->keys,$e);
       if( ! in_array($ee["fileName"],$scanned) ) throw new DataException("Inventory entry {$ee["fileName"]} is missing from the folder");
@@ -87,7 +92,7 @@ class Inventory {
     );
     //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
     $overdraft=$this->getTotalBytes()-$pr->g("maxMediaFolderBytes");
-    if($overdraft > 0) $inv->freeSomeRoom($overdraft);
+    if($overdraft > 0) $this->freeSomeRoom($overdraft);
     return $clipBytes;
   }
   

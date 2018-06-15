@@ -2,7 +2,7 @@
 function PlayerBox() {
   var viewP={}, timerP={}, ajaxerP={}, player={}, serialPlayer={}, _this=this;
   var catalog=[], catalogTime=0, ticks=0, userParams={}, serverParams={};
-  var mediaFolder="media";
+  //var mediaFolder="media";
   
   this.init=function(fromServer) {
     serverParams=fromServer;
@@ -14,7 +14,8 @@ function PlayerBox() {
     ajaxerP=new Utils.Ajaxer("download.php", getResponseP, {});
     setInterval(_this.onTick, 100);
     
-    var urlprefix=userParams.realm+"/"+mediaFolder+"/";
+    if( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
+    var urlprefix=userParams.realm+"/"+serverParams.mediaFolder+"/";
     player=new Player(urlprefix, viewP);
     serialPlayer=new SerialPlayer(urlprefix, this.getNextId, viewP);
     
@@ -26,8 +27,6 @@ function PlayerBox() {
     //alert(resp);
     if(resp.timestamp) catalogTime=resp.timestamp;
     if(resp.list) {
-      //catalog=resp.list;
-      //viewP.showCatalog(catalog);
       //console.log(Utils.dumpArray(userParams));
       //console.log(Utils.dumpArray(resp.list));
       //console.log(Utils.dumpArray(catalog));
@@ -140,8 +139,13 @@ function PlayerBox() {
   
   function findId(clipList,l,id) {
     var j=0;
-    for(; j<l; j++) { if(clipList[j][0]  == id ) return true; }
+    for(; j<l; j++) { if(clipList[j][0]  == id ) return clipList[j]; }
     return false;
+  }
+      
+  _this.isVideo(id) { 
+    var mime=findId(catalog,catalog.length,id)[3];
+    if(mime.indexOf("video") === 0) return true;
   }
   
   
@@ -153,28 +157,17 @@ function ViewP() {
   var user="";
   
   this.applyServerParams=function(sp) {
-    if(sp.pollFactor) {
-      var chr=document.querySelector('input[name="refreshRad"][value="'+sp.pollFactor+'"]');
-      if(chr) { chr.checked="checked"; }
-    }
-    if(sp.hasOwnProperty("playNew")) { 
-      if(sp.playNew === "0" || sp.playNew === 0 || sp.playNew === false) playNewChkb.checked="";
-      else playNewChkb.checked=sp.playNew;
-    }
-    if(sp.hasOwnProperty("skipMine")) { 
-      if(sp.skipMine === "0" || sp.skipMine === 0 || sp.skipMine === false) {
-        skipMineChkb.checked="";
-      }
-      else { skipMineChkb.checked=sp.skipMine; }
-    }
-  }
+    if(sp.pollFactor) { Utils.setRadio("refreshRad",sp.pollFactor); }
+    if(sp.hasOwnProperty("playNew")) { Utils.setCheckbox("playNewChkb",sp.playNew); }
+    if(sp.hasOwnProperty("skipMine")) { Utils.setCheckbox("skipMineChkb",sp.skipMine); }
+  };
   
   this.getParams=function() {
     user=userInput.value;// needed for DELETE links
     return {
       user : userInput.value,
       realm : realmInput.value,
-      pollFactor : document.querySelector('input[name="refreshRad"]:checked').value,
+      pollFactor : Utils.getRadio("refreshRad"),
       playNew : playNewChkb.checked,
       skipMine : skipMineChkb.checked
     };
