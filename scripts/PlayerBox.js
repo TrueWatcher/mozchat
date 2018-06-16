@@ -1,7 +1,8 @@
 "use strict";
 function PlayerBox() {
-  var viewP={}, timerP={}, ajaxerP={}, player={}, serialPlayer={}, _this=this;
+  var viewP={}, timerP={}, ajaxerP={}, /*player={},*/ serialPlayer={}, _this=this;
   var catalog=[], catalogTime=0, ticks=0, userParams={}, serverParams={};
+  var urlprefix="";
   //var mediaFolder="media";
   
   this.init=function(fromServer) {
@@ -15,9 +16,9 @@ function PlayerBox() {
     setInterval(_this.onTick, 100);
     
     if( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
-    var urlprefix=userParams.realm+"/"+serverParams.mediaFolder+"/";
-    player=new Player(urlprefix, viewP);
-    serialPlayer=new SerialPlayer(urlprefix, this.getNextId, viewP);
+    urlprefix=userParams.realm+"/"+serverParams.mediaFolder+"/";
+    //player=new Player(urlprefix, viewP);
+    serialPlayer=new SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP);
     
     viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter);
   }
@@ -26,6 +27,7 @@ function PlayerBox() {
     var ps,diff;
     //alert(resp);
     if(resp.timestamp) catalogTime=resp.timestamp;
+    if(resp.free) viewP.showFreeSpace(resp.free);
     if(resp.list) {
       //console.log(Utils.dumpArray(userParams));
       //console.log(Utils.dumpArray(resp.list));
@@ -40,7 +42,7 @@ function PlayerBox() {
         if(diff.added.length) {
           ps=serialPlayer.getState();
           //console.log(ps);          
-          if(ps == "idle") serialPlayer.play({id:diff.added[0][0], el:false});
+          if(ps == "idle") serialPlayer.play({id:diff.added[0][0], mime:diff.added[0][3], el:false});
           else if(ps == "playing") serialPlayer.tryFeed();
         }
       }
@@ -66,8 +68,10 @@ function PlayerBox() {
     var c=viewP.locateClick(event);
     if( ! c || ! c.command) return false;
     //alert(c.id+" "+c.command);
-    if(c.command == "play") player.play(c.id);
-    else if(c.command == "playDown") serialPlayer.play({id:c.id, el:false});
+    if(c.command == "play") Utils.play(urlprefix+c.id, _this.isVideo(c.id),"playerRoom");
+    else if(c.command == "playDown") serialPlayer.play({
+      id : c.id, mime : _this.isVideo(c.id), el : false}
+    );
     else if(c.command == "delete") sendDelete(c.id); 
     return false;    
   };
@@ -84,11 +88,15 @@ function PlayerBox() {
       idd=catalog[i][0];
       if(id == idd) {
         if( ! userParams.skipMine) {
-          if(i+1 < l) return catalog[i+1][0];
+          if(i+1 < l) return {
+            id : catalog[i+j][0], mime : catalog[i+j][3]
+          };;
           return false
         }
         while(i+j < l) {
-          if(catalog[i+j][1] != userParams.user ) return catalog[i+j][0];
+          if(catalog[i+j][1] != userParams.user ) return {
+            id : catalog[i+j][0], mime : catalog[i+j][3]
+          };
           j+=1;
         }
       }
@@ -109,43 +117,32 @@ function PlayerBox() {
     //console.log(Utils.dumpArray(userParams));
     // no return false !!!
   };
-  
-  this._diffCatalogs=function(newCat) {// WRONGLY puts existing records to ADDED
-    var removed=[],added=[],lOld=catalog.length,lNew=newCat.length,i=0,r={};
-    for(i=0; i < lNew; i+=1) {
-      if(catalog.indexOf(newCat[i]) < 0) added.push(newCat[i]);
-    }
-    for(i=0; i < lOld; i+=1) {
-      if(newCat.indexOf(catalog[i]) < 0) removed.push(catalog[i]);
-    }
-    r={removed:removed, added:added};
-    //console.log(Utils.dumpArray(r));
-    return r;
-  }
 
   this.diffCatalogsById=function(newCat) {
     var removed=[],added=[],lOld=catalog.length,lNew=newCat.length,i=0,j=0,r={},id;
     for(i=0; i < lNew; i+=1) {
       id=newCat[i][0];
-      if( ! findId(catalog,lOld,id) ) added.push(newCat[i]);
+      if( ! this.findId(catalog,lOld,id) ) added.push(newCat[i]);
     }
     for(i=0; i < lOld; i+=1) {
       id=catalog[i][0];
-      if( ! findId(newCat,lNew,id) ) removed.push(catalog[i]);
+      if( ! this.findId(newCat,lNew,id) ) removed.push(catalog[i]);
     }
     r={removed:removed, added:added};
     return r;
   }
   
-  function findId(clipList,l,id) {
+  _this.findId=function(clipList,l,id) {
     var j=0;
     for(; j<l; j++) { if(clipList[j][0]  == id ) return clipList[j]; }
     return false;
   }
       
-  _this.isVideo(id) { 
-    var mime=findId(catalog,catalog.length,id)[3];
-    if(mime.indexOf("video") === 0) return true;
+  _this.isVideo=function(id) { 
+    var mime =_this.findId(catalog,catalog.length,id)[3];
+    if(mime.indexOf("video") === 0) return "video";
+    else if(mime.indexOf("audio") === 0) return "audio";
+    throw new Error("Unknown mime type="+mime);
   }
   
   
@@ -215,22 +212,6 @@ function ViewP() {
     return tr;
   }
   
-  function renderLine(l) {
-    if( ! l instanceof Array) throw new Error("Wrong argument type "+(typeof l));
-    var r="", i=0, ll=l.length, title="";
-    //for(; i<ll; i+=1) { r+="<td>"+line[i]+"</td>"; };
-    r+="<td>"+l[1]+"</td>";
-    r+="<td>"+l[2]+"</td>";
-    r+="<td>"+l[3]+"</td>";
-    r+="<td>"+l[4]+"s</td>";
-    r+="<td>"+Utils.b2kb(l[5])+'</td>';
-    r+='<td class="play">'+"play"+"</td>";
-    r+='<td class="playDown">'+"play_down"+"</td>";
-    if(l[7]) title=' title="'+l[7]+'" ';
-    r='<tr id="'+l[0]+'"'+title+'>'+r+"</tr>\n";
-    return r;
-  }
-  
   _this.locateClick=function(event) { 
     event = event || window.event;
     var target = event.target || event.srcElement;
@@ -256,6 +237,8 @@ function ViewP() {
   this.showMessage=function(m) { playerAlertP.innerHTML=m; };
   this.clearMessage=function(m) { playerAlertP.innerHTML=""; };
   
+  this.showFreeSpace=function(b) { folderFreeS.innerHTML=Utils.b2kb(b); };
+  
   _this.showClip=function(a) { playerRoom.appendChild(a); };
   _this.clearClips=function(a) { playerRoom.innerHTML=""; };
   
@@ -267,40 +250,34 @@ function ViewP() {
   };
 }
 
-function Player(urlprefix,viewP) {
-  this.play=function(name) {
-    var a;
-    try {
-      a=new Audio(urlprefix+name);
-      a.controls=true;
-      viewP.showClip(a);
-      a.play();
-      a.onended=function() { setTimeout(viewP.clearClips(), 1); };
-    } catch (err) {
-      viewP.showMessage(err);
-    }    
-  } 
-}
-
-function SerialPlayer(urlprefix, getNextId, viewP) {
+function SerialPlayer(urlprefix, getNextId, getType, viewP) {
   if(typeof getNextId != "function") throw new Error("Non-function argument");
   var actual=false, next=false, _this=this, stopping=false, state="idle";
   
   _this.play=function(idOrElement) {
-    var n,id,el;
+    var n,id,el,mime;
     
-    if(! idOrElement.el) {
+    if( ! idOrElement.mime) throw new Error("no MIME");
+    mime=idOrElement.mime.substr(0,5);
+    if( ! idOrElement.el) {
       id=idOrElement.id;
-      el=new Audio(urlprefix+id);
+      if(mime == "audio") el=new Audio();
+      else if(mime == "video") {
+        el=document.createElement('video');
+      }
+      else throw new Error("Wrong MIME="+mime);
+      el.src=urlprefix+id;
+      el.autoplay=true;
       //el.controls=true;
-      actual={el:el, id:id};      
+      actual={el:el, id:id, mime:mime};
+      if(actual.mime == "video") viewP.showClip(actual.el);      
     }
     else {
-      if(! idOrElement.id) throw new Error("Element without id");
-      actual={id:idOrElement.id, el:idOrElement.el};
+      if( ! idOrElement.id) throw new Error("Element without ID");
+      actual={id:idOrElement.id, el:idOrElement.el, mime:idOrElement.mime};
     }
-    //viewP.showClip(actual.el);
-    actual.el.play();
+    //if(actual.mime == "video") viewP.showClip(actual.el);
+    //actual.el.play(); // 
     console.log("playing "+actual.id);
     viewP.highlightLine(actual.id,"p");
     this.tryFeed();
@@ -310,20 +287,39 @@ function SerialPlayer(urlprefix, getNextId, viewP) {
       //console.time("listrecorder step");
       setTimeout(function(){
         //alert("2");
-        //viewP.clearClips();
+        if(next && ! stopping) next.el.play();
+        if(actual.mime == "video") {
+          actual.el.parentNode.removeChild(actual.el);
+          if(next && ! stopping) viewP.showClip(next.el);
+        }
         _this.tryStep();
       }, 0);
     }
   }
   
   _this.tryEnqueue=function(id) {
-    var el;
-    if( ! id) return false;
+    //console.log(Utils.dumpArray(id));
+    var el,mime="";
     if(next) return false;
-    el=new Audio(urlprefix+id);
+    if( ! id) return false;
+    if(typeof id == "object") {
+      mime=id.mime.substr(0,5);
+      id=id.id;      
+    }
+    else {
+      mime=getType();
+      console.log("this should not happen");
+    }
+    //if( ! mime) mime=getType();
+    if(mime == "audio") el=new Audio();
+    else if(mime == "video") {
+      el=document.createElement('video');
+    }
+    else throw new Error("Wrong MIME="+mime);
+    el.src=urlprefix+id;
     //el.controls=true;
     el.autoplay=false;
-    next={el:el, id:id};
+    next={el:el, id:id, mime:mime};
     console.log("loading "+next.id);
     viewP.highlightLine(next.id,"l");
   };
@@ -345,7 +341,7 @@ function SerialPlayer(urlprefix, getNextId, viewP) {
       console.log("queue ended");
       return "finished";
     }
-    copy={id:next.id, el:next.el};
+    copy={id:next.id, el:next.el, mime:next.mime};
     next=false;
     setTimeout(function(){
       _this.play(copy);

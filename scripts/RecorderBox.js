@@ -82,21 +82,7 @@ function RecorderBox() {
   };
   
   _this.playLocally=function() {    
-    var a;
-    if( ! blobPlus.localUrl) { 
-      //alert("No data");
-      return;
-    }
-    if(userParams.audioOrVideo == "audio") a=new Audio();//
-    else if(userParams.audioOrVideo == "video") {
-      a = document.createElement('video');
-    }
-    else throw new Error("Wrong AUDIOORVIDEO="+userParams.audioOrVideo);
-    a.src=blobPlus.localUrl;
-    a.controls="controls";
-    if(playerRoom.hasChildNodes()) playerRoom.innerHTML="";
-    playerRoom.appendChild(a);
-    a.play();
+    Utils.play(blobPlus.localUrl, userParams.audioOrVideo, "playerRoom");
   };
   
   _this.uploadStoredBlob=function() { uploadBlobAndData(blobPlus); };
@@ -279,7 +265,7 @@ function ViewR() {
     maxSizeInp.value=Utils.b2kb(sp.maxBlobBytes);
     lifetimeInp.value=sp.lifetimeMediaSec+"s";
     folderSizeInp.value=Utils.b2kb(sp.maxMediaFolderBytes);
-    if(sp.allowVideo) {
+    if(sp.allowVideo && sp.allowVideo !== "0") {
       audioOrVideoS.style.display="";
       Utils.setRadio("audioOrVideoRad","video");
     }
@@ -314,7 +300,8 @@ function ViewR() {
   
   _this.setHandlers=function(initRecorder, recorderOn, recorderOff, toggleRecorder, playLocally, uploadStoredBlob) {
     var firstKeyDown=1;
-    audioOrVideoS.onclick=initRecorder;
+    audioOrVideoRad1.onchange=initRecorder;
+    audioOrVideoRad2.onchange=initRecorder;
     document.onkeydown=function(event) { 
       if(firstKeyDown && event.keyCode == 32) {
         recorderOn();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>Audio chat</title>
@@ -21,8 +21,8 @@
   Server limits: clip size <input type="text" id="maxSizeInp" style="width : 4em; border:none;" />, lifetime <input type="text" id="lifetimeInp" style="width : 8em; border:none;" />, folder size <input type="text" id="folderSizeInp" style="width : 8em; border:none;" />
   <br />
   <span id="audioOrVideoS">
-    audio<input type="radio" name="audioOrVideoRad" value="audio" checked="checked" />
-    or video<input type="radio" name="audioOrVideoRad" value="video" />
+    audio<input type="radio" id="audioOrVideoRad1" name="audioOrVideoRad" value="audio" checked="checked" />
+    or video<input type="radio" id="audioOrVideoRad2" name="audioOrVideoRad" value="video" />
   </span>  
   &nbsp;
   Chunk:
@@ -57,33 +57,33 @@
     &nbsp;&nbsp;
     Play new clips<input type="checkbox" id="playNewChkb" checked="checked" />,
     only from others<input type="checkbox" id="skipMineChkb" checked="checked" />
-    &nbsp;&nbsp;
-    <input type="button" id="stopAfterBtn" value="Stop after current" />
   </div>
   <table id="medialistT">
   </table>
   <p>
-    Free:<span id="folderFreeS" width="10em"></span>, net downloaded:<span id="folderFreeS" width="10em"></span>
+    Free:<span id="folderFreeS" style="width : 10em;"></span>, net downloaded:<span id="downloadCountS" style="width : 10em;"></span>
   </p>
+  <input type="button" id="stopAfterBtn" value="Stop after current" />
   <p id="playerAlertP">Javascript required</p>
 </fieldset>
 
 <fieldset id="techPanel">
 </fieldset>
 
-<div id="playerRoom">
+<div id="playerRoom" style="position: fixed; bottom:5px; right:5px">
 </div>
 
-<script src="scripts/client.js" type="text/javascript"></script>
-<script src="scripts/RecorderBox.js" type="text/javascript"></script>
-<script src="scripts/PlayerBox.js" type="text/javascript"></script>
-<script type="text/javascript">
+<script src="scripts/client.js"></script>
+<script src="scripts/RecorderBox.js"></script>
+<script src="scripts/PlayerBox.js"></script>
+<script>
 
 //Utils.dumpArray("a string");
 //console.log(Utils.dumpArray({qwerty:"qwerty",f:false,arr:["a",2,3],emptyArr:[],notEmpty:![]}));
 var serverParams='<?php print(json_encode($serverParams)) ?>';
 serverParams=JSON.parse(serverParams);
 
+if(serverParams.title) document.title=serverParams.title;
 if(serverParams.state == "zero") {
   recorderPanel.style.display="none";
   playerPanel.style.display="none";

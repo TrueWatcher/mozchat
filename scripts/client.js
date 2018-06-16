@@ -172,3 +172,24 @@ Utils.setCheckbox=function(id,value) {
   else el.checked="checked";
 };
 
+Utils.play=function(url,audioOrVideo,playerRoom) {    
+  var a, plr;
+  if( playerRoom instanceof HTMLElement) plr=playerRoom=document.getElementById(playerRoom);
+  else plr=document.getElementById(playerRoom);
+  if( ! plr) throw new Error("Wrong PLAYERROOM");
+  if( ! url) { console.log("Empty url"); return; }
+  if(audioOrVideo == "audio") a=new Audio();
+  else if(audioOrVideo == "video") {
+    a = document.createElement('video');
+  }
+  else throw new Error("Wrong AUDIOORVIDEO="+audioOrVideo);
+  a.src=url;
+  a.controls="controls";
+  if(plr.hasChildNodes()) plr.innerHTML="";
+  plr.appendChild(a);
+  a.play();
+  
+  a.onended=function(){ 
+    setTimeout( function() { plr.innerHTML=""; }, 1 ); 
+  };
+};

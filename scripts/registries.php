@@ -82,6 +82,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "timeShiftHrs"=>0,
       "lang"=>"en",
       //"skipPlayerAuth"=>0,// if set, allowPlayerNameInInput must be set also
+      "title"=>"Audio chat",
       "mediaFolder"=>"media",
       "maxBlobBytes"=>50000,
       "maxMediaFolderBytes"=>400000,
