@@ -41,26 +41,10 @@ try {
     $uploadedBytes=b2kb($uploadedBytes);
     //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
     $r["alert"]='Server got a record of '.$uploadedBytes;
+    
+    $counter=0;
     if( ! $pr->g("allowStream") && $pr->g("notifyUsers") && file_exists($targetPath."notify.ini")) {
-      $valid=$dt=date("M_d_H:i:s",time()+$pr->g("timeShiftHrs")+$pr->g("lifetimeMediaSec"));
-      $url = 'http://';
-      if ( (array_key_exists("HTTPS",$_SERVER)) && $_SERVER['HTTPS'] ) $url = 'https://';
-      $url .= $_SERVER['HTTP_HOST'];// Get the server
-      $dir=dirname($_SERVER['REQUEST_URI']);
-      $url.="$dir/";
-      $directLink=$url.$targetPath;
-      $directLink.=Inventory::checkMediaFolderName($pr->g("mediaFolder"))."/";
-      $directLink.=$n;
-      $enterLink=$url;
-      $noteMain="{$input["realm"]} has received a message from {$input["user"]} of {$input["duration"]}s/$uploadedBytes, valid until $valid";
-      $noteMain.="\n <a href=\"{$directLink}\">direct link</a>, <a href=\"{$enterLink}\">thread</a>";
-      $recipients=parse_ini_file($targetPath."notify.ini",true);
-      $counter=0;
-      foreach($recipients as $rName=>$rAddr) {
-        $welcome="Dear $rName,\n";
-        $sent=sendEmail($rAddr,$welcome.$noteMain,$pr);
-        if($sent === true) $counter+=1;
-      }
+      $counter=notifyUsers($input, $targetPath, $n, $uploadedBytes, $pr);
     }
     if($counter) {
       $r["alert"].=", $counter notifications sent";
@@ -122,18 +106,42 @@ function reportMimeFault($pathBias,$input) {
   file_put_contents($browserLogFile,$rec);  
 }
 
-function sendEmail($recAddr,$msgBody,PageREgistry $pr) {
-  $defaultSender="ppa@posmotrel.net";
+function notifyUsers($input, $targetPath, $n, $uploadedBytes,  PageRegistry $pr) {
+  $valid=date("M_d_H:i:s",time()+$pr->g("timeShiftHrs")+$pr->g("lifetimeMediaSec"));
+  $url = 'http://';
+  if ( (array_key_exists("HTTPS",$_SERVER)) && $_SERVER['HTTPS'] ) $url = 'https://';
+  $url .= $_SERVER['HTTP_HOST'];
+  $dir=dirname($_SERVER['REQUEST_URI']);
+  $url.=$dir."/";
+  $directLink=$url.$targetPath;
+  $directLink.=Inventory::checkMediaFolderName($pr->g("mediaFolder"))."/";
+  $directLink.=$n;
+  $enterLink=$url;
+  $noteMain="{$input["realm"]} has received a message from {$input["user"]} of {$input["duration"]}s/$uploadedBytes, valid until $valid";
+  $noteMain.="\n".'<a href="'.$directLink.'">direct link</a>, <a href="'.$enterLink.'">thread</a>';
+  $recipients=parse_ini_file($targetPath."notify.ini",true);
+  //var_dump($recipients);
+  $counter=0;
+  foreach($recipients as $rName=>$rAddr) {
+    $welcome="Dear $rName,\n";
+    $sent=sendEmail($rAddr,$welcome.$noteMain,$pr);
+    if($sent === true) $counter+=1;
+  }
+  return $counter;
+}
+
+function sendEmail($recAddr,$msgBody,PageRegistry $pr) {
+  $defaultSender="me@example.com";
   $defaultHeaders="\r\nContent-Type: text/plain; charset=utf-8;\r\nContent-transfer-encoding: quoted-printable";
   $subj="New message in media chat";
   
-  if(empty($recAddr) || false===strpos($recAddr,"@") || false===strpos($recAddr,".")) {
+  if(empty($recAddr) || false === strpos($recAddr,"@") || false===strpos($recAddr,".")) {
     return ([ $subj.$msgBody,"Invalid recipient" ]);
     //throw new UsageException("Invalid recipient address:$recAddr!");
   }    
   if( $pr->checkNotEmpty("mailFrom") ) { $from="From: ".$pr->g("mailFrom"); }
   else { $from="From: ".$defaultSender; }
-  if( $pr->checkNotEmpty("mailReplyto") ) { $replyto="\r\nReply-To: ".$pr->g("mailReplyto"); }
+  if( $pr->checkNotEmpty("mailReplyTo") ) { $replyto="\r\nReply-To: ".$pr->g("mailReplyTo"); }
   else { $replyto=""; }
   $headers= $from.$replyto.$defaultHeaders;
       

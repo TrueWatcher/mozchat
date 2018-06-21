@@ -82,6 +82,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "timeShiftHrs"=>0,
       "lang"=>"en",
       //"skipPlayerAuth"=>0,// if set, allowPlayerNameInInput must be set also
+      "mailReplyTo"=>"",
       "title"=>"Audio chat",
       "mediaFolder"=>"media",
       "notifyUsers"=>0,
@@ -112,6 +113,8 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "lang"=>"en",
       //"allowAuthByRequestId"=>1,// Credentials
       //"allowPlayerNameInInput"=>1,// Credentials
+      "mailFrom"=>"me@example.com",
+      "mailReplyTo"=>"",
       "mediaFolder"=>"media",
       "notifyUsers"=>0,
       "maxBlobBytes"=>50000,

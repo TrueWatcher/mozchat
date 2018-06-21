@@ -6,5 +6,7 @@
 /thrv/media*
 /thr1/media
 /thr1/media*
+/thr1/.ini
+*/notify.ini
 */catalog.json
-*/browser.log
+browser.log
