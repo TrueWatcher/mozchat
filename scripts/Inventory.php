@@ -13,7 +13,7 @@ class Inventory {
   
   function init($tp,$mfn) {
     // media must be stored in "mediaBLABLA" folder
-    if( strpos($mfn, "media") !== 0 ) { $mfn="media".$mfn; }
+    $mfn=self::checkMediaFolderName($mfn);
     $mediaFolder=$tp.$mfn;
     if( ! file_exists($mediaFolder)) mkdir($mediaFolder);
     //|| ! is_dir($mediaFolder)) throw new DataException ("Target folder ".$mediaFolder." not found");
@@ -35,6 +35,11 @@ class Inventory {
     $this->data=json_decode(file_get_contents($myFile));
     $this->checkCatalog($filesFound);
     $this->sumUpBytes();
+  }
+  
+  static function checkMediaFolderName($mfn) {
+    if( strpos($mfn, "media") !== 0 ) { $mfn="media".$mfn; }
+    return $mfn;
   }
   
   private function checkCatalog($scanned) {
@@ -79,7 +84,7 @@ class Inventory {
       $inc+=1;
       $n=$this->makeName($ext,$inc);
     }
-    return $n;
+    return $n;// only fileName, no path
   }
   
   function pickUploadedBlob($newName,$input,$pr) {
@@ -88,9 +93,10 @@ class Inventory {
     $r=move_uploaded_file($_FILES['blob']['tmp_name'], $this->mediaFolder."/".$newName);
     if( ! $r) throw new DataException("Moving failed");
     $clipBytes=filesize($this->mediaFolder."/".$newName);
-    $dt=date("M_d_H:i:s",time());
+    $dt=date("M_d_H:i:s",time()+$pr->g("timeShiftHrs"));
+    $expire=time()+$pr->g("timeShiftHrs")+$pr->g("lifetimeMediaSec");
     $this->addLine(
-      $newName, $input["user"], $dt, $input["mime"], $input["duration"], $clipBytes, time()+$pr->g("lifetimeMediaSec"), $input["description"]
+      $newName, $input["user"], $dt, $input["mime"], $input["duration"], $clipBytes, $expire, $input["description"]
     );
     //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
     $overdraft=$this->getTotalBytes()-$pr->g("maxMediaFolderBytes");

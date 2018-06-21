@@ -18,7 +18,7 @@ function PlayerBox() {
     if( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
     urlprefix=userParams.realm+"/"+serverParams.mediaFolder+"/";
     //player=new Player(urlprefix, viewP);
-    serialPlayer=new SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP);
+    serialPlayer=new SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP, onMediaError);
     
     viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter);
   }
@@ -69,13 +69,20 @@ function PlayerBox() {
     var c=viewP.locateClick(event);
     if( ! c || ! c.command) return false;
     //alert(c.id+" "+c.command);
-    if(c.command == "play") Utils.play(urlprefix+c.id, _this.isVideo(c.id),"playerRoom");
+    if(c.command == "play") Utils.play(urlprefix+c.id, _this.isVideo(c.id),"playerRoom",onMediaError);
     else if(c.command == "playDown") serialPlayer.play({
       id : c.id, mime : _this.isVideo(c.id), el : false}
     );
-    else if(c.command == "delete") sendDelete(c.id); 
+    else if(c.command == "delete") sendDelete(c.id);
     return false;    
   };
+  
+  function onMediaError(msg) { 
+    console.log("Caught a media error:"+msg); 
+    viewP.showMessage(msg);
+    viewP.clearClips();
+    return false;
+  }
   
   function sendDelete(file) {
     var qs="user="+userParams.user+"&realm="+userParams.realm;
@@ -151,7 +158,7 @@ function PlayerBox() {
 
 function ViewP() {
   var _this=this;
-  var lineColors={l:"#ffd", p:"#fdd", g:"#ddd", n:""};
+  var lineColors={l:"#ffd", p:"#fdd", g:"#ddd", n:"", e:""};
   var user="";
   
   this.applyServerParams=function(sp) {
@@ -248,11 +255,13 @@ function ViewP() {
     //applyPlayerBtn.onclick=applyParams;
     playerControlsDiv.onclick=applyParams;
     stopAfterBtn.onclick=stopAfter;
+    clearBtn.onclick=function(){ _this.clearClips(); stopAfter(); };
   };
 }
 
-function SerialPlayer(urlprefix, getNextId, getType, viewP) {
+function SerialPlayer(urlprefix, getNextId, getType, viewP, errorHandler) {
   if(typeof getNextId != "function") throw new Error("Non-function argument");
+  if(errorHandler && typeof errorHandler != "function") throw new Error("Invalid ERRORHANDLER");
   var actual=false, next=false, _this=this, stopping=false, state="idle";
   
   _this.play=function(idOrElement) {
@@ -267,17 +276,22 @@ function SerialPlayer(urlprefix, getNextId, getType, viewP) {
         el=document.createElement('video');
       }
       else throw new Error("Wrong MIME="+mime);
+      if(errorHandler) el.onerror=function() { 
+        viewP.highlightLine(actual.id,"e");
+        errorHandler(el.error.message);
+        return false; 
+      };
       el.src=urlprefix+id;
       el.autoplay=true;
       //el.controls=true;
       actual={el:el, id:id, mime:mime};
-      if(actual.mime == "video") viewP.showClip(actual.el);      
+      //if(actual.mime == "video") viewP.showClip(actual.el);
     }
     else {
       if( ! idOrElement.id) throw new Error("Element without ID");
       actual={id:idOrElement.id, el:idOrElement.el, mime:idOrElement.mime};
     }
-    //if(actual.mime == "video") viewP.showClip(actual.el);
+    if(actual.mime == "video") viewP.showClip(actual.el);
     //actual.el.play(); // 
     console.log("playing "+actual.id);
     viewP.highlightLine(actual.id,"p");
@@ -296,6 +310,7 @@ function SerialPlayer(urlprefix, getNextId, getType, viewP) {
         _this.tryStep();
       }, 0);
     }
+    
   }
   
   _this.tryEnqueue=function(id) {

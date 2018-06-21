@@ -116,7 +116,8 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "notifyUsers"=>0,
       "maxBlobBytes"=>50000,
       "maxMediaFolderBytes"=>400000,
-      "lifetimeMediaSec"=>300
+      "lifetimeMediaSec"=>300,
+      "allowStream"=>0
     ];
     return $a;
   }

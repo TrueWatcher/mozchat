@@ -170,7 +170,7 @@ Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
       return;
     }
     if(req.status == 304) {
-      console.log("304 "+lag);
+      //console.log("304 "+lag);
       onDataReceived({ alert : "No changes", lag : lag });
       return;
     }
@@ -215,17 +215,20 @@ Utils.setCheckbox=function(id,value) {
   else el.checked="checked";
 };
 
-Utils.play=function(url,audioOrVideo,playerRoom) {    
+Utils.play=function(url,audioOrVideo,playerRoom,errorHandler) {    
   var a, plr;
   if( playerRoom instanceof HTMLElement) plr=playerRoom=document.getElementById(playerRoom);
   else plr=document.getElementById(playerRoom);
   if( ! plr) throw new Error("Wrong PLAYERROOM");
   if( ! url) { console.log("Empty url"); return; }
-  if(audioOrVideo == "audio") a=new Audio();
+  if(audioOrVideo == "audio") {
+    a=new Audio();
+  }
   else if(audioOrVideo == "video") {
     a = document.createElement('video');
   }
   else throw new Error("Wrong AUDIOORVIDEO="+audioOrVideo);
+  if(errorHandler && typeof errorHandler != "function") throw new Error("Invalid ERRORHANDLER");
   a.src=url;
   a.controls="controls";
   if(plr.hasChildNodes()) plr.innerHTML="";
@@ -235,4 +238,6 @@ Utils.play=function(url,audioOrVideo,playerRoom) {
   a.onended=function(){ 
     setTimeout( function() { plr.innerHTML=""; }, 1 ); 
   };
+  
+  if(errorHandler) a.onerror=function() { errorHandler(a.error.message); return false; };
 };

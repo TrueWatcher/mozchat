@@ -6,6 +6,7 @@ $pathBias="";
 require_once("scripts/AssocArrayWrapper.php");
 require_once("scripts/MyExceptions.php");
 require_once("scripts/registries.php");
+require_once("scripts/Inventory.php");
 $input=$_REQUEST;
 try {
   checkUserRealm($pathBias,$input);
@@ -22,6 +23,7 @@ try {
   $serverParams=$pr->exportByList( [
     "maxBlobBytes", "maxMediaFolderBytes", "lifetimeMediaSec", "title", "allowVideo", "videoOn", "chunkSize", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder"
   ] , $serverParams);
+  $serverParams["mediaFolder"]=Inventory::checkMediaFolderName($serverParams["mediaFolder"]);
 
   include("scripts/templates/client.php");
 } 

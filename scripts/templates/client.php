@@ -63,9 +63,10 @@
   <table id="medialistT">
   </table>
   <p>
-    Free:<span id="folderFreeS" style="width : 10em;"></span>, net downloaded:<span id="downloadCountS" style="width : 10em;"></span>
+    Free:<span id="folderFreeS" style="width : 10em;"></span><!--, net downloaded:<span id="downloadCountS" style="width : 10em;"></span>-->
   </p>
   <input type="button" id="stopAfterBtn" value="Stop after current" />
+  <input type="button" id="clearBtn" value="Clear" />
   <p id="playerAlertP">Javascript required</p>
 </fieldset>
 

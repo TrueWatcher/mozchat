@@ -18,6 +18,7 @@ header('Content-type: text/plain; charset=utf-8');//application/json
 
 $input=$_POST;
 try {
+  $r=[];
   checkUserRealm($pathBias,$input);
   $targetPath=$pathBias.$input["realm"]."/";
   $iniParams=IniParams::read($targetPath);
@@ -36,9 +37,34 @@ try {
     $inv->init($targetPath,$pr->g("mediaFolder"));
     $inv->removeExpired();
     $n=$inv->newName($input["ext"]);
-    $r=$inv->pickUploadedBlob($n,$input,$pr);
+    $uploadedBytes=$inv->pickUploadedBlob($n,$input,$pr);
+    $uploadedBytes=b2kb($uploadedBytes);
     //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
-    print('{"alert":"'.'Got a record of '.b2kb($r).'"}');
+    $r["alert"]='Server got a record of '.$uploadedBytes;
+    if( ! $pr->g("allowStream") && $pr->g("notifyUsers") && file_exists($targetPath."notify.ini")) {
+      $valid=$dt=date("M_d_H:i:s",time()+$pr->g("timeShiftHrs")+$pr->g("lifetimeMediaSec"));
+      $url = 'http://';
+      if ( (array_key_exists("HTTPS",$_SERVER)) && $_SERVER['HTTPS'] ) $url = 'https://';
+      $url .= $_SERVER['HTTP_HOST'];// Get the server
+      $dir=dirname($_SERVER['REQUEST_URI']);
+      $url.="$dir/";
+      $directLink=$url.$targetPath;
+      $directLink.=Inventory::checkMediaFolderName($pr->g("mediaFolder"))."/";
+      $directLink.=$n;
+      $enterLink=$url;
+      $noteMain="{$input["realm"]} has received a message from {$input["user"]} of {$input["duration"]}s/$uploadedBytes, valid until $valid";
+      $noteMain.="\n <a href=\"{$directLink}\">direct link</a>, <a href=\"{$enterLink}\">thread</a>";
+      $recipients=parse_ini_file($targetPath."notify.ini",true);
+      $counter=0;
+      foreach($recipients as $rName=>$rAddr) {
+        $welcome="Dear $rName,\n";
+        $sent=sendEmail($rAddr,$welcome.$noteMain,$pr);
+        if($sent === true) $counter+=1;
+      }
+    }
+    if($counter) {
+      $r["alert"].=", $counter notifications sent";
+    }
   }
   else if($act == "reportMimeFault") {
     reportMimeFault($pathBias,$input);
@@ -47,16 +73,17 @@ try {
   else throw new DataException("Unknown command=$act!");
   
 } catch (DataException $de) {
-  print('{"error":"'.$de->getMessage().'"}');
+  $r["error"]=$de->getMessage();
 }
-if($r == 204) {
+if($r === 204) {
   header("HTTP/1.0 204 No Content");
   exit();
 }
-if($r == 304) {
+if($r === 304) {
   header("HTTP/1.0 304 Not Modified");
   exit();
 }
+print(json_encode($r));
 exit();
 
 function checkExt($ext) {
@@ -95,6 +122,23 @@ function reportMimeFault($pathBias,$input) {
   file_put_contents($browserLogFile,$rec);  
 }
 
-
+function sendEmail($recAddr,$msgBody,PageREgistry $pr) {
+  $defaultSender="ppa@posmotrel.net";
+  $defaultHeaders="\r\nContent-Type: text/plain; charset=utf-8;\r\nContent-transfer-encoding: quoted-printable";
+  $subj="New message in media chat";
+  
+  if(empty($recAddr) || false===strpos($recAddr,"@") || false===strpos($recAddr,".")) {
+    return ([ $subj.$msgBody,"Invalid recipient" ]);
+    //throw new UsageException("Invalid recipient address:$recAddr!");
+  }    
+  if( $pr->checkNotEmpty("mailFrom") ) { $from="From: ".$pr->g("mailFrom"); }
+  else { $from="From: ".$defaultSender; }
+  if( $pr->checkNotEmpty("mailReplyto") ) { $replyto="\r\nReply-To: ".$pr->g("mailReplyto"); }
+  else { $replyto=""; }
+  $headers= $from.$replyto.$defaultHeaders;
+      
+  $ret=mail($recAddr,$subj,$msgBody,$headers);
+  return $ret;
+}
 
 ?>

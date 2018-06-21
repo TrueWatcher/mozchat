@@ -62,18 +62,20 @@ try {
     $r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
     break;
   
-  
   default:
     throw new DataException("Unknown command $act");  
   }
-  if($r == 304) {
-    header("HTTP/1.0 304 Not Modified");
-    exit();
-  }
-  print(json_encode($r));
+
 } catch (DataException $de) {
-  print('{"error":"'.$de->getMessage().'"}');
+  $r["error"]=$de->getMessage();
 }
+
+if($r === 304) {
+  header("HTTP/1.0 304 Not Modified");
+  exit();
+}
+print(json_encode($r));
+exit();
 
 
 function checkFields($input) {

@@ -188,7 +188,7 @@ function RecorderMR(receiveBlob,indicate,viewR) {
         mediaRecorder.stop();
         indicate("ready");
       }
-      console.log("recorder "+mediaRecorder.state);
+      //console.log("recorder "+mediaRecorder.state);
       return isOn;
     };
     
@@ -211,7 +211,7 @@ function RecorderMR(receiveBlob,indicate,viewR) {
     console.time("make blob");
     var blob = new Blob(chunks, { 'type':mime });
     chunks = [];
-    console.log("data processed");
+    //console.log("data processed");
     console.timeEnd("make blob");
     return {
       mime : mime,
@@ -283,8 +283,10 @@ function ViewR() {
     lifetimeInp.value=Utils.s2dhms(sp.lifetimeMediaSec);
     folderSizeInp.value=Utils.b2kb(sp.maxMediaFolderBytes);
     if(sp.allowVideo && sp.allowVideo === "0") sp.allowVideo=0;
+    if(sp.videoOn && sp.videoOn === "0") sp.videoOn=false;
     if(sp.allowVideo) {
       audioOrVideoS.style.display="";
+      //alert(sp.videoOn+" "+Utils.getRadio("audioOrVideoRad"));
       if(sp.videoOn) Utils.setRadio("audioOrVideoRad","video");
     }
     else { audioOrVideoS.style.display="none"; }
