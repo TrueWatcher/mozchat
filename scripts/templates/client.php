@@ -32,8 +32,10 @@
   <input type="radio" name="chunkRad" value="custom" />custom
   <input type="text" id="chunkInp" style="width : 4em;" />s,
   &nbsp;&nbsp;&nbsp;
-  then: upload<input type="radio" name="onrecordedRad" value="upload" checked="checked" />&nbsp;
-  stop<input type="radio" name="onrecordedRad" value="stop" />
+  <span id="onrecordedS">
+    then: upload<input type="radio" name="onrecordedRad" value="upload" checked="checked" />&nbsp;
+    stop<input type="radio" name="onrecordedRad" value="stop" />
+  </span>
   <br />
   <input type="text" id="decriptionInput" placeholder="You may type here a decription BEFORE recording" style="width : 40em;" />
   <br />
@@ -92,6 +94,14 @@ if(serverParams.state == "zero") {
 else {
   userInput.value=serverParams.user;
   realmInput.value=serverParams.realm;
+  
+  var found=Utils.checkBrowser();
+  console.log(Utils.dumpArray(found));
+  if(found.outcome !== true) {
+    //console.log(Utils.dumpArray(found));
+    accountBottomAlertP.innerHTML=found.outcome;
+    throw new Error(found.outcome);
+  }
 
   var recorderBox=new RecorderBox();
   recorderBox.init(serverParams);

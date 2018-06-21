@@ -49,6 +49,7 @@ function PlayerBox() {
     } 
     
     if(resp.error) viewP.showMessage("Error! "+resp.error);
+    if(resp.alert) viewP.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms");
     else viewP.showMessage(resp.alert || Utils.dumpArray(resp) || "<empty>");
   }
   

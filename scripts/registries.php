@@ -84,11 +84,14 @@ class PageRegistry extends SingletAssocArrayWrapper {
       //"skipPlayerAuth"=>0,// if set, allowPlayerNameInInput must be set also
       "title"=>"Audio chat",
       "mediaFolder"=>"media",
+      "notifyUsers"=>0,
       "maxBlobBytes"=>50000,
       "maxMediaFolderBytes"=>400000,
       "lifetimeMediaSec"=>300,
       "allowVideo"=>0,
-      "onRecorded"=>"stop",
+      "videoOn"=>0,// if allowVideo==0 this will be considered 0
+      "allowStream"=>0,
+      "onRecorded"=>"stop",// if allowStream==0 this will be considered "stop"
       "chunkSize"=>2,
       "pollFactor"=>10,
       "playNew"=>1,
@@ -110,6 +113,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
       //"allowAuthByRequestId"=>1,// Credentials
       //"allowPlayerNameInInput"=>1,// Credentials
       "mediaFolder"=>"media",
+      "notifyUsers"=>0,
       "maxBlobBytes"=>50000,
       "maxMediaFolderBytes"=>400000,
       "lifetimeMediaSec"=>300

@@ -4,4 +4,7 @@
 /thr0/media*
 /thrv/media
 /thrv/media*
+/thr1/media
+/thr1/media*
 */catalog.json
+*/browser.log

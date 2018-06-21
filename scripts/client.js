@@ -69,6 +69,7 @@ Utils.TypesExtensions=function(audioOrVideo) {
   
   this.mime2ext=function(mime) {
     var ext;
+    //return false;// DEBUG mime fault logging
     for(ext in te[audioOrVideo]) {
       if( te[audioOrVideo].hasOwnProperty(ext) && te[audioOrVideo][ext] === mime ) return ext;
     }
@@ -98,16 +99,46 @@ Utils.dumpArray=function(x) {
 
 Utils.b2kb=function (b) { return Math.ceil(b/1000)+"KB" };
 
+Utils.s2dhms=function(sec) {
+  var r="", day=86400, hour=3600, min=60, d, h, m, s;
+  d=Math.floor(sec/day);
+  if(d) { 
+    r+=d+"d"; 
+    sec=sec-d*day;
+  }
+  h=Math.floor(sec/hour);
+  if(h) {
+    if(d) r+=" ";
+    r+=h+"h"; 
+    sec=sec-h*hour;
+    if(d) return r;
+  }
+  m=Math.floor(sec/min);
+  if(m) {
+    if(h) r+=" ";
+    r+=m+"m";
+    sec=sec-m*min;
+    if(h) return r;
+  }
+  if(sec) {
+    if(m) r+=" ";
+    r+=sec+"s";
+  }
+  return r;
+};
+
 Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
   if(typeof onDataReceived != "function") throw new Error("Non-function callback argument");
   if( ! indicator.on) indicator={on:function(){}, off:function(){}}; 
   var urlOffset="";
   if (typeof URLOFFSET != "undefined") urlOffset=URLOFFSET;
+  var lag=0,timer=false;
   
   var _this=this, req;
     
   this.postRequest=function(what) {
     if ( ! what) throw new Error ("no data");
+    timer=Date.now();
     req=new XMLHttpRequest();
     req.open("POST",urlOffset+responderUrl,true); // POST
     //req.setRequestHeader("Content-Type","multipart/form-data");// for POST; should go _after_ req.open!//application/x-www-form-urlencoded
@@ -117,6 +148,7 @@ Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
   };
   
   this.getRequest=function(queryString) {
+    timer=Date.now();
     req=new XMLHttpRequest();
     req.open("GET",urlOffset+responderUrl+"?"+queryString); // GET
     req.onreadystatechange=receive;// both
@@ -126,13 +158,20 @@ Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
   
   function receive() {
     if (req.readyState != 4) return;
-    if(req.status != 200 && req.status != 201 && req.status != 304) {
-      console.log("ajax returned code "+req.status);
+    if(req.status != 200 && req.status != 204 && req.status != 304) {
+      console.log("ajax returned error "+req.status);
       return;
     }
+    lag=Date.now()-timer;
     indicator.off();
-    if(req.status != 200) {
-      onDataReceived(req.status);
+    if(req.status != 200  && req.status != 304) {
+      console.log("ajax returned code "+req.status);
+      //onDataReceived(req.status);
+      return;
+    }
+    if(req.status == 304) {
+      console.log("304 "+lag);
+      onDataReceived({ alert : "No changes", lag : lag });
       return;
     }
     var rdata=req.responseText;
@@ -143,6 +182,7 @@ Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
   }
   
   function tryJsonParse(responseText) {
+    if( ! responseText) return responseText;
     var responseObj={};
     try { 
       responseObj=JSON.parse(responseText); 
@@ -152,8 +192,11 @@ Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
       console.log("Unparsable server response:"+responseText);
       return responseText;
     }
+    responseObj.lag=lag;
     return responseObj;
   }
+  
+  this.getLag=function() { return lag; };
   
 };// end Ajaxer
 

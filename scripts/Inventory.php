@@ -12,6 +12,8 @@ class Inventory {
   static function getMyFileName() { return self::$myFileName; }
   
   function init($tp,$mfn) {
+    // media must be stored in "mediaBLABLA" folder
+    if( strpos($mfn, "media") !== 0 ) { $mfn="media".$mfn; }
     $mediaFolder=$tp.$mfn;
     if( ! file_exists($mediaFolder)) mkdir($mediaFolder);
     //|| ! is_dir($mediaFolder)) throw new DataException ("Target folder ".$mediaFolder." not found");

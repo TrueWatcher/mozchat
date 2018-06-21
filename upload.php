@@ -40,12 +40,24 @@ try {
     //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
     print('{"alert":"'.'Got a record of '.b2kb($r).'"}');
   }
+  else if($act == "reportMimeFault") {
+    reportMimeFault($pathBias,$input);
+    $r=204;
+  }
   else throw new DataException("Unknown command=$act!");
   
 } catch (DataException $de) {
   print('{"error":"'.$de->getMessage().'"}');
 }
-
+if($r == 204) {
+  header("HTTP/1.0 204 No Content");
+  exit();
+}
+if($r == 304) {
+  header("HTTP/1.0 304 Not Modified");
+  exit();
+}
+exit();
 
 function checkExt($ext) {
   $mimeExt=["oga"=>"audio/ogg\;codecs=opus", "webm"=>"audio/webm\;codecs=opus", "wav"=>"audio/wav"];
@@ -73,7 +85,15 @@ function checkUserRealm($pathBias,$input) {
   if($r !== true) throw new DataException($r);
 }
 
-
+function reportMimeFault($pathBias,$input) {
+  $browserLogFile=$pathBias."browser.log";
+  $rec="";
+  $rec.=$input["user"]." ".$_SERVER["HTTP_REMOTE_ADDR"]." ".$input["realm"]."\n";
+  $rec.=$_SERVER["HTTP_USER_AGENT"]."\n";
+  $rec.=$input["mimesList"]."\n";
+  $rec.="\n";
+  file_put_contents($browserLogFile,$rec);  
+}
 
 
 
