@@ -213,3 +213,26 @@ class Inventory {
 }// end Inventory
 
 function b2kb($bytes) { return ceil($bytes/1000).'kB'; }
+
+abstract class MimeDecoder {
+  private static $lookup=["audio/ogg;codecs=opus"=>"oga", "audio/webm;codecs=opus"=>"webm" , "audio/wav"=>"wav", "video/webm;codecs=vp8"=>"webm", "video/webm;codecs=h264"=>"webm"];
+  
+  static function getLookup() { return self::$lookup; }
+  
+  static function getDictionary() {
+    $a=[];
+    $v=[];
+    foreach(self::$lookup as $mime=>$ext) {
+      if( strpos($mime,"audio") === 0 ) $a[$mime]=$ext;
+      if( strpos($mime,"video") === 0 ) $v[$mime]=$ext;
+    }
+    return [ "audio"=>$a, "video"=>$v ];
+  }
+
+  static function ext2mime($ext) { return array_search($ext,self::$lookup); }
+  
+  static function mime2ext($mime) {
+    if(array_key_exists($mime,self::$lookup)) return self::$lookup[$mime];
+    return false;
+  }
+}

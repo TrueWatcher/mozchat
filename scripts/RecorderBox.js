@@ -25,8 +25,8 @@ function RecorderBox() {
   };
   
   function checkMime() {
-    var rma=Utils.checkRecorderMime("audio"), rmv={ outcome : true }, fail="";
-    if(serverParams.allowVideo) rmv=Utils.checkRecorderMime("video");
+    var rma=Utils.checkRecorderMime(mimeDictionary, "audio"), rmv={ outcome : true }, fail="";
+    if(serverParams.allowVideo) rmv=Utils.checkRecorderMime(mimeDictionary, "video");
     console.log(Utils.dumpArray(rma.recorderMimes));
     if(rma.outcome !== true) fail=rma.outcome;
     else if(rmv.outcome !== true) fail=rmv.outcome;
@@ -173,7 +173,7 @@ function RecorderMR(receiveBlob,indicate,viewR) {
     var constraints={ audio: true }, aov=userParams.audioOrVideo, rm;
     if(aov == "video") constraints.video=true;
     navigator.mediaDevices.getUserMedia(constraints).then(operate).catch(logError);
-    rm=Utils.checkRecorderMime(aov);
+    rm=Utils.checkRecorderMime(mimeDictionary, aov);
     mime=rm.chosenMime; 
     ext=rm.chosenExtension;
   };
@@ -242,16 +242,18 @@ function ViewR() {
   _this.setIndicator=function(s) {
     switch(s) {
     case "ready":
-      recordBtn.innerHTML="Ready";
-      recordBtn.style.background = "";
-      recordBtn.style.color = "";
+      recordBtn.innerHTML="Record";
+      //recordBtn.style.background = "";
+      //recordBtn.style.color = "";
+      recordBtn.classList.remove("recording");
       break;
     case "recording":
-      recordBtn.innerHTML="Now recording";
-      recordBtn.style.background = "red";
-      recordBtn.style.color = "white";
+      recordBtn.classList.add("recording");
+      //recordBtn.innerHTML="Recording";
+      //recordBtn.style.background = "red";
+      //recordBtn.style.color = "white";
       break;
-    case "inactive":
+    /*case "inactive":
       recordBtn.innerHTML="Writing";
       recordBtn.style.background = "yellow";
       recordBtn.style.color = "";
@@ -260,7 +262,7 @@ function ViewR() {
       recordBtn.innerHTML="Uploading";
       recordBtn.style.background = "yellow";
       recordBtn.style.color = "green";
-      break;
+      break;*/
     default:
       throw new Error("Unknown state="+s);
     }    
@@ -272,7 +274,7 @@ function ViewR() {
   };
   
   _this.showLocalPlay=function(url,bytes) {
-    downloadLink.innerHTML = '<a href="'+url+'" target="_blank">Get file</a>';
+    downloadLink.innerHTML = '<a href="'+url+'" target="_blank">The file</a>';
     blobSizeS.innerHTML=Utils.b2kb(bytes);
     localPlayS.style.visibility="";
   };
@@ -347,6 +349,7 @@ function ViewR() {
     audioOrVideoRad2.onchange=initRecorder;
     document.onkeydown=function(event) { 
       if(firstKeyDown && event.keyCode == 32) {
+        document.activeElement.blur();
         recorderOn();
         firstKeyDown=0;
       }

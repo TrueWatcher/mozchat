@@ -1,0 +1,82 @@
+body {
+  background-color: #aef;
+  color: #444;
+}
+
+* {
+  font-family: Arial,sans-serif;
+  font-size: 100%;
+  border-collapse: collapse;
+}
+
+input.inline,input.inline:hover {
+  border: none;
+  background-color: #aef;
+  text-align: right;
+  padding: 0;
+}
+
+button,input {
+  border-radius: 8px;
+  padding: 0.3em;
+  margin: 0.2em;
+  background-color: #eee;
+}
+
+#recordBtn {
+  padding: 0.5em;
+  font-size: 1.2em;
+  width: 10em;
+}
+
+#recordBtn.recording {
+  background-color: #faa;
+}
+
+button:hover,input:hover {
+  background-color: #fff;
+  color: #000;
+}
+
+td.delete, td.play, td.playDown {
+  border-radius: 5px;
+  padding: 0.3em;
+  background-color: #eee;  
+}
+
+td.delete:hover, td.play:hover, td.playDown:hover {
+  background-color: #fff;
+  color: #000;
+}
+
+#medialistT td {
+  font-size: 80%;
+}
+
+#medialistT tr.l {
+  background-color: #ffd;
+}
+#medialistT tr.p {
+  background-color: #faa;
+}
+#medialistT tr.g {
+  background-color: #ddd;
+}
+#medialistT tr.n,#medialistT tr.e  {
+  background-color: auto;
+}
+
+#medialistT {
+  border-spacing: 0.1em;
+  border-collapse: separate;
+}
+
+a,a:link,a:visited {
+  color: #000;
+  text-decoration: underline;
+  padding: 0.3em;  
+}
+
+a:hover {
+  background-color: #fff;
+}

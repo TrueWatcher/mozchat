@@ -19,25 +19,25 @@ Utils.checkBrowser=function() {
   };
 };
 
-Utils.checkRecorderMime=function(audioOrVideo) {
+Utils.checkRecorderMime=function(te, audioOrVideo) {
   if(audioOrVideo != "audio" && audioOrVideo != "video") throw new Error("Wrong argument="+audioOrVideo+"!");
   var mimes =  {
     audio : [
-      "audio/webm", "audio/webm\;codecs=opus", "audio/ogg\;codecs=opus", "audio/mpeg3", "audio/mpeg", "audio/midi", "audio/wav", "audio/flac"
+      "audio/webm", "audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mpeg3", "audio/mpeg", "audio/midi", "audio/wav", "audio/flac"
     ],
     video : [
-      "video/webm", "video/webm\;codecs=vp8", "video/webm\;codecs=daala", "video/webm\;codecs=h264", "video/mpeg"
+      "video/webm", "video/webm;codecs=vp8", "video/webm;codecs=daala", "video/webm;codecs=h264", "video/mpeg"
     ]
   };
   var recorderMimes = { audio:[], video:[] }, t;
-  var te,ext,chosenMime=false,chosenExtension=false;
+  var tex,ext,chosenMime=false,chosenExtension=false;
   var outcome="?";
   
   for(t in mimes.audio) { if (MediaRecorder.isTypeSupported(mimes.audio[t])) recorderMimes.audio.push(mimes.audio[t]); }
   for(t in mimes.video) { if (MediaRecorder.isTypeSupported(mimes.video[t])) recorderMimes.video.push(mimes.video[t]); }
-  te=new Utils.TypesExtensions(audioOrVideo);
+  tex=new Utils.TypesExtensions(te, audioOrVideo);
   for(t in recorderMimes[audioOrVideo]) { 
-    ext=te.mime2ext(recorderMimes[audioOrVideo][t]);
+    ext=tex.mime2ext(recorderMimes[audioOrVideo][t]);
     if(ext) {
       chosenMime=recorderMimes[audioOrVideo][t];
       chosenExtension=ext;
@@ -57,27 +57,28 @@ Utils.checkRecorderMime=function(audioOrVideo) {
   };
 };
 
-Utils.TypesExtensions=function(audioOrVideo) {
-  var te={
+Utils.TypesExtensions=function(te,audioOrVideo) {
+  /*var te={
     audio : {
       "oga":"audio/ogg\;codecs=opus", "webm": "audio/webm\;codecs=opus", "wav":"audio/wav"
     },
     video : {
       "webm":"video/webm;codecs=vp8"
     }
-  };
+  };*/
+  if( ! te.audio || ! te.video) throw new Error("Wrong dictionary");
   
-  this.mime2ext=function(mime) {
-    var ext;
+  this.ext2mime=function(ext) {
+    var mime;
     //return false;// DEBUG mime fault logging
-    for(ext in te[audioOrVideo]) {
-      if( te[audioOrVideo].hasOwnProperty(ext) && te[audioOrVideo][ext] === mime ) return ext;
+    for(mime in te[audioOrVideo]) {
+      if( te[audioOrVideo].hasOwnProperty(mime) && te[audioOrVideo][mime] === ext ) return mime;
     }
     return false;
   };
   
-  this.ext2mime=function(ext) {
-    if( te[audioOrVideo].hasOwnProperty(ext) ) return te[audioOrVideo][ext];
+  this.mime2ext=function(mime) {
+    if( te[audioOrVideo].hasOwnProperty(mime) ) return te[audioOrVideo][mime];
     return false;
   };
 };

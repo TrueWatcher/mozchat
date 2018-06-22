@@ -71,8 +71,9 @@ print(json_encode($r));
 exit();
 
 function checkExt($ext) {
-  $mimeExt=["oga"=>"audio/ogg\;codecs=opus", "webm"=>"audio/webm\;codecs=opus", "wav"=>"audio/wav"];
-  return array_key_exists($ext,$mimeExt);
+  return MimeDecoder::ext2mime($ext);
+  //$mimeExt=["oga"=>"audio/ogg\;codecs=opus", "webm"=>"audio/webm\;codecs=opus", "wav"=>"audio/wav"];
+  //return array_key_exists($ext,$mimeExt);
 }
   
 function checkFields($input) {

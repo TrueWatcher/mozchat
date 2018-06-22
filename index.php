@@ -8,6 +8,8 @@ require_once("scripts/MyExceptions.php");
 require_once("scripts/registries.php");
 require_once("scripts/Inventory.php");
 $input=$_REQUEST;
+$mimeDictionary=[];
+$cssLink="blue.css";
 try {
   checkUserRealm($pathBias,$input);
   $targetPath=$pathBias.$input["realm"]."/";
@@ -24,6 +26,7 @@ try {
     "maxBlobBytes", "maxMediaFolderBytes", "lifetimeMediaSec", "title", "allowVideo", "videoOn", "chunkSize", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder"
   ] , $serverParams);
   $serverParams["mediaFolder"]=Inventory::checkMediaFolderName($serverParams["mediaFolder"]);
+  $mimeDictionary=MimeDecoder::getDictionary();
 
   include("scripts/templates/client.php");
 } 

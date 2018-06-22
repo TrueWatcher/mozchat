@@ -47,8 +47,11 @@ function PlayerBox() {
     } 
     
     if(resp.error) viewP.showMessage("Error! "+resp.error);
-    if(resp.alert) viewP.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms");
-    else viewP.showMessage(resp.alert || Utils.dumpArray(resp) || "<empty>");
+    ps=serialPlayer.getState();
+    if(ps != "playing" && ps !="playingNLoading") {
+      if(resp.alert) { viewP.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms"); }
+      else viewP.showMessage(resp.alert || Utils.dumpArray(resp) || "<empty>");
+    }
   }
   
   _this.onTick=function() {
@@ -171,7 +174,7 @@ function Inventory() {
 
 function ViewP() {
   var _this=this;
-  var lineColors={l:"#ffd", p:"#fdd", g:"#ddd", n:"", e:""};
+  //var lineColors={l:"#ffd", p:"#fdd", g:"#ddd", n:"", e:""};
   var user="";
   
   this.applyServerParams=function(sp) {
@@ -246,7 +249,8 @@ function ViewP() {
   this.highlightLine=function(id,mode) {
     var l=document.getElementById(id);
     if( ! l) return;
-    l.style.backgroundColor=lineColors[mode];
+    //l.style.backgroundColor=lineColors[mode];
+    l.className=mode;
   };
   
   this.showMessage=function(m) { playerAlertP.innerHTML=m; };
