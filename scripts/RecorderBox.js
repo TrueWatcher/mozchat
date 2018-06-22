@@ -105,12 +105,9 @@ function RecorderBox() {
   }
 
   function uploadBlobAndData(blobPlusData) {
-    //var userParams=viewR.getParams();
-    if(serverParams.maxBlobBytes && (blobPlusData.size > serverParams.maxBlobBytes)) {
-      viewR.showMessage("Error! You have "+Utils.b2kb(blobPlusData.size)+", server allows only "+Utils.b2kb(serverParams.maxBlobBytes));
-      return;
-    }
-    var stuff=new FormData();
+    var stuff;
+    if( true !== checkBlobSize(blobPlusData) || true !== checkUplinkOverload() ) return;
+    stuff=new FormData();
     stuff.append("act","uploadBlob");
     stuff.append("user",userParams.user);
     stuff.append("realm",userParams.realm);
@@ -120,6 +117,23 @@ function RecorderBox() {
     stuff.append("duration",lastRecordedTime);
     stuff.append("blob",blobPlusData.blob);
     ajaxerR.postRequest(stuff);
+  }
+  
+  function checkBlobSize(blobPlusData) {
+    if(serverParams.maxBlobBytes && (blobPlusData.size < serverParams.maxBlobBytes)) return true;
+    var errmsg="Error! You have "+Utils.b2kb(blobPlusData.size)+", server allows only "+Utils.b2kb(serverParams.maxBlobBytes);
+    viewR.showMessage(errmsg);
+    return errmsg;
+  }
+  
+  function checkUplinkOverload() {
+    if( ! ajaxerR.isBusy()) return true;
+    var errmsg="Error! Uplink is busy. Your network or server is too slow for instant uploads. Try bigger chuncks sent after recording";
+    viewR.showMessage(errmsg);
+    console.log(errmsg);
+    viewR.applyServerParams({ allowStream : serverParams.allowStream, onRecorded : "stop" });
+    userParams=viewR.getParams();
+    return errmsg;
   }
   
   function reportMimeFault(recorderMimes) {
@@ -279,9 +293,9 @@ function ViewR() {
   _this.clearMessage=function(m) { recorderAlertP.innerHTML=""; };
   
   _this.applyServerParams=function(sp) {
-    maxSizeInp.value=Utils.b2kb(sp.maxBlobBytes);
-    lifetimeInp.value=Utils.s2dhms(sp.lifetimeMediaSec);
-    folderSizeInp.value=Utils.b2kb(sp.maxMediaFolderBytes);
+    if(sp.maxBlobBytes) maxSizeInp.value=Utils.b2kb(sp.maxBlobBytes);
+    if(sp.lifetimeMediaSec) lifetimeInp.value=Utils.s2dhms(sp.lifetimeMediaSec);
+    if(sp.maxMediaFolderBytes) folderSizeInp.value=Utils.b2kb(sp.maxMediaFolderBytes);
     if(sp.allowVideo && sp.allowVideo === "0") sp.allowVideo=0;
     if(sp.videoOn && sp.videoOn === "0") sp.videoOn=false;
     if(sp.allowVideo) {
@@ -303,8 +317,7 @@ function ViewR() {
       onrecordedS.style.display="none";
       sp.onRecorded="stop";
       Utils.setRadio("onrecordedRad",sp.onRecorded);
-    }
-    
+    }    
   };
   
   _this.getParams=function() {
@@ -336,6 +349,9 @@ function ViewR() {
       if(firstKeyDown && event.keyCode == 32) {
         recorderOn();
         firstKeyDown=0;
+      }
+      if(event.keyCode == 27) {
+        if(playerBox && playerBox.clear) playerBox.clear();
       }
     };
     document.onkeyup=function(event) { 

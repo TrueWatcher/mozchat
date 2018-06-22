@@ -82,6 +82,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "timeShiftHrs"=>0,
       "lang"=>"en",
       //"skipPlayerAuth"=>0,// if set, allowPlayerNameInInput must be set also
+      "mailFrom"=>"me@example.com",
       "mailReplyTo"=>"",
       "title"=>"Audio chat",
       "mediaFolder"=>"media",

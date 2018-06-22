@@ -132,7 +132,7 @@ Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
   if( ! indicator.on) indicator={on:function(){}, off:function(){}}; 
   var urlOffset="";
   if (typeof URLOFFSET != "undefined") urlOffset=URLOFFSET;
-  var lag=0,timer=false;
+  var lag=0, timer=false, busy=false;
   
   var _this=this, req;
     
@@ -145,6 +145,7 @@ Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
     req.onreadystatechange=receive;// both
     var q=req.send(what); // POST
     indicator.on();
+    busy=true;
   };
   
   this.getRequest=function(queryString) {
@@ -154,6 +155,7 @@ Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
     req.onreadystatechange=receive;// both
     var q=req.send(null); // GET
     indicator.on();
+    busy=true;
   };
   
   function receive() {
@@ -164,6 +166,7 @@ Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
     }
     lag=Date.now()-timer;
     indicator.off();
+    busy=false;
     if(req.status != 200  && req.status != 304) {
       console.log("ajax returned code "+req.status);
       //onDataReceived(req.status);
@@ -198,6 +201,8 @@ Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
   
   this.getLag=function() { return lag; };
   
+  this.isBusy=function() { return busy; };
+  
 };// end Ajaxer
 
 Utils.getRadio=function(name) {
@@ -206,13 +211,17 @@ Utils.getRadio=function(name) {
 
 Utils.setRadio=function(name,value) {
   var btn=document.querySelector('input[name="'+name+'"][value="'+value+'"]');
-  if(btn) btn.checked="checked";
+  if(btn) {
+    btn.checked="checked";
+    document.activeElement.blur();// otherwise it will catch onkeypressed
+  }
 };
 
 Utils.setCheckbox=function(id,value) {
   var el=document.getElementById(id);
   if(value === "0" || value === 0 || value === false) el.checked="";
   else el.checked="checked";
+  document.activeElement.blur();
 };
 
 Utils.play=function(url,audioOrVideo,playerRoom,errorHandler) {    
