@@ -269,7 +269,8 @@ function ViewP() {
   this.showFreeSpace=function(b) { folderFreeS.innerHTML=Utils.b2kb(b); };
   
   _this.showClip=function(a) { playerRoom.appendChild(a); };
-  _this.clearClips=function(a) { playerRoom.innerHTML=""; };
+  _this.clearClips=function() { playerRoom.innerHTML=""; };
+  _this.replaceClip=function(newc,oldc) { playerRoom.replaceChild(newc,oldc); };// replaceChild(new, old)
   
   this.setHandlers=function(listClicked, applyParams, stopAfter, clear) {    
     medialistT.onclick=listClicked;
@@ -321,8 +322,8 @@ function SerialPlayer(urlprefix, getNextId, getType, viewP, errorHandler) {
     actual.el.onended=function() {
       setTimeout(function() {       
         if(actual.mime == "video") {
-          actual.el.parentNode.removeChild(actual.el);
-          if(next && ! stopping) viewP.showClip(next.el);
+          if(next && ! stopping) viewP.replaceClip(next.el, actual.el);
+          else viewP.clearClips();
         }
         // play() after appendChild() is important for Chromium and unimportant for FF
         if(next && ! stopping) next.el.play();
