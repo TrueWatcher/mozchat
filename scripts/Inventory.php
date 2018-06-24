@@ -87,14 +87,14 @@ class Inventory {
     return $n;// only fileName, no path
   }
   
-  function pickUploadedBlob($newName,$input,$pr) {
+  function pickUploadedBlob($newName,$input,PageRegistry $pr) {
     // overcheck
     if(file_exists($this->mediaFolder."/".$newName)) throw new DataException("File ".$newName." already exists");
     $r=move_uploaded_file($_FILES['blob']['tmp_name'], $this->mediaFolder."/".$newName);
     if( ! $r) throw new DataException("Moving failed");
     $clipBytes=filesize($this->mediaFolder."/".$newName);
-    $dt=date("M_d_H:i:s",time()+$pr->g("timeShiftHrs"));
-    $expire=time()+$pr->g("timeShiftHrs")+$pr->g("lifetimeMediaSec");
+    $dt=date("M_d_H:i:s", time()+3600*$pr->g("timeShiftHrs"));
+    $expire=time()+$pr->g("lifetimeMediaSec");
     $this->addLine(
       $newName, $input["user"], $dt, $input["mime"], $input["duration"], $clipBytes, $expire, $input["description"]
     );

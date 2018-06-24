@@ -108,7 +108,7 @@ function reportMimeFault($pathBias,$input) {
 }
 
 function notifyUsers($input, $targetPath, $n, $uploadedBytes,  PageRegistry $pr) {
-  $valid=date("M_d_H:i:s",time()+$pr->g("timeShiftHrs")+$pr->g("lifetimeMediaSec"));
+  $valid=date("M_d_H:i:s",time()+3600*$pr->g("timeShiftHrs")+$pr->g("lifetimeMediaSec"));
   $url = 'http://';
   if ( (array_key_exists("HTTPS",$_SERVER)) && $_SERVER['HTTPS'] ) $url = 'https://';
   $url .= $_SERVER['HTTP_HOST'];

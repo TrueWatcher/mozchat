@@ -24,24 +24,20 @@ function PlayerBox() {
   }
   
   function getResponseP(resp) { 
-    var ps,diff,added;
+    var ps,changes,toPlay;
 
     if(resp.timestamp) catalogTime=resp.timestamp;
     if(resp.free) viewP.showFreeSpace(resp.free);
     if(resp.list) {
       //console.log(Utils.dumpArray(userParams));
-      diff=inventory.diffCatalogsById(resp.list);
-      inventory.refreshCatalog(resp.list);
-      viewP.applyDiff(diff);
-      if(userParams.playNew) {
-        //console.log(Utils.dumpArray(diff.added));
-        if(userParams.skipMine) added=inventory.removeMyClips(diff.added);
-        else added=diff.added;
-        if(added.length && ! firstResponse) {
-          ps=serialPlayer.getState();         
-          if(ps == "idle") serialPlayer.play({id : added[0][0], mime: added[0][3], el:false});
-          else if(ps == "playing") serialPlayer.tryFeed();
-        }
+      changes=inventory.consumeNewCatalog(resp.list, userParams);
+      viewP.applyDiff(changes);
+      //console.log(Utils.dumpArray(changes));
+      toPlay=changes.toPlay;
+      if(toPlay && ! firstResponse) {
+        ps=serialPlayer.getState();         
+        if(ps == "idle") serialPlayer.play({id : toPlay[0], mime: toPlay[3], el:false});
+        else if(ps == "playing") serialPlayer.tryFeed();
       }
       firstResponse=0;// allows playing new items
     } 
@@ -107,11 +103,6 @@ function PlayerBox() {
 function Inventory() {
   var catalog={}, oldCatalog={}, _this=this, userParams={};
   
-  this.refreshCatalog=function(clipsList) { 
-    oldCatalog=catalog;
-    catalog=clipsList;
-  };
-  
   _this.getNextId=function(id,aUserParams) {
     userParams=aUserParams;
     var i=0, l=catalog.length, idd, j=1;
@@ -135,7 +126,17 @@ function Inventory() {
     return false;
   };
   
-  this.removeMyClips=function(clipList) {
+  this.consumeNewCatalog=function(newCat,aUserParams) {
+    userParams=aUserParams;
+    var diff=diffCatalogsById(newCat);
+    catalog=newCat;
+    if( ! userParams.playNew || ! diff.added.length) diff.toPlay=false;
+    else if( ! userParams.skipMine) diff.toPlay=diff.added[0];
+    else diff.toPlay=findFirstNotMine(diff.added);
+    return diff;
+  }
+  
+  function removeMyClips(clipList) {
     var r=[], i=0, l=clipList.length;
     for(; i<l; i+=1) {
       if(clipList[i][1] != userParams.user) r.push(clipList[i]);
@@ -143,15 +144,23 @@ function Inventory() {
     return r;
   }
   
-  this.diffCatalogsById=function(newCat) {
+  function findFirstNotMine(clipList) {
+    var i=0, l=clipList.length;
+    for(; i<l; i+=1) {
+      if(clipList[i][1] != userParams.user) return clipList[i];
+    }
+    return false;
+  }
+  
+  function diffCatalogsById(newCat) {
     var removed=[],added=[],lOld=catalog.length,lNew=newCat.length,i=0,j=0,r={},id;
     for(i=0; i < lNew; i+=1) {
       id=newCat[i][0];
-      if( ! this.findId(catalog,lOld,id) ) added.push(newCat[i]);
+      if( ! _this.findId(catalog,lOld,id) ) added.push(newCat[i]);
     }
     for(i=0; i < lOld; i+=1) {
       id=catalog[i][0];
-      if( ! this.findId(newCat,lNew,id) ) removed.push(catalog[i]);
+      if( ! _this.findId(newCat,lNew,id) ) removed.push(catalog[i]);
     }
     r={removed:removed, added:added};
     return r;
@@ -161,14 +170,14 @@ function Inventory() {
     var j=0;
     for(; j<l; j++) { if(clipList[j][0]  == id ) return clipList[j]; }
     return false;
-  }
+  };
   
   _this.isVideo=function(id) { 
     var mime =_this.findId(catalog, catalog.length, id)[3];
     if(mime.indexOf("video") === 0) return "video";
     else if(mime.indexOf("audio") === 0) return "audio";
     throw new Error("Unknown mime type="+mime);
-  }
+  };
   
 }
 
@@ -198,6 +207,7 @@ function ViewP() {
     var rml=diff.removed.length;
     var adl=diff.added.length;
     var i,tr;
+
     for(i=0; i<rml; i+=1) {
       tr=document.getElementById(diff.removed[i][0]);
       tr.parentNode.removeChild(tr);
@@ -205,28 +215,28 @@ function ViewP() {
     }
     for(i=0; i<adl; i+=1) {
       tr=renderLine(diff.added[i]);
-      medialistT.appendChild(tr);
+      //medialistT.appendChild(tr); // latest at bottom
+      medialistT.insertBefore(tr, medialistT.firstChild);// latest at top
+      tr=null;
     }
   };
   
   // @return HTMLElement tr
   function renderLine(l) {
     if( ! l instanceof Array) throw new Error("Wrong argument type "+(typeof l));
-    var r="", i=0, ll=l.length, del="<td></td>";
+    var r="", i=0, ll=l.length, del="<td></td>", descr="";
     var tr=document.createElement("TR");
-    //for(; i<ll; i+=1) { r+="<td>"+line[i]+"</td>"; };
     if(l[1] == user) del='<td class="delete">'+"delete"+"</td>";
-    r+="<td>"+l[1]+"</td>";
-    r+="<td>"+l[2]+"</td>";
+    if(l[7]) descr="<br />"+l[7];
+    r+="<td>"+l[1]+" "+l[2]+descr+"</td>";
     r+="<td>"+l[3]+"</td>";
     r+="<td>"+l[4]+"s</td>";
     r+="<td>"+Utils.b2kb(l[5])+'</td>';
     r+=del;
     r+='<td class="play">'+"play"+"</td>";
-    r+='<td class="playDown">'+"play_down"+"</td>";
+    r+='<td class="playDown">'+"play_from"+"</td>";
     tr.innerHTML=r;
     tr.id=l[0];
-    if(l[7]) tr.title=l[7];
     return tr;
   }
   

@@ -61,6 +61,7 @@ function RecorderBox() {
     timingOn=0;
     lastRecordedTime=recordingTime;
     viewR.showTiming(lastRecordedTime);
+    return false;
   };
   
   _this.recorderOn=function() {
@@ -71,18 +72,21 @@ function RecorderBox() {
     timingOn=1;
     recordingTime=0;
     viewR.showTiming(recordingTime);
+    return false;
   };
   
   _this.recorderRestart=function() {
     recorder.restart();
     lastRecordedTime=recordingTime;
     recordingTime=0;
+    return false;
   };
   
   _this.recorderToggle=function() {
     var s=recorder.getState();
     if(s) _this.recorderOff();
     else _this.recorderOn();
+    return false;
   };
   
   _this.playLocally=function() {    
@@ -222,11 +226,11 @@ function RecorderMR(receiveBlob,indicate,viewR) {
   }
   
   function makeBlob() {
-    console.time("make blob");
+    //console.time("make blob");
     var blob = new Blob(chunks, { 'type':mime });
     chunks = [];
     //console.log("data processed");
-    console.timeEnd("make blob");
+    //console.timeEnd("make blob");
     return {
       mime : mime,
       ext : ext,
@@ -347,7 +351,8 @@ function ViewR() {
     var firstKeyDown=1;
     audioOrVideoRad1.onchange=initRecorder;
     audioOrVideoRad2.onchange=initRecorder;
-    document.onkeydown=function(event) { 
+    document.onkeydown=function(event) {
+      if(document.activeElement.type == "text") { return; }
       if(firstKeyDown && event.keyCode == 32) {
         document.activeElement.blur();
         recorderOn();
@@ -356,12 +361,14 @@ function ViewR() {
       if(event.keyCode == 27) {
         if(playerBox && playerBox.clear) playerBox.clear();
       }
+      return false;
     };
     document.onkeyup=function(event) { 
       if(event.keyCode == 32) {
         recorderOff(); 
         firstKeyDown=1;
       }
+      return false;
     };
     recordBtn.onclick=toggleRecorder;
     playHereBtn.onclick=playLocally;

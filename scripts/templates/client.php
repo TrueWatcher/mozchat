@@ -38,7 +38,7 @@
     stop<input type="radio" name="onrecordedRad" value="stop" />
   </span>
   <br />
-  <input type="text" id="decriptionInput" placeholder="You may type here a decription before recording without spaces" style="width : 40em;" />
+  <input type="text" id="decriptionInput" placeholder="You may type here a decription before recording" style="width : 40em;" />
   <br />
   <button id="recordBtn">Wait...</button>
   <button id="uploadIndBtn">&nbsp;</button>
@@ -56,19 +56,19 @@
 
 <fieldset id="playerPanel">
   <div id="playerControlsDiv">
-    Refresh <input type="radio" name="refreshRad" value="4" />0.4s&nbsp;<input type="radio" name="refreshRad" value="10" checked="checked" />1s&nbsp;<input type="radio" name="refreshRad" value="300" />30s
+    Refresh <input type="radio" name="refreshRad" value="4" />0.4s&nbsp;<input type="radio" name="refreshRad" value="10" checked="checked" />1s&nbsp;<input type="radio" name="refreshRad" value="100" />10s
     &nbsp;&nbsp;
     Play new clips<input type="checkbox" id="playNewChkb" checked="checked" />,
     only from others<input type="checkbox" id="skipMineChkb" checked="checked" />
   </div>
+  <input type="button" id="clearBtn" value="Stop" />
+  <input type="button" id="stopAfterBtn" value="Stop after current" />
+  <p id="playerAlertP">Javascript required</p>
   <table id="medialistT">
   </table>
   <p>
     Free:<span id="folderFreeS" style="width : 10em;"></span><!--, net downloaded:<span id="downloadCountS" style="width : 10em;"></span>-->
-  </p>
-  <input type="button" id="clearBtn" value="Clear" />
-  <input type="button" id="stopAfterBtn" value="Stop after current" />
-  <p id="playerAlertP">Javascript required</p>
+  </p>  
 </fieldset>
 
 <!--<fieldset id="techPanel">
@@ -95,7 +95,7 @@ if(serverParams.state == "zero") {
 else {
   userInput.value=serverParams.user;
   realmInput.value=serverParams.realm;
-  accountBottomAlertP.innerHTML="Press SPACE to start recording, release SPACE to finish it";
+  accountBottomAlertP.innerHTML="Press and hold SPACE to start recording, release SPACE to finish it";
   
   var found=Utils.checkBrowser();
   console.log(Utils.dumpArray(found));
