@@ -108,17 +108,21 @@ function reportMimeFault($pathBias,$input) {
 }
 
 function notifyUsers($input, $targetPath, $n, $uploadedBytes,  PageRegistry $pr) {
+  $title="";
+  if($input["description"]) $title=" \"".$input["description"]."\" ";
   $valid=date("M_d_H:i:s",time()+3600*$pr->g("timeShiftHrs")+$pr->g("lifetimeMediaSec"));
   $url = 'http://';
   if ( (array_key_exists("HTTPS",$_SERVER)) && $_SERVER['HTTPS'] ) $url = 'https://';
   $url .= $_SERVER['HTTP_HOST'];
   $dir=dirname($_SERVER['REQUEST_URI']);
-  $url.=$dir."/";
-  $directLink=$url.$targetPath;
-  $directLink.=Inventory::checkMediaFolderName($pr->g("mediaFolder"))."/";
-  $directLink.=$n;
+  //echo(" url=$url, dir=$dir, ");
+  if( ! empty($dir) && $dir !== "/") $url.=$dir;
+  $url.="/";
   $enterLink=$url;
-  $noteMain="{$input["realm"]} has received a message from {$input["user"]} of {$input["duration"]}s/$uploadedBytes, valid until $valid";
+  if($targetPath) $directLink=$url.$targetPath;
+  $directLink.=Inventory::checkMediaFolderName($pr->g("mediaFolder"))."/";
+  $directLink.=$n;  
+  $noteMain="{$input["realm"]} has received a message from {$input["user"]} $title of {$input["duration"]}s/$uploadedBytes, valid until $valid";
   $noteMain.="\n".'<a href="'.$directLink.'">direct link</a>, <a href="'.$enterLink.'">thread</a>';
   $recipients=parse_ini_file($targetPath."notify.ini",true);
   //var_dump($recipients);
@@ -133,7 +137,11 @@ function notifyUsers($input, $targetPath, $n, $uploadedBytes,  PageRegistry $pr)
 
 function sendEmail($recAddr,$msgBody,PageRegistry $pr) {
   $defaultSender="me@example.com";
-  $defaultHeaders="\r\nContent-Type: text/plain; charset=utf-8;\r\nContent-transfer-encoding: quoted-printable";
+  $headers=[];
+  $defaultHeaders=[
+    "Content-Type: text/plain; charset=utf-8;"/*, 
+    "Content-transfer-encoding: quoted-printable;"*/
+  ];
   $subj="New message in media chat";
   
   if(empty($recAddr) || false === strpos($recAddr,"@") || false===strpos($recAddr,".")) {
@@ -142,11 +150,16 @@ function sendEmail($recAddr,$msgBody,PageRegistry $pr) {
   }    
   if( $pr->checkNotEmpty("mailFrom") ) { $from="From: ".$pr->g("mailFrom"); }
   else { $from="From: ".$defaultSender; }
-  if( $pr->checkNotEmpty("mailReplyTo") ) { $replyto="\r\nReply-To: ".$pr->g("mailReplyTo"); }
-  else { $replyto=""; }
-  $headers= $from.$replyto.$defaultHeaders;
+  $headers[]=$from;  
+  if( $pr->checkNotEmpty("mailReplyTo") ) { 
+    $replyto="Reply-To: ".$pr->g("mailReplyTo");
+    $headers[]=$replyto;
+  }
+  else { $replyto=""; }  
+  $headers=$headers+$defaultHeaders;
+  //var_dump($headers);
       
-  $ret=mail($recAddr,$subj,$msgBody,$headers);
+  $ret=mail($recAddr,$subj,$msgBody,implode("\r\n", $headers));
   return $ret;
 }
 

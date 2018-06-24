@@ -93,7 +93,10 @@ function RecorderBox() {
     Utils.play(blobPlus.localUrl, userParams.audioOrVideo, "playerRoom");
   };
   
-  _this.uploadStoredBlob=function() { uploadBlobAndData(blobPlus); };
+  _this.uploadStoredBlob=function() { 
+    userParams=viewR.getParams();
+    uploadBlobAndData(blobPlus);
+  };
   
   function onBlobReady(blobPlusData) {    
     if(userParams.onrecorded == "upload" && serverParams.allowStream && serverParams.allowStream !== "0") uploadBlobAndData(blobPlusData);
@@ -257,16 +260,6 @@ function ViewR() {
       //recordBtn.style.background = "red";
       //recordBtn.style.color = "white";
       break;
-    /*case "inactive":
-      recordBtn.innerHTML="Writing";
-      recordBtn.style.background = "yellow";
-      recordBtn.style.color = "";
-      break;
-    case "uploading":
-      recordBtn.innerHTML="Uploading";
-      recordBtn.style.background = "yellow";
-      recordBtn.style.color = "green";
-      break;*/
     default:
       throw new Error("Unknown state="+s);
     }    
