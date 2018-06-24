@@ -357,18 +357,22 @@ function ViewR() {
         document.activeElement.blur();
         recorderOn();
         firstKeyDown=0;
+        return false;
       }
       if(event.keyCode == 27) {
         if(playerBox && playerBox.clear) playerBox.clear();
+        return false;
       }
-      return false;
+      if(event.keyCode == 32) return false;// prevents scrolling to the bottom
+      //return false;
     };
     document.onkeyup=function(event) { 
       if(event.keyCode == 32) {
         recorderOff(); 
         firstKeyDown=1;
+        return false;
       }
-      return false;
+      //return false;
     };
     recordBtn.onclick=toggleRecorder;
     playHereBtn.onclick=playLocally;
