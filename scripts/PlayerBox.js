@@ -1,5 +1,8 @@
 "use strict";
-function PlayerBox() {
+if( ! mc) mc={};//namespace
+mc.pb={};
+
+mc.pb.PlayerBox=function() {
   var viewP={}, timerP={}, ajaxerP={}, /*player={},*/ serialPlayer={}, _this=this;
   var catalogTime=0, ticks=0, userParams={}, serverParams={}, inventory={}, firstResponse=1;
   var urlprefix="";
@@ -7,21 +10,21 @@ function PlayerBox() {
   
   this.init=function(fromServer) {
     serverParams=fromServer;
-    viewP=new ViewP();
+    viewP=new mc.pb.ViewP();
     viewP.clearMessage();
     viewP.applyServerParams(serverParams);
     _this.applyParams();
-    inventory=new Inventory();
+    inventory=new mc.pb.Inventory();
     
-    ajaxerP=new Utils.Ajaxer("download.php", getResponseP, {});
+    ajaxerP=new mc.utils.Ajaxer("download.php", getResponseP, {});
     setInterval(_this.onTick, 100);
     
     if( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
     urlprefix=userParams.realm+"/"+serverParams.mediaFolder+"/";
-    serialPlayer=new SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP, onMediaError);
+    serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP, onMediaError);
     
     viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear);
-  }
+  };
   
   function getResponseP(resp) { 
     var ps,changes,toPlay;
@@ -29,10 +32,10 @@ function PlayerBox() {
     if(resp.timestamp) catalogTime=resp.timestamp;
     if(resp.free) viewP.showFreeSpace(resp.free);
     if(resp.list) {
-      //console.log(Utils.dumpArray(userParams));
+      //console.log(mc.utils.dumpArray(userParams));
       changes=inventory.consumeNewCatalog(resp.list, userParams);
       viewP.applyDiff(changes);
-      //console.log(Utils.dumpArray(changes));
+      //console.log(mc.utils.dumpArray(changes));
       toPlay=changes.toPlay;
       if(toPlay && ! firstResponse) {
         ps=serialPlayer.getState();         
@@ -46,26 +49,31 @@ function PlayerBox() {
     ps=serialPlayer.getState();
     if(ps != "playing" && ps !="playingNLoading") {
       if(resp.alert) { viewP.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms"); }
-      else viewP.showMessage(resp.alert || Utils.dumpArray(resp) || "<empty>");
+      else viewP.showMessage(resp.alert || mc.utils.dumpArray(resp) || "<empty>");
     }
   }
   
   _this.onTick=function() {
     ticks+=1;
-    var qs="";
     if(ticks < userParams.pollFactor) return;
     ticks=0;
+    _this.sendDir();
+  };
+  
+  _this.sendDir=function() {
+    var qs="";
     qs+="user="+userParams.user+"&realm="+userParams.realm;
     qs+="&act=dir&since="+catalogTime;
-    ajaxerP.getRequest(qs, getResponseP);
-  };
+    qs+="&pollFactor="+userParams.pollFactor;
+    ajaxerP.getRequest(qs, getResponseP);    
+  }
   
   _this.listClicked=function(event) {
     //alert("click");
     var c=viewP.locateClick(event);
     if( ! c || ! c.command) return false;
     //alert(c.id+" "+c.command);
-    if(c.command == "play") Utils.play(urlprefix+c.id, _this.isVideo(c.id),"playerRoom",onMediaError);
+    if(c.command == "play") mc.utils.play(urlprefix+c.id, _this.isVideo(c.id),"playerRoom",onMediaError);
     else if(c.command == "playDown") serialPlayer.play({
       id : c.id, mime : _this.isVideo(c.id), el : false}
     );
@@ -90,7 +98,7 @@ function PlayerBox() {
   
   _this.applyParams=function() { 
     userParams=viewP.getParams();
-    //console.log(Utils.dumpArray(userParams));
+    //console.log(mc.utils.dumpArray(userParams));
     // no return false !!!
   };
 
@@ -100,7 +108,7 @@ function PlayerBox() {
    
 }// end PlayerBox 
 
-function Inventory() {
+mc.pb.Inventory=function() {
   var catalog={}, oldCatalog={}, _this=this, userParams={};
   
   _this.getNextId=function(id,aUserParams) {
@@ -179,17 +187,17 @@ function Inventory() {
     throw new Error("Unknown mime type="+mime);
   };
   
-}
+}// end Inxentory
 
-function ViewP() {
+mc.pb.ViewP=function() {
   var _this=this;
-  //var lineColors={l:"#ffd", p:"#fdd", g:"#ddd", n:"", e:""};
   var user="";
+  var playerRoom=document.getElementById("playerRoom");
   
   this.applyServerParams=function(sp) {
-    if(sp.pollFactor) { Utils.setRadio("refreshRad",sp.pollFactor); }
-    if(sp.hasOwnProperty("playNew")) { Utils.setCheckbox("playNewChkb",sp.playNew); }
-    if(sp.hasOwnProperty("skipMine")) { Utils.setCheckbox("skipMineChkb",sp.skipMine); }
+    if(sp.pollFactor) { mc.utils.setRadio("refreshRad",sp.pollFactor); }
+    if(sp.hasOwnProperty("playNew")) { mc.utils.setCheckbox("playNewChkb",sp.playNew); }
+    if(sp.hasOwnProperty("skipMine")) { mc.utils.setCheckbox("skipMineChkb",sp.skipMine); }
   };
   
   this.getParams=function() {
@@ -197,7 +205,7 @@ function ViewP() {
     return {
       user : userInput.value,
       realm : realmInput.value,
-      pollFactor : Utils.getRadio("refreshRad"),
+      pollFactor : mc.utils.getRadio("refreshRad"),
       playNew : playNewChkb.checked,
       skipMine : skipMineChkb.checked
     };
@@ -231,7 +239,7 @@ function ViewP() {
     r+="<td>"+l[1]+" "+l[2]+descr+"</td>";
     r+="<td>"+l[3]+"</td>";
     r+="<td>"+l[4]+"s</td>";
-    r+="<td>"+Utils.b2kb(l[5])+'</td>';
+    r+="<td>"+mc.utils.b2kb(l[5])+'</td>';
     r+=del;
     r+='<td class="play">'+"play"+"</td>";
     r+='<td class="playDown">'+"play_from"+"</td>";
@@ -259,14 +267,13 @@ function ViewP() {
   this.highlightLine=function(id,mode) {
     var l=document.getElementById(id);
     if( ! l) return;
-    //l.style.backgroundColor=lineColors[mode];
     l.className=mode;
   };
   
   this.showMessage=function(m) { playerAlertP.innerHTML=m; };
   this.clearMessage=function(m) { playerAlertP.innerHTML=""; };
   
-  this.showFreeSpace=function(b) { folderFreeS.innerHTML=Utils.b2kb(b); };
+  this.showFreeSpace=function(b) { folderFreeS.innerHTML=mc.utils.b2kb(b); };
   
   _this.showClip=function(a) { playerRoom.appendChild(a); };
   _this.clearClips=function() { playerRoom.innerHTML=""; };
@@ -277,11 +284,11 @@ function ViewP() {
     playerControlsDiv.onclick=applyParams;
     stopAfterBtn.onclick=stopAfter;
     clearBtn.onclick=clear;
-    // onkeydown 27 = clear SEE viewR::setHandlers
+    // onkeydown 27 = clear SEE top controller
   };
 }
 
-function SerialPlayer(urlprefix, getNextId, getType, viewP, errorHandler) {
+mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) {
   if(typeof getNextId != "function") throw new Error("Non-function argument");
   if(errorHandler && typeof errorHandler != "function") throw new Error("Invalid ERRORHANDLER");
   var actual=false, next=false, _this=this, stopping=false, state="idle";
@@ -321,10 +328,11 @@ function SerialPlayer(urlprefix, getNextId, getType, viewP, errorHandler) {
     
     actual.el.onended=function() {
       setTimeout(function() {       
-        if(actual.mime == "video") {
-          if(next && ! stopping) viewP.replaceClip(next.el, actual.el);
-          else viewP.clearClips();
+        if(next && ! stopping && next.mime == "video") {
+          if(actual.mime == "video") { viewP.replaceClip(next.el, actual.el); }
+          else { viewP.showClip(next.el); }
         }
+        else if(actual.mime == "video") { viewP.clearClips(); }
         // play() after appendChild() is important for Chromium and unimportant for FF
         if(next && ! stopping) next.el.play();
         _this.tryStep();
@@ -334,7 +342,7 @@ function SerialPlayer(urlprefix, getNextId, getType, viewP, errorHandler) {
   }
   
   _this.tryEnqueue=function(id) {
-    //console.log(Utils.dumpArray(id));
+    //console.log(mc.utils.dumpArray(id));
     var el,mime="";
     if(next) return false;
     if( ! id) return false;
@@ -355,7 +363,7 @@ function SerialPlayer(urlprefix, getNextId, getType, viewP, errorHandler) {
     //el.controls=true;
     el.autoplay=false;
     next={el:el, id:id, mime:mime};
-    console.log("loading "+next.id);
+    console.log("loading "+next.id+" "+next.mime);
     viewP.highlightLine(next.id,"l");
   };
   
@@ -404,4 +412,4 @@ function SerialPlayer(urlprefix, getNextId, getType, viewP, errorHandler) {
     if( actual && next) return "playingNLoading";    
   };
 
-}
+}// end SerialPlayer

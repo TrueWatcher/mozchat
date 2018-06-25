@@ -1,5 +1,8 @@
 "use strict";
-function RecorderBox() {
+if( ! mc) mc={};//namespace
+mc.rb={};
+
+mc.rb.RecorderBox=function() {
   var viewR={}, timerR={}, ajaxerR={}, recorder={}, _this=this;
   var blobPlus={}, userParams={}, serverParams={};
   var recordingTime=0, lastRecordedTime=0, timingOn=0;
@@ -7,34 +10,35 @@ function RecorderBox() {
   this.init=function(fromServer) {
     serverParams=fromServer;
     
-    viewR=new ViewR();
+    viewR=new mc.rb.ViewR();
     viewR.applyServerParams(serverParams);
     userParams=viewR.getParams();
-    console.log(Utils.dumpArray(userParams));
+    console.log(mc.utils.dumpArray(userParams));
     
-    ajaxerR=new Utils.Ajaxer("upload.php", getResponseR, viewR.uploadIndicator);
+    ajaxerR=new mc.utils.Ajaxer("upload.php", getResponseR, viewR.uploadIndicator);
     
     checkMime();
     
-    recorder=new RecorderMR(onBlobReady, viewR.setIndicator, viewR);
+    recorder=new mc.rb.RecorderMR(onBlobReady, viewR.setIndicator, viewR);
     recorder.init(userParams);
     
     setInterval(_this.onTick, 1000);
     
-    viewR.setHandlers(_this.recorderInit, _this.recorderOn, _this.recorderOff, _this.recorderToggle, _this.playLocally, _this.uploadStoredBlob);
+    viewR.setHandlers(_this.recorderInit, _this.recorderToggle, _this.playLocally, _this.uploadStoredBlob);
+    // keyboard events are monitored separately by KeyboardMonitor
   };
   
   function checkMime() {
-    var rma=Utils.checkRecorderMime(mimeDictionary, "audio"), rmv={ outcome : true }, fail="";
-    if(serverParams.allowVideo) rmv=Utils.checkRecorderMime(mimeDictionary, "video");
-    console.log(Utils.dumpArray(rma.recorderMimes));
+    var rma=mc.utils.checkRecorderMime(mc.mimeDictionary, "audio"), rmv={ outcome : true }, fail="";
+    if(serverParams.allowVideo) rmv=mc.utils.checkRecorderMime(mc.mimeDictionary, "video");
+    console.log(mc.utils.dumpArray(rma.recorderMimes));
     if(rma.outcome !== true) fail=rma.outcome;
     else if(rmv.outcome !== true) fail=rmv.outcome;
     if(fail) {
       reportMimeFault(rma.recorderMimes);// requires ajaxerR
       viewR.showMessage(fail);
-      console.log(Utils.dumpArray(rma))
-      console.log(Utils.dumpArray(rmv));
+      console.log(mc.utils.dumpArray(rma))
+      console.log(mc.utils.dumpArray(rmv));
       throw new Error(fail);
     }
   }
@@ -90,7 +94,7 @@ function RecorderBox() {
   };
   
   _this.playLocally=function() {    
-    Utils.play(blobPlus.localUrl, userParams.audioOrVideo, "playerRoom");
+    mc.utils.play(blobPlus.localUrl, userParams.audioOrVideo, "playerRoom");
   };
   
   _this.uploadStoredBlob=function() { 
@@ -128,7 +132,7 @@ function RecorderBox() {
   
   function checkBlobSize(blobPlusData) {
     if(serverParams.maxBlobBytes && (blobPlusData.size < serverParams.maxBlobBytes)) return true;
-    var errmsg="Error! You have "+Utils.b2kb(blobPlusData.size)+", server allows only "+Utils.b2kb(serverParams.maxBlobBytes);
+    var errmsg="Error! You have "+mc.utils.b2kb(blobPlusData.size)+", server allows only "+mc.utils.b2kb(serverParams.maxBlobBytes);
     viewR.showMessage(errmsg);
     return errmsg;
   }
@@ -148,20 +152,20 @@ function RecorderBox() {
     stuff.append("act","reportMimeFault");
     stuff.append("user",userParams.user);
     stuff.append("realm",userParams.realm);
-    stuff.append("mimesList",Utils.dumpArray(recorderMimes));
+    stuff.append("mimesList",mc.utils.dumpArray(recorderMimes));
     ajaxerR.postRequest(stuff);
   }
 
   function getResponseR(resp) { 
     //alert(resp);
     if(resp.error) viewR.showMessage("Error! "+resp.error);
-    if(resp.alert) viewR.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms");
-    else viewR.showMessage(resp.alert || Utils.dumpArray(resp) || "<empty>");
+    else if(resp.alert) viewR.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms");
+    else viewR.showMessage(resp.alert || mc.utils.dumpArray(resp) || "<empty>");
   }
 
-}
+}// end RecorderBox
 
-function RecorderMR(receiveBlob,indicate,viewR) {  
+mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {  
   if(typeof receiveBlob != "function") throw new Error("No receiver callback given");
   
   var chunks = [];
@@ -180,7 +184,7 @@ function RecorderMR(receiveBlob,indicate,viewR) {
     var constraints={ audio: true }, aov=userParams.audioOrVideo, rm;
     if(aov == "video") constraints.video=true;
     navigator.mediaDevices.getUserMedia(constraints).then(operate).catch(logError);
-    rm=Utils.checkRecorderMime(mimeDictionary, aov);
+    rm=mc.utils.checkRecorderMime(mc.mimeDictionary, aov);
     mime=rm.chosenMime; 
     ext=rm.chosenExtension;
   };
@@ -241,24 +245,19 @@ function RecorderMR(receiveBlob,indicate,viewR) {
       blob : blob
     };
   }
-}
+}// end RecorderMR
 
-function ViewR() {
+mc.rb.ViewR=function() {
   var _this=this;
   
   _this.setIndicator=function(s) {
     switch(s) {
     case "ready":
       recordBtn.innerHTML="Record";
-      //recordBtn.style.background = "";
-      //recordBtn.style.color = "";
       recordBtn.classList.remove("recording");
       break;
     case "recording":
       recordBtn.classList.add("recording");
-      //recordBtn.innerHTML="Recording";
-      //recordBtn.style.background = "red";
-      //recordBtn.style.color = "white";
       break;
     default:
       throw new Error("Unknown state="+s);
@@ -272,7 +271,7 @@ function ViewR() {
   
   _this.showLocalPlay=function(url,bytes) {
     downloadLink.innerHTML = '<a href="'+url+'" target="_blank">The file</a>';
-    blobSizeS.innerHTML=Utils.b2kb(bytes);
+    blobSizeS.innerHTML=mc.utils.b2kb(bytes);
     localPlayS.style.visibility="";
   };
   
@@ -292,84 +291,61 @@ function ViewR() {
   _this.clearMessage=function(m) { recorderAlertP.innerHTML=""; };
   
   _this.applyServerParams=function(sp) {
-    if(sp.maxBlobBytes) maxSizeInp.value=Utils.b2kb(sp.maxBlobBytes);
-    if(sp.lifetimeMediaSec) lifetimeInp.value=Utils.s2dhms(sp.lifetimeMediaSec);
-    if(sp.maxMediaFolderBytes) folderSizeInp.value=Utils.b2kb(sp.maxMediaFolderBytes);
+    if(sp.maxBlobBytes) maxSizeInp.value=mc.utils.b2kb(sp.maxBlobBytes);
+    if(sp.lifetimeMediaSec) lifetimeInp.value=mc.utils.s2dhms(sp.lifetimeMediaSec);
+    if(sp.maxMediaFolderBytes) folderSizeInp.value=mc.utils.b2kb(sp.maxMediaFolderBytes);
     if(sp.allowVideo && sp.allowVideo === "0") sp.allowVideo=0;
     if(sp.videoOn && sp.videoOn === "0") sp.videoOn=false;
     if(sp.allowVideo) {
       audioOrVideoS.style.display="";
-      //alert(sp.videoOn+" "+Utils.getRadio("audioOrVideoRad"));
-      if(sp.videoOn) Utils.setRadio("audioOrVideoRad","video");
+      //alert(sp.videoOn+" "+mc.utils.getRadio("audioOrVideoRad"));
+      if(sp.videoOn) mc.utils.setRadio("audioOrVideoRad","video");
     }
     else { audioOrVideoS.style.display="none"; }
     if(sp.chunkSize) {
       chunkInp.value=sp.chunkSize;
-      Utils.setRadio("chunkRad","custom");
+      mc.utils.setRadio("chunkRad","custom");
     }
     if(sp.allowStream && sp.allowStream === "0") sp.allowStream=0;
     if(sp.allowStream) {
       onrecordedS.style.display="";
-      if(sp.onRecorded) { Utils.setRadio("onrecordedRad",sp.onRecorded); }
+      if(sp.onRecorded) { mc.utils.setRadio("onrecordedRad",sp.onRecorded); }
     }
     else { 
       onrecordedS.style.display="none";
       sp.onRecorded="stop";
-      Utils.setRadio("onrecordedRad",sp.onRecorded);
+      mc.utils.setRadio("onrecordedRad",sp.onRecorded);
     }    
   };
   
   _this.getParams=function() {
-    var chunkSizeS=Utils.getRadio("chunkRad");
+    var chunkSizeS=mc.utils.getRadio("chunkRad");
     if(chunkSizeS == "custom") {
       var c=chunkSizeS=parseInt(chunkInp.value,10);
       //alert(chunkInp.value+"/"+c);
       if( ( ! c ) || (c != c) ) {// empty or nan
         chunkSizeS=1;
-        Utils.setRadio("chunkRad",1);
+        mc.utils.setRadio("chunkRad",1);
       }
     }
     
     return {
       user : userInput.value,
       realm : realmInput.value,
-      audioOrVideo : Utils.getRadio("audioOrVideoRad"),
-      onrecorded : Utils.getRadio("onrecordedRad"),
+      audioOrVideo : mc.utils.getRadio("audioOrVideoRad"),
+      onrecorded : mc.utils.getRadio("onrecordedRad"),
       description : decriptionInput.value,
       chunkSizeS : chunkSizeS
     };
   };
   
-  _this.setHandlers=function(initRecorder, recorderOn, recorderOff, toggleRecorder, playLocally, uploadStoredBlob) {
-    var firstKeyDown=1;
+  _this.setHandlers=function(initRecorder, toggleRecorder, playLocally, uploadStoredBlob) {
     audioOrVideoRad1.onchange=initRecorder;
     audioOrVideoRad2.onchange=initRecorder;
-    document.onkeydown=function(event) {
-      if(document.activeElement.type == "text") { return; }
-      if(firstKeyDown && event.keyCode == 32) {
-        document.activeElement.blur();
-        recorderOn();
-        firstKeyDown=0;
-        return false;
-      }
-      if(event.keyCode == 27) {
-        if(playerBox && playerBox.clear) playerBox.clear();
-        return false;
-      }
-      if(event.keyCode == 32) return false;// prevents scrolling to the bottom
-      //return false;
-    };
-    document.onkeyup=function(event) { 
-      if(event.keyCode == 32) {
-        recorderOff(); 
-        firstKeyDown=1;
-        return false;
-      }
-      //return false;
-    };
     recordBtn.onclick=toggleRecorder;
     playHereBtn.onclick=playLocally;
     uploadStoredBtn.onclick=uploadStoredBlob;
+    // keyboard events are managed at the higher level by KeyboardMonitor
   };
 
 }// end ViewR

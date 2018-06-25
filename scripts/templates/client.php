@@ -77,40 +77,63 @@
 <div id="playerRoom" style="position: fixed; bottom:5px; right:5px">
 </div>
 
-<script src="scripts/client.js"></script>
+<script>
+  var mc={};// namespace root
+</script>
+<script src="scripts/utils.js"></script>
 <script src="scripts/RecorderBox.js"></script>
 <script src="scripts/PlayerBox.js"></script>
 <script>
-var mimeDictionary='<?php print(json_encode($mimeDictionary)); ?>';
-mimeDictionary=JSON.parse(mimeDictionary);
+mc.mimeDictionary='<?php print(json_encode($mimeDictionary)); ?>';
+mc.mimeDictionary=JSON.parse(mc.mimeDictionary);
 
-var serverParams='<?php print(json_encode($serverParams)); ?>';
-serverParams=JSON.parse(serverParams);
-if(serverParams.title) document.title=serverParams.title;
-if(serverParams.state == "zero") {
-  recorderPanel.style.display="none";
-  playerPanel.style.display="none";
-  accountTopAlertP.innerHTML="Please introduce yourself and choose your thread";
-}
-else {
-  userInput.value=serverParams.user;
-  realmInput.value=serverParams.realm;
-  accountBottomAlertP.innerHTML="Press and hold SPACE to start recording, release SPACE to finish it";
+mc.serverParams='<?php print(json_encode($serverParams)); ?>';
+mc.serverParams=JSON.parse(mc.serverParams);
+
+mc.TopManager=function() {
+  var sp=mc.serverParams;
   
-  var found=Utils.checkBrowser();
-  console.log(Utils.dumpArray(found));
-  if(found.outcome !== true) {
-    //console.log(Utils.dumpArray(found));
-    accountBottomAlertP.innerHTML=found.outcome;
-    throw new Error(found.outcome);
+  this.go=function() {
+    if(sp.title) document.title=sp.title;
+    if(sp.state == "zero") {
+      initZero();
+    }
+    else {
+      initFull();
+    }
+  };
+  
+  function initZero() {
+    recorderPanel.style.display="none";
+    playerPanel.style.display="none";
+    accountTopAlertP.innerHTML="Please introduce yourself and choose your thread";    
   }
+  
+  function initFull() {
+    userInput.value=sp.user;
+    realmInput.value=sp.realm;
+    accountBottomAlertP.innerHTML="Press and hold SPACE to start recording, release SPACE to finish it";
+    
+    var found=mc.utils.checkBrowser();
+    console.log(mc.utils.dumpArray(found));
+    if(found.outcome !== true) {
+      //console.log(Utils.dumpArray(found));
+      accountBottomAlertP.innerHTML=found.outcome;
+      throw new Error(found.outcome);
+    }
 
-  var recorderBox=new RecorderBox();
-  recorderBox.init(serverParams);
+    var recorderBox=new mc.rb.RecorderBox();
+    recorderBox.init(mc.serverParams);
 
-  var playerBox=new PlayerBox();
-  playerBox.init(serverParams);
-}
+    var playerBox=new mc.pb.PlayerBox();
+    playerBox.init(mc.serverParams);
+    
+    var kbm=new mc.utils.KeyboardMonitor(recorderBox.recorderOn, recorderBox.recorderOff, playerBox.clear);    
+  }
+};
+
+mc.tm=new mc.TopManager();
+mc.tm.go();
 
 </script>
 

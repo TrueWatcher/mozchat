@@ -1,7 +1,8 @@
 "use strict";
-var Utils={};
+if( ! mc) mc={};
+mc.utils={};
 
-Utils.checkBrowser=function() {
+mc.utils.checkBrowser=function() {
   var mediaDevices= !! navigator.mediaDevices;
   var mediaRecorder= !! MediaRecorder;
   var plainGetUserMedia= !! navigator.getUserMedia;
@@ -19,7 +20,7 @@ Utils.checkBrowser=function() {
   };
 };
 
-Utils.checkRecorderMime=function(te, audioOrVideo) {
+mc.utils.checkRecorderMime=function(te, audioOrVideo) {
   if(audioOrVideo != "audio" && audioOrVideo != "video") throw new Error("Wrong argument="+audioOrVideo+"!");
   var mimes =  {
     audio : [
@@ -35,7 +36,7 @@ Utils.checkRecorderMime=function(te, audioOrVideo) {
   
   for(t in mimes.audio) { if (MediaRecorder.isTypeSupported(mimes.audio[t])) recorderMimes.audio.push(mimes.audio[t]); }
   for(t in mimes.video) { if (MediaRecorder.isTypeSupported(mimes.video[t])) recorderMimes.video.push(mimes.video[t]); }
-  tex=new Utils.TypesExtensions(te, audioOrVideo);
+  tex=new mc.utils.TypesExtensions(te, audioOrVideo);
   for(t in recorderMimes[audioOrVideo]) { 
     ext=tex.mime2ext(recorderMimes[audioOrVideo][t]);
     if(ext) {
@@ -57,7 +58,7 @@ Utils.checkRecorderMime=function(te, audioOrVideo) {
   };
 };
 
-Utils.TypesExtensions=function(te,audioOrVideo) {
+mc.utils.TypesExtensions=function(te,audioOrVideo) {
   /*var te={
     audio : {
       "oga":"audio/ogg\;codecs=opus", "webm": "audio/webm\;codecs=opus", "wav":"audio/wav"
@@ -83,13 +84,13 @@ Utils.TypesExtensions=function(te,audioOrVideo) {
   };
 };
 
-Utils.dumpArray=function(x) {
+mc.utils.dumpArray=function(x) {
   var res="",i,expanded;
   if(typeof x == "object") {
     res+="{ ";
     for(i in x) {
       if(x.hasOwnProperty(i)) {
-        res+=" "+i+":"+Utils.dumpArray(x[i]);
+        res+=" "+i+":"+mc.utils.dumpArray(x[i]);
       }  
     }
     res+=" }";
@@ -98,9 +99,9 @@ Utils.dumpArray=function(x) {
   return res;  
 };
 
-Utils.b2kb=function (b) { return Math.ceil(b/1000)+"KB" };
+mc.utils.b2kb=function (b) { return Math.ceil(b/1000)+"KB" };
 
-Utils.s2dhms=function(sec) {
+mc.utils.s2dhms=function(sec) {
   var r="", day=86400, hour=3600, min=60, d, h, m, s;
   d=Math.floor(sec/day);
   if(d) { 
@@ -128,7 +129,7 @@ Utils.s2dhms=function(sec) {
   return r;
 };
 
-Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
+mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
   if(typeof onDataReceived != "function") throw new Error("Non-function callback argument");
   if( ! indicator.on) indicator={on:function(){}, off:function(){}}; 
   var urlOffset="";
@@ -206,11 +207,11 @@ Utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
   
 };// end Ajaxer
 
-Utils.getRadio=function(name) {
+mc.utils.getRadio=function(name) {
   return document.querySelector('input[name="'+name+'"]:checked').value;  
 };
 
-Utils.setRadio=function(name,value) {
+mc.utils.setRadio=function(name,value) {
   var btn=document.querySelector('input[name="'+name+'"][value="'+value+'"]');
   if(btn) {
     btn.checked="checked";
@@ -218,14 +219,14 @@ Utils.setRadio=function(name,value) {
   }
 };
 
-Utils.setCheckbox=function(id,value) {
+mc.utils.setCheckbox=function(id,value) {
   var el=document.getElementById(id);
   if(value === "0" || value === 0 || value === false) el.checked="";
   else el.checked="checked";
   document.activeElement.blur();
 };
 
-Utils.play=function(url,audioOrVideo,playerRoom,errorHandler) {    
+mc.utils.play=function(url,audioOrVideo,playerRoom,errorHandler) {    
   var a, plr;
   if( playerRoom instanceof HTMLElement) plr=playerRoom=document.getElementById(playerRoom);
   else plr=document.getElementById(playerRoom);
@@ -251,3 +252,46 @@ Utils.play=function(url,audioOrVideo,playerRoom,errorHandler) {
   
   if(errorHandler) a.onerror=function() { errorHandler(a.error.message); return false; };
 };
+
+mc.utils.KeyboardMonitor=function(onSpacePressed, onSpaceReleased, onEsc) {
+  // deals with serial onkeydown+onkeyup in Windows
+  var counter=0, watching=false, to;
+  
+  document.onkeydown = function(e){
+    var keycode = window.event ? window.event.keyCode : e.which;
+    if(keycode == 27) {
+      onEsc();
+      return false;
+    }
+    if(document.activeElement.type == "text") { return; }
+    if(keycode == 32) {
+      if( ! watching && ! counter) onSpacePressed();
+      counter+=1;
+      //console.log(" keydown "+counter);
+      if( ! watching) {
+        watching=true;
+        to=setTimeout(
+          checkout
+        ,400);
+      }
+      return false;
+    }
+    if(keycode == 32) return false;// prevents scrolling to the bottom
+  };
+  
+  function checkout() {
+    if(counter == 0) { 
+      //console.log(" release ");
+      watching=false;
+      onSpaceReleased();
+      return true; 
+    }
+    else { 
+      counter=0;
+      to=setTimeout(
+        checkout
+      ,200);
+      return false; 
+    }
+  }
+}

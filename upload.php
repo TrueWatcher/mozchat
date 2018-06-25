@@ -25,7 +25,6 @@ try {
   $pr=PageRegistry::getInstance( 0, PageRegistry::getDefaultsUpload() );
   //$pr->overrideValuesBy($pageEntryParams["PageRegistry"]);
   $pr->overrideValuesBy($iniParams["common"]);
-  //$pr->overrideValuesBy($iniParams["inventory"]);
   //$pr->dump();  
   if( ! isset($input["act"])) throw new DataException("Missing ACT");
   $act=$input["act"];
@@ -41,14 +40,7 @@ try {
     $uploadedBytes=b2kb($uploadedBytes);
     //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
     $r["alert"]='Server got a record of '.$uploadedBytes;
-    
-    $counter=0;
-    if( ! $pr->g("allowStream") && $pr->g("notifyUsers") && file_exists($targetPath."notify.ini")) {
-      $counter=notifyUsers($input, $targetPath, $n, $uploadedBytes, $pr);
-    }
-    if($counter) {
-      $r["alert"].=", $counter notifications sent";
-    }
+    $r["alert"] .= MailHelper::go($input, $targetPath, $n, $uploadedBytes,  $pr);
   }
   else if($act == "reportMimeFault") {
     reportMimeFault($pathBias,$input);
@@ -70,16 +62,16 @@ if($r === 304) {
 print(json_encode($r));
 exit();
 
-function checkExt($ext) {
-  return MimeDecoder::ext2mime($ext);
-  //$mimeExt=["oga"=>"audio/ogg\;codecs=opus", "webm"=>"audio/webm\;codecs=opus", "wav"=>"audio/wav"];
-  //return array_key_exists($ext,$mimeExt);
-}
+function checkExt($ext) { return MimeDecoder::ext2mime($ext); }
   
 function checkFields($input) {
   $r=true;
   if( ! isset($input["mime"]) || ! isset($input["ext"]) ) $r="Missing MIME or EXT";
   else if( ! checkExt($input["ext"])) $r="Unknown EXT=".$input["ext"]."!";
+  else if( isset($input["description"]) && charsInString($input["description"],"<>&\"':;()") ) $r="Forbidden symbols in DESCRIPTION";
+  else if( isset($input["description"]) && strlen($input["description"]) > 100 ) {
+    $input["description"]=substr($input["description"],0,100);
+  }
   if($r !== true) throw new DataException($r);
 }
 
@@ -93,8 +85,16 @@ function checkBlob($files,$pr) {
 function checkUserRealm($pathBias,$input) {
   $r=true;
   if( ! isset($input["user"]) || ! isset($input["realm"]) ) $r="Missing USER or REALM";
+  else if( charsInString($input["user"],"<>&\"':;()") ) $r="Forbidden symbols in username";
+  else if( strlen($input["user"]) > 30 ) $r="Too long username";
   else if( ! file_exists($pathBias.$input["realm"]) || ! is_dir($pathBias.$input["realm"])) $r="Thread folder not found";
   if($r !== true) throw new DataException($r);
+}
+
+function charsInString($object,$charsString) {
+  if ( empty($object) ) return false;
+  if (strtok($object,$charsString) !== $object) return true;
+  return false;
 }
 
 function reportMimeFault($pathBias,$input) {
@@ -107,60 +107,75 @@ function reportMimeFault($pathBias,$input) {
   file_put_contents($browserLogFile,$rec);  
 }
 
-function notifyUsers($input, $targetPath, $n, $uploadedBytes,  PageRegistry $pr) {
-  $title="";
-  if($input["description"]) $title=" \"".$input["description"]."\" ";
-  $valid=date("M_d_H:i:s",time()+3600*$pr->g("timeShiftHrs")+$pr->g("lifetimeMediaSec"));
-  $url = 'http://';
-  if ( (array_key_exists("HTTPS",$_SERVER)) && $_SERVER['HTTPS'] ) $url = 'https://';
-  $url .= $_SERVER['HTTP_HOST'];
-  $dir=dirname($_SERVER['REQUEST_URI']);
-  //echo(" url=$url, dir=$dir, ");
-  if( ! empty($dir) && $dir !== "/") $url.=$dir;
-  $url.="/";
-  $enterLink=$url;
-  if($targetPath) $directLink=$url.$targetPath;
-  $directLink.=Inventory::checkMediaFolderName($pr->g("mediaFolder"))."/";
-  $directLink.=$n;  
-  $noteMain="{$input["realm"]} has received a message from {$input["user"]} $title of {$input["duration"]}s/$uploadedBytes, valid until $valid";
-  $noteMain.="\n".'<a href="'.$directLink.'">direct link</a>, <a href="'.$enterLink.'">thread</a>';
-  $recipients=parse_ini_file($targetPath."notify.ini",true);
-  //var_dump($recipients);
-  $counter=0;
-  foreach($recipients as $rName=>$rAddr) {
-    $welcome="Dear $rName,\n";
-    $sent=sendEmail($rAddr,$welcome.$noteMain,$pr);
-    if($sent === true) $counter+=1;
-  }
-  return $counter;
-}
 
-function sendEmail($recAddr,$msgBody,PageRegistry $pr) {
-  $defaultSender="me@example.com";
-  $headers=[];
-  $defaultHeaders=[
-    "Content-Type: text/plain; charset=utf-8;"/*, 
-    "Content-transfer-encoding: quoted-printable;"*/
-  ];
-  $subj="New message in media chat";
-  
-  if(empty($recAddr) || false === strpos($recAddr,"@") || false===strpos($recAddr,".")) {
-    return ([ $subj.$msgBody,"Invalid recipient" ]);
-    //throw new UsageException("Invalid recipient address:$recAddr!");
-  }    
-  if( $pr->checkNotEmpty("mailFrom") ) { $from="From: ".$pr->g("mailFrom"); }
-  else { $from="From: ".$defaultSender; }
-  $headers[]=$from;  
-  if( $pr->checkNotEmpty("mailReplyTo") ) { 
-    $replyto="Reply-To: ".$pr->g("mailReplyTo");
-    $headers[]=$replyto;
+abstract class MailHelper {
+
+  function go($input, $targetPath, $n, $uploadedBytes,  PageRegistry $pr) {
+    if( ! self::check($targetPath,$pr) ) return "";
+    $counter=self::notifyUsers($input, $targetPath, $n, $uploadedBytes,  $pr);
+    if( ! $counter) return ", notifications failed";
+    return ", $counter notifications sent";
   }
-  else { $replyto=""; }  
-  $headers=$headers+$defaultHeaders;
-  //var_dump($headers);
-      
-  $ret=mail($recAddr,$subj,$msgBody,implode("\r\n", $headers));
-  return $ret;
+  
+  private static function check($targetPath, PageRegistry $pr) {
+    return (! $pr->g("allowStream")) && $pr->g("notifyUsers") && file_exists($targetPath."notify.ini");
+  }
+
+  private static function notifyUsers($input, $targetPath, $n, $uploadedBytes,  PageRegistry $pr) {
+    $title="";
+    if($input["description"]) $title=" \"".$input["description"]."\" ";
+    $valid=date("M_d_H:i:s",time()+3600*$pr->g("timeShiftHrs")+$pr->g("lifetimeMediaSec"));
+    $url = 'http://';
+    if ( (array_key_exists("HTTPS",$_SERVER)) && $_SERVER['HTTPS'] ) $url = 'https://';
+    $url .= $_SERVER['HTTP_HOST'];
+    $dir=dirname($_SERVER['REQUEST_URI']);
+    //echo(" url=$url, dir=$dir, ");
+    if( ! empty($dir) && $dir !== "/") $url.=$dir;
+    $url.="/";
+    $enterLink=$url;
+    if($targetPath) $directLink=$url.$targetPath;
+    $directLink.=Inventory::checkMediaFolderName($pr->g("mediaFolder"))."/";
+    $directLink.=$n;  
+    $noteMain="{$input["realm"]} has received a message from {$input["user"]} $title of {$input["duration"]}s/$uploadedBytes, valid until $valid";
+    $noteMain.="\n".'<a href="'.$directLink.'">direct link</a>, <a href="'.$enterLink.'">thread</a>';
+    $recipients=parse_ini_file($targetPath."notify.ini",true);
+    //var_dump($recipients);
+    $counter=0;
+    foreach($recipients as $rName=>$rAddr) {
+      $welcome="Dear $rName,\n";
+      $sent=self::sendEmail($rAddr,$welcome.$noteMain,$pr);
+      if($sent === true) $counter+=1;
+    }
+    return $counter;
+  }
+  
+  private static function sendEmail($recAddr,$msgBody,PageRegistry $pr) {
+    $defaultSender="me@example.com";
+    $headers=[];
+    $defaultHeaders=[
+      "Content-Type: text/plain; charset=utf-8;"/*, 
+      "Content-transfer-encoding: quoted-printable;"*/
+    ];
+    $subj="New message in media chat";
+    
+    if(empty($recAddr) || false === strpos($recAddr,"@") || false===strpos($recAddr,".")) {
+      return ([ $subj.$msgBody,"Invalid recipient" ]);
+      //throw new UsageException("Invalid recipient address:$recAddr!");
+    }    
+    if( $pr->checkNotEmpty("mailFrom") ) { $from="From: ".$pr->g("mailFrom"); }
+    else { $from="From: ".$defaultSender; }
+    $headers[]=$from;  
+    if( $pr->checkNotEmpty("mailReplyTo") ) { 
+      $replyto="Reply-To: ".$pr->g("mailReplyTo");
+      $headers[]=$replyto;
+    }
+    else { $replyto=""; }  
+    $headers=$headers+$defaultHeaders;
+    //var_dump($headers);
+        
+    $ret=mail($recAddr,$subj,$msgBody,implode("\r\n", $headers));
+    return $ret;
+  }
 }
 
 ?>

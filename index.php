@@ -41,8 +41,16 @@ catch (DataException $de) {
 function checkUserRealm($pathBias,$input) {
   $r=true;
   if( ! isset($input["user"]) || ! isset($input["realm"]) ) $r="Missing USER or REALM";
+  else if( charsInString($input["user"],"<>&\"':;()") ) $r="Forbidden symbols in username";
+  else if( strlen($input["user"]) > 30 ) $r="Too long username";
   else if( ! file_exists($pathBias.$input["realm"]) || ! is_dir($pathBias.$input["realm"])) $r="Thread folder not found";
   if($r !== true) throw new NoCredentialsException($r);
+}
+
+function charsInString($object,$charsString) {
+  if ( empty($object) ) return false;
+  if (strtok($object,$charsString) !== $object) return true;
+  return false;
 }
 
 ?>
