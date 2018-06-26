@@ -66,10 +66,10 @@ function checkExt($ext) { return MimeDecoder::ext2mime($ext); }
   
 function checkFields($input) {
   $r=true;
+  if( isset($input["description"]) ) $input["description"]=htmlspecialchars($input["description"]);
   if( ! isset($input["mime"]) || ! isset($input["ext"]) ) $r="Missing MIME or EXT";
   else if( ! checkExt($input["ext"])) $r="Unknown EXT=".$input["ext"]."!";
-  else if( isset($input["description"]) && charsInString($input["description"],"<>&\"':;()") ) $r="Forbidden symbols in DESCRIPTION";
-  else if( isset($input["description"]) && strlen($input["description"]) > 100 ) {
+  else if( isset($input["description"]) && strlen($input["description"]) > 200 ) {
     $input["description"]=substr($input["description"],0,100);
   }
   if($r !== true) throw new DataException($r);

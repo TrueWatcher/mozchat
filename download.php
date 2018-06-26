@@ -49,7 +49,10 @@ try {
     if(isset($input["since"]) && $input["since"]) {
       $catalog=$targetPath.Inventory::getMyFileName();
       if(filemtime($catalog) < $input["since"]) {
-        $r=304;
+        //$r=304;
+        $r["alert"]="No new messages";
+        $um=new UsersMonitor();
+        $r["users"]=$um->markOnlineAndReport($targetPath,$input["user"],(int)$input["pollFactor"]);
         break;
       }
     }
@@ -84,3 +87,54 @@ function checkFields($input) {
   else if( ! isset($input["act"])) $r="Missing ACT";
   if($r !== true) throw new DataException($r);
 }
+
+class UsersMonitor {
+  private static $myFileName="users.json";
+  private $myFileFull="";
+  private $data=[];
+  private $targetPath="";
+  
+  static function getMyFileName() { return self::$myFileName; }
+  
+  function markOnlineAndReport($tp,$user,$pollFactor) {
+    $this->read($tp);
+    $this->removeExpired();
+    if(is_null($pollFactor) || $pollFactor <= 20) $valid=2;
+    else $valid=ceil($pollFactor/10);
+    $this->mark($user,"online",$valid);
+    file_put_contents($this->myFileFull,json_encode($this->data));
+    return $this->presentOnline();
+  }
+  
+  
+  private function read($tp) {
+    $this->myFileFull=$tp.self::$myFileName;
+    if( ! file_exists($this->myFileFull)) {
+      $this->data=["online"=>[]];
+    }
+    else {      
+      $buf=file_get_contents($this->myFileFull);
+      $this->data=json_decode($buf,true);
+    }
+  }
+  
+  private function removeExpired() {
+    $status="online";
+    $res=[];
+    $t=time();
+    foreach($this->data[$status] as $u=>$expire) {
+      if($expire > $t) { $res[$u]=$expire; }
+    }
+    $this->data[$status]=$res;  
+  }
+  
+  private function mark($user,$status,$validForS) {
+    $expire=time()+$validForS;
+    $this->data[$status][$user]=$expire;
+  }
+  
+  private function presentOnline() {
+    return implode(", ",array_keys($this->data["online"]));
+  }
+  
+}// end UsersMonitor

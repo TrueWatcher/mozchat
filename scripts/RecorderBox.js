@@ -272,13 +272,13 @@ mc.rb.ViewR=function() {
   _this.showLocalPlay=function(url,bytes) {
     downloadLink.innerHTML = '<a href="'+url+'" target="_blank">The file</a>';
     blobSizeS.innerHTML=mc.utils.b2kb(bytes);
-    localPlayS.style.visibility="";
+    localPlayS.style.display="";
   };
   
   _this.hideLocalPlay=function() {
     downloadLink.innerHTML = '';
     blobSizeS.innerHTML='';
-    localPlayS.style.visibility="hidden";
+    localPlayS.style.display="none";
   };
   
   _this.hideLocalPlay();

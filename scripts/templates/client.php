@@ -41,7 +41,6 @@
   <input type="text" id="decriptionInput" placeholder="You may type here a decription before recording" style="width : 40em;" />
   <br />
   <button id="recordBtn">Wait...</button>
-  <button id="uploadIndBtn">&nbsp;</button>
   <input type="text" id="timerInd" style="width : 4em;" class="inline" value="0" />s&nbsp;
   <span id="localPlayS">
     <span id="blobSizeS"></span>
@@ -49,25 +48,32 @@
     <input type="button" id="playHereBtn" value="Play" />
     <input type="button" id="uploadStoredBtn" value="Upload" />
   </span>
+  <button id="uploadIndBtn" title="uplink indicator" >&nbsp;</button>
   <br />
   
   <p id="recorderAlertP"></p>
 </fieldset>
 
 <fieldset id="playerPanel">
-  <div id="playerControlsDiv">
+  <input type="button" id="clearBtn" value="Stop" />
+  <input type="button" id="stopAfterBtn" value="Stop after current" />
+  &nbsp;&nbsp;
+  <span id="playerControlsDiv">
     Refresh <input type="radio" name="refreshRad" value="4" />0.4s&nbsp;<input type="radio" name="refreshRad" value="10" checked="checked" />1s&nbsp;<input type="radio" name="refreshRad" value="100" />10s
     &nbsp;&nbsp;
     Play new clips<input type="checkbox" id="playNewChkb" checked="checked" />,
     only from others<input type="checkbox" id="skipMineChkb" checked="checked" />
-  </div>
-  <input type="button" id="clearBtn" value="Stop" />
-  <input type="button" id="stopAfterBtn" value="Stop after current" />
-  <p id="playerAlertP">Javascript required</p>
+  </span>
+  <p>
+    Online: <span id="usersS" ></span>
+  </p>
   <table id="medialistT">
   </table>
   <p>
-    Free:<span id="folderFreeS" style="width : 10em;"></span><!--, net downloaded:<span id="downloadCountS" style="width : 10em;"></span>-->
+    Free:<input type="text" id="folderFreeInp" class="inline" style="width : 6em;" />
+  </p>
+  <p id="playerAlertP">
+    Something is wrong if you see this
   </p>  
 </fieldset>
 

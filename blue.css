@@ -9,7 +9,7 @@ body {
   border-collapse: collapse;
 }
 
-input.inline,input.inline:hover {
+.inline,.inline:hover {
   border: none;
   background-color: #aef;
   text-align: right;
@@ -63,7 +63,7 @@ td.delete:hover, td.play:hover, td.playDown:hover {
   background-color: #ddd;
 }
 #medialistT tr.n,#medialistT tr.e  {
-  background-color: auto;
+  background-color: inherit;
 }
 
 #medialistT {

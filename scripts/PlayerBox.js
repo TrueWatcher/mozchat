@@ -31,6 +31,7 @@ mc.pb.PlayerBox=function() {
 
     if(resp.timestamp) catalogTime=resp.timestamp;
     if(resp.free) viewP.showFreeSpace(resp.free);
+    if(resp.users) viewP.showUsers(resp.users);
     if(resp.list) {
       //console.log(mc.utils.dumpArray(userParams));
       changes=inventory.consumeNewCatalog(resp.list, userParams);
@@ -49,7 +50,7 @@ mc.pb.PlayerBox=function() {
     ps=serialPlayer.getState();
     if(ps != "playing" && ps !="playingNLoading") {
       if(resp.alert) { viewP.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms"); }
-      else viewP.showMessage(resp.alert || mc.utils.dumpArray(resp) || "<empty>");
+      //else viewP.showMessage(resp.alert || mc.utils.dumpArray(resp) || "<empty>");
     }
   }
   
@@ -273,7 +274,8 @@ mc.pb.ViewP=function() {
   this.showMessage=function(m) { playerAlertP.innerHTML=m; };
   this.clearMessage=function(m) { playerAlertP.innerHTML=""; };
   
-  this.showFreeSpace=function(b) { folderFreeS.innerHTML=mc.utils.b2kb(b); };
+  this.showFreeSpace=function(b) { folderFreeInp.value=mc.utils.b2kb(b); };
+  this.showUsers=function(s) { usersS.innerHTML=s; };
   
   _this.showClip=function(a) { playerRoom.appendChild(a); };
   _this.clearClips=function() { playerRoom.innerHTML=""; };
