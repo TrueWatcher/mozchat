@@ -46,6 +46,12 @@ try {
     reportMimeFault($pathBias,$input);
     $r=204;
   }
+  else if($act == "clearMedia") {
+    $inv=new Inventory();
+    //$inv->init($targetPath,$pr->g("mediaFolder"));
+    $inv->clear($targetPath,$pr->g("mediaFolder"));
+    $r["alert"]="files cleared";
+  }
   else throw new DataException("Unknown command=$act!");
   
 } catch (DataException $de) {

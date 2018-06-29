@@ -11,6 +11,13 @@ class Inventory {
   
   static function getMyFileName() { return self::$myFileName; }
   
+  static function isStillValid($tp, $since) {
+    if(is_null($since) || ! $since) return false;
+    if( ! file_exists($tp.self::$myFileName)) return false;
+    if(filemtime($tp.self::$myFileName) < $since) return 304;
+    return false;
+  }
+  
   function init($tp,$mfn) {
     // media must be stored in "mediaBLABLA" folder
     $mfn=self::checkMediaFolderName($mfn);
@@ -149,10 +156,6 @@ class Inventory {
   
   private function sumUpBytes() {
     $sum=0;
-    /*if(empty($this->data)) {
-      $this->total=0;
-      return 0;
-    }*/
     foreach($this->data as $e) {
       $ee=array_combine($this->keys,$e);
       $sum+=$ee["bytes"];
@@ -163,15 +166,6 @@ class Inventory {
   
   function getCatalog() { return $this->data; }
   function getTotalBytes() { return $this->total; }
-  
-  function getCatalogWithoutExpired() { $t=time();
-    $resData=[];
-    foreach($this->data as $e) {
-      $ee=array_combine($this->keys,$e);
-      if($ee["expire"] > $t) { $resData[]=$e; }
-    }
-    return $resData;
-  }
   
   function getLineById($id) {
     if(empty($id)) return false;
@@ -209,6 +203,14 @@ class Inventory {
   }
   
   function getMediaPath() { return $this->mediaFolder."/"; }
+  
+  function clear($tp,$mfn) {
+    // media must be stored in "mediaBLABLA" folder
+    $mfn=self::checkMediaFolderName($mfn);
+    $mediaFolder=$tp.$mfn;
+    if( ! file_exists($mediaFolder)) return true;
+    array_map('unlink', glob($mediaFolder."/*.*"));
+  }  
 
 }// end Inventory
 

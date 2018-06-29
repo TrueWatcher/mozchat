@@ -163,7 +163,7 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
   function receive() {
     if (req.readyState != 4) return;
     if(req.status != 200 && req.status != 204 && req.status != 304) {
-      console.log("ajax returned error "+req.status);
+      console.log(responderUrl+" ajax returned error "+req.status);
       return;
     }
     lag=Date.now()-timer;

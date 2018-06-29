@@ -46,23 +46,36 @@ try {
     break;
   
   case "dir":    
-    if(isset($input["since"]) && $input["since"]) {
-      $catalog=$targetPath.Inventory::getMyFileName();
-      if(filemtime($catalog) < $input["since"]) {
-        //$r=304;
-        $r["alert"]="No new messages";
-        $um=new UsersMonitor();
-        $r["users"]=$um->markOnlineAndReport($targetPath,$input["user"],(int)$input["pollFactor"]);
-        break;
-      }
+    $inventoryUpdated=$pr->checkNotEmpty("removeExpiredFromDir") || ! Inventory::isStillValid($targetPath,$input["since"]);
+    $usersToBeUpdated= ! UsersMonitor::isStillValid($targetPath,$input["since"],$pr);
+    //$delta=filemtime($targetPath."users.json")-$input["since"];
+    
+    if($inventoryUpdated) {
+      $inv=new Inventory();
+      $inv->init($targetPath,$pr->g("mediaFolder"));
+      if($pr->checkNotEmpty("removeExpiredFromDir")) { $inv->removeExpired(); }
+      $list=$inv->getCatalog();
+      $r["list"]=$list;
+      $r["timestamp"]=time();
+      $r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes();     
     }
+    if($usersToBeUpdated) {
+      $um=new UsersMonitor();
+      $r["users"]=$um->markOnlineAndReport($targetPath,$input["user"],(int)$input["pollFactor"],$pr);
+      $r["timestamp"]=time();
+      $r["alert"]="Users updated";//, delta=$delta, statusFade=".$pr->g("userStatusFadeS");
+    }
+    if( ! $inventoryUpdated && ! $usersToBeUpdated) {
+      $r=304;
+      //$r["alert"]="No changes, delta=$delta";
+    }
+    break;
+  
+  case "clearMedia":
     $inv=new Inventory();
     $inv->init($targetPath,$pr->g("mediaFolder"));
-    //$list=$inv->getCatalogWithoutExpired();
-    $list=$inv->getCatalog();
-    $r["list"]=$list;
-    $r["timestamp"]=time();
-    $r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
+    $inv->clear();
+    $r["alert"]="files cleared";
     break;
   
   default:
@@ -93,14 +106,25 @@ class UsersMonitor {
   private $myFileFull="";
   private $data=[];
   private $targetPath="";
+  private static $statusFadeS=5;
+  private static $fileFadeS=2;
   
   static function getMyFileName() { return self::$myFileName; }
   
-  function markOnlineAndReport($tp,$user,$pollFactor) {
+  static function isStillValid($tp, $since, PageRegistry $pr) {
+    if(is_null($since) || ! $since) return false;
+    if( ! file_exists($tp.self::$myFileName)) return false;
+    self::$fileFadeS=$pr->g("userStatusFadeS")-1;
+    if( time()-$since <  self::$fileFadeS ) return 304;
+    return false;
+  }
+  
+  function markOnlineAndReport($tp,$user,$pollFactor,PageRegistry $pr) {
     $this->read($tp);
     $this->removeExpired();
-    if(is_null($pollFactor) || $pollFactor <= 20) $valid=2;
-    else $valid=ceil($pollFactor/10);
+    self::$statusFadeS=$pr->g("userStatusFadeS");
+    $valid=self::$statusFadeS;
+    if($pollFactor > self::$statusFadeS*10) $valid=ceil($pollFactor/10);
     $this->mark($user,"online",$valid);
     file_put_contents($this->myFileFull,json_encode($this->data));
     return $this->presentOnline();

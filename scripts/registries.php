@@ -78,7 +78,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
   public static function getDefaultsClient() {
     $a=[
       //"scriptsPath"=>"scripts/",
-      //"pathBias"=>"",
+      "pathBias"=>"",
       "timeShiftHrs"=>0,
       "lang"=>"en",
       //"skipPlayerAuth"=>0,// if set, allowPlayerNameInInput must be set also
@@ -97,7 +97,9 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "chunkSize"=>2,
       "pollFactor"=>10,
       "playNew"=>1,
-      "skipMine"=>1,      
+      "skipMine"=>1,
+      "userStatusFadeS"=>3,
+      "removeExpiredFromDir"=>0
     ];
     return $a;
   }
@@ -109,7 +111,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
   public static function getDefaultsUpload() {
     $a=[
       //"scriptsPath"=>"scripts/",
-      //"pathBias"=>"",
+      "pathBias"=>"",
       "timeShiftHrs"=>0,
       "lang"=>"en",
       //"allowAuthByRequestId"=>1,// Credentials
@@ -121,7 +123,9 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "maxBlobBytes"=>50000,
       "maxMediaFolderBytes"=>400000,
       "lifetimeMediaSec"=>300,
-      "allowStream"=>0
+      "allowStream"=>0,
+      "userStatusFadeS"=>3,
+      "removeExpiredFromDir"=>0
     ];
     return $a;
   }

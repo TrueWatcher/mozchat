@@ -15,7 +15,7 @@ mc.rb.RecorderBox=function() {
     userParams=viewR.getParams();
     console.log(mc.utils.dumpArray(userParams));
     
-    ajaxerR=new mc.utils.Ajaxer("upload.php", getResponseR, viewR.uploadIndicator);
+    ajaxerR=new mc.utils.Ajaxer(fromServer.pathBias+"upload.php", getResponseR, viewR.uploadIndicator);
     
     checkMime();
     
@@ -153,6 +153,14 @@ mc.rb.RecorderBox=function() {
     stuff.append("user",userParams.user);
     stuff.append("realm",userParams.realm);
     stuff.append("mimesList",mc.utils.dumpArray(recorderMimes));
+    ajaxerR.postRequest(stuff);
+  }
+  
+  _this.sendClear=function() {
+    var  stuff=new FormData();
+    stuff.append("act","clearMedia");
+    stuff.append("user",userParams.user);
+    stuff.append("realm",userParams.realm);
     ajaxerR.postRequest(stuff);
   }
 

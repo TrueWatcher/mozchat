@@ -16,11 +16,11 @@ mc.pb.PlayerBox=function() {
     _this.applyParams();
     inventory=new mc.pb.Inventory();
     
-    ajaxerP=new mc.utils.Ajaxer("download.php", getResponseP, {});
-    setInterval(_this.onTick, 100);
+    ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", getResponseP, {});
+    if(serverParams.pollFactor < 3600) setInterval(_this.onTick, 100);
     
     if( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
-    urlprefix=userParams.realm+"/"+serverParams.mediaFolder+"/";
+    urlprefix=serverParams.pathBias+userParams.realm+"/"+serverParams.mediaFolder+"/";
     serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP, onMediaError);
     
     viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear);

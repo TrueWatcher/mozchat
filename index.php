@@ -23,7 +23,7 @@ try {
     "state"=>"operational", "user"=>$input["user"], "realm"=>$input["realm"]
   ];
   $serverParams=$pr->exportByList( [
-    "maxBlobBytes", "maxMediaFolderBytes", "lifetimeMediaSec", "title", "allowVideo", "videoOn", "chunkSize", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder"
+    "maxBlobBytes", "maxMediaFolderBytes", "lifetimeMediaSec", "title", "allowVideo", "videoOn", "chunkSize", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder", "pathBias"
   ] , $serverParams);
   $serverParams["mediaFolder"]=Inventory::checkMediaFolderName($serverParams["mediaFolder"]);
   $mimeDictionary=MimeDecoder::getDictionary();

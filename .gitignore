@@ -7,6 +7,7 @@
 /thr1/media
 /thr1/media*
 /thr1/.ini
+/test0/media
 */notify.ini
 */catalog.json
 */users.json
