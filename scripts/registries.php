@@ -108,7 +108,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
    *
    * @return Array
    */  
-  public static function getDefaultsUpload() {
+  public static function getDefaultsAjax() {
     $a=[
       //"scriptsPath"=>"scripts/",
       "pathBias"=>"",

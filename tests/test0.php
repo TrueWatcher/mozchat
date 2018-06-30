@@ -1,9 +1,34 @@
+<?php
+$pathBias="../";
+require_once($pathBias."scripts/AssocArrayWrapper.php");
+require_once($pathBias."scripts/MyExceptions.php");
+require_once($pathBias."scripts/registries.php");
+require_once($pathBias."scripts/Inventory.php");
+$input=["user"=>"Test1","realm"=>"test0"];//$_REQUEST;
+$mimeDictionary=[];
+$cssLink=$pathBias."blue.css";
+$targetPath=$pathBias.$input["realm"]."/";
+$iniParams=IniParams::read($targetPath);
+$pr=PageRegistry::getInstance( 0, PageRegistry::getDefaultsClient() );
+//$pr->overrideValuesBy($pageEntryParams["PageRegistry"]);
+$pr->overrideValuesBy($iniParams["common"]);
+$pr->overrideValuesBy($iniParams["client"]);
+
+$serverParams=[
+  "state"=>"operational", "user"=>$input["user"], "realm"=>$input["realm"]
+];
+$serverParams=$pr->exportByList( [
+  "maxBlobBytes", "maxMediaFolderBytes", "lifetimeMediaSec", "userStatusFadeS", "title", "allowVideo", "videoOn", "chunkSize", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder", "pathBias"
+] , $serverParams);
+$serverParams["mediaFolder"]=Inventory::checkMediaFolderName($serverParams["mediaFolder"]);
+$mimeDictionary=MimeDecoder::getDictionary();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>Test media chat 0</title>
-  <link rel="stylesheet" type="text/css" href="../blue.css" media="all" />
+  <link rel="stylesheet" type="text/css" href="<?php print($cssLink); ?>" media="all" />
 </head>
 <body>
 
@@ -91,25 +116,15 @@
 <script src="../scripts/PlayerBox.js"></script>
 <script src="testUtils.js"></script>
 <script>
-// modified templates/client.php
+// slightly modified templates/client.php
+mc.mimeDictionary='<?php print(json_encode($mimeDictionary)); ?>';
+mc.mimeDictionary=JSON.parse(mc.mimeDictionary);
 
-//mc.mimeDictionary='<?php print(json_encode($mimeDictionary)); ?>';
-//mc.mimeDictionary=JSON.parse(mc.mimeDictionary);
-mc.mimeDictionary={
-  audio:{"audio/ogg;codecs=opus":"oga", "audio/webm;codecs=opus":"webm" , "audio/wav":"wav"},
-  video:{"video/webm;codecs=vp8":"webm", "video/webm;codecs=h264":"webm"}
-};
-//"maxBlobBytes", "maxMediaFolderBytes", "lifetimeMediaSec", "title", "allowVideo", "videoOn", "chunkSize", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder"
-
-//mc.serverParams='<?php print(json_encode($serverParams)); ?>';
-//mc.serverParams=JSON.parse(mc.serverParams);
-mc.serverParams={
-  "maxBlobBytes":20000, "maxMediaFolderBytes":50000, "lifetimeMediaSec":8, "title":"Test0", "allowVideo":0, "videoOn":0, "chunkSize":1, "allowStream":1, "onRecorded":"stop", "pollFactor":10000, "playNew":0, "skipMine":1, "mediaFolder":"media", "pathBias":"../", "state":"active", "user":"user1", "realm":"test0"
-};
-var sp=mc.serverParams;
-var recorderBox, playerBox;
+mc.serverParams='<?php print(json_encode($serverParams)); ?>';
+mc.serverParams=JSON.parse(mc.serverParams);
 
 mc.TopManager=function() {
+  var recorderBox={}, playerBox={}, sp=mc.serverParams;
   
   this.go=function() {
     if(sp.title) document.title=sp.title;
@@ -148,12 +163,52 @@ mc.TopManager=function() {
     
     //var kbm=new mc.utils.KeyboardMonitor(recorderBox.recorderOn, recorderBox.recorderOff, playerBox.clear);    
   }
+  
+  this.getRB=function() { return recorderBox; };
+  this.getPB=function() { return playerBox; };
 };
 
 mc.tm=new mc.TopManager();
 mc.tm.go();
 
-var ok,err,blobKb,clip1,clip2,free,i,toSend,storedTime1, storedTime2, elapsed;
+function Shadow() {
+  var serverParams={user:"Shadow",realm:"test0",pathBias:"../",playNew:1,skipMine:1};
+  var userParams=serverParams;
+  var response={},changesMap={};
+  var catalogBytes=0, catalogTime=0;
+  
+  var ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", takeResponseSh, {});
+  var inventory=new mc.pb.Inventory();
+  
+  function takeResponseSh(resp) {
+    if(resp.catalogBytes) catalogBytes=resp.catalogBytes;
+    if(resp.timestamp) catalogTime=resp.timestamp;
+    if(resp.list) { changesMap=inventory.consumeNewCatalog(resp.list, userParams); }     
+    if(resp.alert) { resp.alert+=" fulfiled in "+resp.lag+"ms"; }
+    response=resp;
+  }
+  
+  this.getResponce=function() { return response; };
+  this.getChangesMap=function() { return changesMap; };
+  this.getUser=function() { return userParams.user; };
+  
+  this.sendDir=function() {
+    var qs="";
+    qs+="user="+userParams.user+"&realm="+userParams.realm;
+    qs+="&act=dir&since="+catalogTime+"&catBytes="+catalogBytes;
+    //qs+="&pollFactor="+userParams.pollFactor;
+    console.log("Shadow's request : "+qs);
+    ajaxerP.getRequest(qs);    
+  };
+
+}
+
+var recorderBox=mc.tm.getRB(), playerBox=mc.tm.getPB(), sp=mc.serverParams;
+var shadow=new Shadow();
+
+var ok,err,blobKb,clip1,clip2,clip3,free,i,toSend,storedTime1, storedTime2, elapsed;
+var shResp, shUser=shadow.getUser(), shChangesMap;
+
 print(">page");
 var testScript=[
 'println("Clearing files and reading the catalog");',
@@ -164,14 +219,15 @@ var testScript=[
 'playerBox.sendDir();',
 '',
 'ok= ! medialistT.hasChildren; \
- assertTrue(ok,"Some data are present un the catalog","catalog cleared"); \
+ assertTrue(ok,"Some data are present in the catalog","catalog cleared"); \
  free=parseInt(folderFreeInp.value); \
  assertEqualsPrim(sp.maxMediaFolderBytes/1000, free, "Wrong free space", "All space is free");',
 'var ok=usersS.innerHTML.indexOf(sp.user) >= 0; \
  assertTrue(ok, "Missing my username", "My username is listed")',
 
 'println("Testing max size limit");',
-'chunkInp.value=3; mc.utils.setRadio("chunkRad","custom"); \
+'chunkInp.value=4; \
+ mc.utils.setRadio("chunkRad","custom"); \
  mc.utils.setRadio("onrecordedRad","stop");',
 'ci.loop();',
 'if(recordBtn.innerHTML.charAt(0) != "W") ci.inc();',
@@ -235,7 +291,7 @@ var testScript=[
 'println("Testing clip expiration");',
 'ci.loop();',
 'elapsed=Date.now()/1000-storedTime1; \
- if(elapsed > sp.lifetimeMediaSec) { ci.inc(); };',
+ if(elapsed > (1+parseInt(sp.lifetimeMediaSec)) ) { ci.inc(); };',
 'ci.noLoop();', 
 'playerBox.sendDir();',
 '',
@@ -248,11 +304,70 @@ var testScript=[
 'playerBox.sendDir();',
 '',
 'var freeFinally=parseInt(folderFreeInp.value); \
- assertEqualsPrim(sp.maxMediaFolderBytes/1000, freeFinally, "Wrong free space", "All space is eventually free");',
+ assertEqualsPrim(sp.maxMediaFolderBytes/1000, freeFinally, "Wrong free space", "All space is eventually free"); \
+ ok= ! medialistT.hasChildren; \
+ assertTrue(ok,"Some data are present un the catalog","Catalog is empty"); ',
  
+'println("Testing users list basic operations");',
+'storedTime1=Date.now()/1000; \
+ playerBox.sendDir();',
+'',
+'shadow.sendDir();',
+'',
+'shResp=shadow.getResponce(); \
+ console.log(mc.utils.dumpArray(shResp)); \
+ ok=shResp.users.indexOf(sp.user) >= 0; \
+ assertTrue(ok, "Failed to get my username", "My username is visible to Shadow"); \
+ ok=shResp.users.indexOf(shUser) >= 0; \
+ assertTrue(ok, "Failed to get Shadow username", "Shadow username is visible to Shadow");',
+'',// fine tune of delay: the responder shoul be open to me without expiring Shadow's record
+'elapsed=Date.now()/1000-storedTime1; \
+ assertTrue(elapsed > sp.userStatusFadeS, "Increase delay, elapsed="+elapsed+" of "+sp.userStatusFadeS, "Delay has passed"); \
+ playerBox.sendDir();',
+'',
+//'console.log(mc.utils.dumpArray(playerBox.getResponse()));',
+'ok=usersS.innerHTML.indexOf(sp.user) >= 0; \
+ assertTrue(ok, "Missing my username", "My username is listed"); \
+ ok=usersS.innerHTML.indexOf(shUser) >= 0; \
+ assertTrue(ok, "Missing Shadow username", "Shadow username is listed"); ',
+'','',// another tune: waiting for Shadow's record to expire
+'playerBox.sendDir();',
+'',
+//'console.log(mc.utils.dumpArray(playerBox.getResponse()));',
+'ok=usersS.innerHTML.indexOf(sp.user) >= 0; \
+ assertTrue(ok, "Missing my username", "My username is listed"); \
+ ok=usersS.innerHTML.indexOf(shUser) < 0; \
+ assertTrue(ok, "Shadow username not expired", "Shadow username is expired"); ',
  
-'println("Testing more");',
-''
+'println("Testing passing a clip to another user");',
+'clip3="Clips salvo Two"; \
+ decriptionInput.value=clip3; \
+ mc.utils.setRadio("onrecordedRad","upload"); \
+ mc.utils.setRadio("chunkRad",1); \
+ storedTime1=Date.now()/1000; \
+ recordBtn.click(); \
+ ci.loop();\
+',
+'elapsed=Date.now()/1000-storedTime1; \
+ if(elapsed >= 2) { recordBtn.click(); ci.inc();}',
+'ci.noLoop();',
+'shadow.sendDir();',
+'playerBox.sendDir();',
+'',
+'shResp=shadow.getResponce(); \
+ console.log(mc.utils.dumpArray(shResp)); \
+ shChangesMap=shadow.getChangesMap(); \
+ /*console.log(mc.utils.dumpArray(shChangesMap)); */\
+ assertTrue(shResp.list && (shResp.list.length >= 1), "Missing clips list", "New clips are visible" ); \
+ ok=shChangesMap.added && (shChangesMap.added.length == shResp.list.length); \
+ ok=ok && (shChangesMap.removed.length == 0); \
+ assertTrue(ok, "Wrong changesMap", "ChangesMap ok"); \
+ ok=shChangesMap.toPlay && (shChangesMap.toPlay[1] == sp.user) && (shChangesMap.toPlay[7] == clip3); \
+ assertTrue(ok, "Wrong changesMap.toPlay", "ChangesMap.toPlay ok"); \
+',
+
+ 
+'println("Tests finished successfully");',
 ];
 
 var ci=new CommandIterator(testScript);

@@ -22,7 +22,7 @@ try {
   checkUserRealm($pathBias,$input);
   $targetPath=$pathBias.$input["realm"]."/";
   $iniParams=IniParams::read($targetPath);
-  $pr=PageRegistry::getInstance( 0, PageRegistry::getDefaultsUpload() );
+  $pr=PageRegistry::getInstance( 0, PageRegistry::getDefaultsAjax() );
   //$pr->overrideValuesBy($pageEntryParams["PageRegistry"]);
   $pr->overrideValuesBy($iniParams["common"]);
   //$pr->dump();  

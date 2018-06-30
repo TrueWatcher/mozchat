@@ -15,7 +15,7 @@ mc.rb.RecorderBox=function() {
     userParams=viewR.getParams();
     console.log(mc.utils.dumpArray(userParams));
     
-    ajaxerR=new mc.utils.Ajaxer(fromServer.pathBias+"upload.php", getResponseR, viewR.uploadIndicator);
+    ajaxerR=new mc.utils.Ajaxer(fromServer.pathBias+"upload.php", takeResponseR, viewR.uploadIndicator);
     
     checkMime();
     
@@ -164,7 +164,7 @@ mc.rb.RecorderBox=function() {
     ajaxerR.postRequest(stuff);
   }
 
-  function getResponseR(resp) { 
+  function takeResponseR(resp) { 
     //alert(resp);
     if(resp.error) viewR.showMessage("Error! "+resp.error);
     else if(resp.alert) viewR.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms");

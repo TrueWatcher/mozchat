@@ -16,7 +16,7 @@ try {
   checkFields($input);
   $targetPath=$pathBias.$input["realm"]."/";
   $iniParams=IniParams::read($targetPath);
-  $pr=PageRegistry::getInstance( 0, PageRegistry::getDefaultsUpload() );
+  $pr=PageRegistry::getInstance( 0, PageRegistry::getDefaultsAjax() );
   //$pr->overrideValuesBy($pageEntryParams["PageRegistry"]);
   $pr->overrideValuesBy($iniParams["common"]);
   //$pr->overrideValuesBy($iniParams["inventory"]);
@@ -46,7 +46,7 @@ try {
     break;
   
   case "dir":    
-    $inventoryUpdated=$pr->checkNotEmpty("removeExpiredFromDir") || ! Inventory::isStillValid($targetPath,$input["since"]);
+    $inventoryUpdated = ( $pr->checkNotEmpty("removeExpiredFromDir") || ! Inventory::isStillValid($targetPath,$input["since"],$input["catBytes"]) );
     $usersToBeUpdated= ! UsersMonitor::isStillValid($targetPath,$input["since"],$pr);
     //$delta=filemtime($targetPath."users.json")-$input["since"];
     
@@ -54,14 +54,14 @@ try {
       $inv=new Inventory();
       $inv->init($targetPath,$pr->g("mediaFolder"));
       if($pr->checkNotEmpty("removeExpiredFromDir")) { $inv->removeExpired(); }
-      $list=$inv->getCatalog();
-      $r["list"]=$list;
+      $r["list"]=$inv->getCatalog();
+      $r["catalogBytes"]=$inv->getCatalogBytes();
       $r["timestamp"]=time();
       $r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes();     
     }
     if($usersToBeUpdated) {
       $um=new UsersMonitor();
-      $r["users"]=$um->markOnlineAndReport($targetPath,$input["user"],(int)$input["pollFactor"],$pr);
+      $r["users"]=$um->markOnlineAndReport($targetPath,$input,$pr);
       $r["timestamp"]=time();
       $r["alert"]="Users updated";//, delta=$delta, statusFade=".$pr->g("userStatusFadeS");
     }
@@ -119,13 +119,15 @@ class UsersMonitor {
     return false;
   }
   
-  function markOnlineAndReport($tp,$user,$pollFactor,PageRegistry $pr) {
+  function markOnlineAndReport($tp,$input,PageRegistry $pr) {
     $this->read($tp);
     $this->removeExpired();
     self::$statusFadeS=$pr->g("userStatusFadeS");
     $valid=self::$statusFadeS;
-    if($pollFactor > self::$statusFadeS*10) $valid=ceil($pollFactor/10);
-    $this->mark($user,"online",$valid);
+    $aPollFactor=0;
+    if(isset($input["pollFactor"]) && $input["pollFactor"]) $aPollFactor=$input["pollFactor"];
+    if($aPollFactor > self::$statusFadeS*10) $valid=ceil($aPollFactor/10);
+    $this->mark($input["user"],"online",$valid);
     file_put_contents($this->myFileFull,json_encode($this->data));
     return $this->presentOnline();
   }

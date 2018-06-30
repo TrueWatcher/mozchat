@@ -11,11 +11,12 @@ class Inventory {
   
   static function getMyFileName() { return self::$myFileName; }
   
-  static function isStillValid($tp, $since) {
+  static function isStillValid($tp, $since, $catBytes) {
     if(is_null($since) || ! $since) return false;
     if( ! file_exists($tp.self::$myFileName)) return false;
-    if(filemtime($tp.self::$myFileName) < $since) return 304;
-    return false;
+    if(filesize($tp.self::$myFileName) != $catBytes) return false;
+    if(filemtime($tp.self::$myFileName) >= $since) return false;
+    return 304;
   }
   
   function init($tp,$mfn) {
@@ -167,6 +168,8 @@ class Inventory {
   function getCatalog() { return $this->data; }
   function getTotalBytes() { return $this->total; }
   
+  function getCatalogBytes() { return filesize($this->targetPath.self::$myFileName); }
+  
   function getLineById($id) {
     if(empty($id)) return false;
     //print_r($this->data);
@@ -210,7 +213,7 @@ class Inventory {
     $mediaFolder=$tp.$mfn;
     if( ! file_exists($mediaFolder)) return true;
     array_map('unlink', glob($mediaFolder."/*.*"));
-  }  
+  } 
 
 }// end Inventory
 

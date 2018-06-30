@@ -4,7 +4,7 @@ mc.pb={};
 
 mc.pb.PlayerBox=function() {
   var viewP={}, timerP={}, ajaxerP={}, /*player={},*/ serialPlayer={}, _this=this;
-  var catalogTime=0, ticks=0, userParams={}, serverParams={}, inventory={}, firstResponse=1;
+  var catalogTime=0, catalogBytes=0, ticks=0, userParams={}, serverParams={}, inventory={}, firstResponse=1, response={}, changesMap={};
   var urlprefix="";
   //var mediaFolder="media";
   
@@ -16,7 +16,7 @@ mc.pb.PlayerBox=function() {
     _this.applyParams();
     inventory=new mc.pb.Inventory();
     
-    ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", getResponseP, {});
+    ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", takeResponseP, {});
     if(serverParams.pollFactor < 3600) setInterval(_this.onTick, 100);
     
     if( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
@@ -26,18 +26,19 @@ mc.pb.PlayerBox=function() {
     viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear);
   };
   
-  function getResponseP(resp) { 
-    var ps,changes,toPlay;
+  function takeResponseP(resp) { 
+    var ps,toPlay;
 
+    if(resp.catalogBytes) catalogBytes=resp.catalogBytes;
     if(resp.timestamp) catalogTime=resp.timestamp;
     if(resp.free) viewP.showFreeSpace(resp.free);
     if(resp.users) viewP.showUsers(resp.users);
     if(resp.list) {
       //console.log(mc.utils.dumpArray(userParams));
-      changes=inventory.consumeNewCatalog(resp.list, userParams);
-      viewP.applyDiff(changes);
-      //console.log(mc.utils.dumpArray(changes));
-      toPlay=changes.toPlay;
+      changesMap=inventory.consumeNewCatalog(resp.list, userParams);
+      viewP.applyDiff(changesMap);
+      //console.log(mc.utils.dumpArray(changesMap));
+      toPlay=changesMap.toPlay;
       if(toPlay && ! firstResponse) {
         ps=serialPlayer.getState();         
         if(ps == "idle") serialPlayer.play({id : toPlay[0], mime: toPlay[3], el:false});
@@ -52,7 +53,11 @@ mc.pb.PlayerBox=function() {
       if(resp.alert) { viewP.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms"); }
       //else viewP.showMessage(resp.alert || mc.utils.dumpArray(resp) || "<empty>");
     }
+    response=resp;
   }
+  
+  this.getResponse=function() { return response; };
+  this.getChangesMap=function() { return changesMap; };
   
   _this.onTick=function() {
     ticks+=1;
@@ -64,9 +69,9 @@ mc.pb.PlayerBox=function() {
   _this.sendDir=function() {
     var qs="";
     qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=dir&since="+catalogTime;
+    qs+="&act=dir&since="+catalogTime+"&catBytes="+catalogBytes;
     qs+="&pollFactor="+userParams.pollFactor;
-    ajaxerP.getRequest(qs, getResponseP);    
+    ajaxerP.getRequest(qs);    
   }
   
   _this.listClicked=function(event) {
@@ -92,7 +97,7 @@ mc.pb.PlayerBox=function() {
   function sendDelete(file) {
     var qs="user="+userParams.user+"&realm="+userParams.realm;
     qs+="&act=delete&id="+encodeURIComponent(file);
-    ajaxerP.getRequest(qs, getResponseP);    
+    ajaxerP.getRequest(qs);    
   }
   
   _this.getNextId=function(id) { return inventory.getNextId(id,userParams); };
