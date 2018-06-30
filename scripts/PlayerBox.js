@@ -300,82 +300,37 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
   if(errorHandler && typeof errorHandler != "function") throw new Error("Invalid ERRORHANDLER");
   var actual=false, next=false, _this=this, stopping=false, state="idle";
   
-  _this.play=function(idOrElement) {
-    var n,id,el,mime;
-    
-    if( ! idOrElement.mime) throw new Error("no MIME");
-    mime=idOrElement.mime.substr(0,5);
-    if( ! idOrElement.el) {
-      id=idOrElement.id;
-      if(mime == "audio") el=new Audio();
-      else if(mime == "video") {
-        el=document.createElement('video');
-      }
-      else throw new Error("Wrong MIME="+mime);
-      if(errorHandler) el.onerror=function() { 
-        viewP.highlightLine(actual.id,"e");
-        errorHandler(el.error.message);
-        return false; 
-      };
-      el.src=urlprefix+id;
-      el.autoplay=true;
-      //el.controls=true;
-      actual={el:el, id:id, mime:mime};
+  _this.play=function(idPlus) {   
+    if( ! idPlus.id) throw new Error("Element without ID");
+    if( ! idPlus.el) {
+      actual=createMediaElement(idPlus,true,errorHandler);
       if(actual.mime == "video") viewP.showClip(actual.el);
+      next=false;
     }
-    else {
-      if( ! idOrElement.id) throw new Error("Element without ID");
-      actual={id:idOrElement.id, el:idOrElement.el, mime:idOrElement.mime};
-    }
-    //if(actual.mime == "video") viewP.showClip(actual.el);
-    //actual.el.play(); // 
-    console.log("playing "+actual.id);
+    console.log("playing from "+actual.id);
     viewP.highlightLine(actual.id,"p");
     this.tryFeed();
-    
-    actual.el.onended=function() {
-      setTimeout(function() {       
-        if(next && ! stopping && next.mime == "video") {
-          if(actual.mime == "video") { viewP.replaceClip(next.el, actual.el); }
-          else { viewP.showClip(next.el); }
-        }
-        else if(actual.mime == "video") { viewP.clearClips(); }
-        // play() after appendChild() is important for Chromium and unimportant for FF
-        if(next && ! stopping) next.el.play();
-        _this.tryStep();
-      }, 0);
-    };
-    
-  }
+  };
   
-  _this.tryEnqueue=function(id) {
-    //console.log(mc.utils.dumpArray(id));
-    var el,mime="";
+  _this.tryEnqueue=function(idPlus) {
     if(next) return false;
-    if( ! id) return false;
-    if(typeof id == "object") {
-      mime=id.mime.substr(0,5);
-      id=id.id;      
-    }
-    else {
-      mime=getType();
-      console.log("this should not happen");
-    }
-    if(mime == "audio") el=new Audio();
-    else if(mime == "video") {
-      el=document.createElement('video');
-    }
-    else throw new Error("Wrong MIME="+mime);
-    el.src=urlprefix+id;
-    //el.controls=true;
-    el.autoplay=false;
-    next={el:el, id:id, mime:mime};
+    if( ! idPlus) return false;
+    next=createMediaElement(idPlus,false,errorHandler);
     console.log("loading "+next.id+" "+next.mime);
     viewP.highlightLine(next.id,"l");
   };
   
-  _this.tryStep=function() {
-    var n,copy;
+  function tryHandover() {
+    // first things first
+    if(next && ! stopping && next.mime == "video") {
+      if(actual.mime == "video") { viewP.replaceClip(next.el, actual.el); }
+      else { viewP.showClip(next.el); }
+    }
+    else if(actual.mime == "video") { viewP.clearClips(); }
+    // play() after appendChild() is important for Chromium and unimportant for FF
+    if(next && ! stopping) next.el.play();
+    console.log("<<"+Date.now());    
+    
     viewP.highlightLine(actual.id,"g");
     if(stopping) {
       actual=false;
@@ -389,15 +344,48 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
     if( ! next) {
       actual=false;
       console.log("queue ended");
-      return "finished";
+      return;
     }
-    copy={id:next.id, el:next.el, mime:next.mime};
+    actual=next;//{id:next.id, el:next.el, mime:next.mime};//
     next=false;
-    _this.play(copy);
+    console.log("playing "+actual.id);
+    viewP.highlightLine(actual.id,"p");
+    _this.tryFeed();
   };
   
+  function createMediaElement(idPlus,autoplay,errorHandler) {
+    var el, id, mime;
+    
+    if( ! idPlus.mime) { throw new Error("Argument must contain id and mime"); }
+    id=idPlus.id;
+    mime=idPlus.mime;
+    if(mime.length > 5) mime=mime.substr(0,5);
+    if(mime.length > 5) mime=mime.substr(0,5);
+    if(mime == "audio") el=new Audio();
+    else if(mime == "video") {
+      el=document.createElement('video');
+    }
+    else throw new Error("Wrong MIME="+mime);
+    if(errorHandler) {
+      el.onerror=function() { 
+        viewP.highlightLine(actual.id,"e");
+        errorHandler(el.error.message);
+        return false; 
+      };
+    }
+    el.onended=function() {
+      console.log(">>"+Date.now());  
+      setTimeout(tryHandover, 0);
+      // simply tryHandover is only a little faster, but more demanding on memory 
+    };
+    el.autoplay=autoplay;
+    //el.controls=true;
+    el.src=urlprefix+id;
+    return { el:el, id:id, mime:mime };
+  }
+  
   _this.tryFeed=function() {
-    this.tryEnqueue(getNextId(actual.id));
+    if( ! next) this.tryEnqueue(getNextId(actual.id));
   };
   
   _this.stopAfter=function() { stopping=true; };
