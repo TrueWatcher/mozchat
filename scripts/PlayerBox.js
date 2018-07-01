@@ -375,8 +375,8 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
     }
     el.onended=function() {
       console.log(">>"+Date.now());  
-      setTimeout(tryHandover, 0);
-      // simply tryHandover is only a little faster, but more demanding on memory 
+      //setTimeout(tryHandover, 0);
+      tryHandover();
     };
     el.autoplay=autoplay;
     //el.controls=true;

@@ -140,6 +140,7 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
     
   this.postRequest=function(what) {
     if ( ! what) throw new Error ("no data");
+    if(busy) throw new Error("Ajaxer "+responderUrl+" is busy");
     timer=Date.now();
     req=new XMLHttpRequest();
     req.open("POST",urlOffset+responderUrl,true); // POST
@@ -151,6 +152,7 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
   };
   
   this.getRequest=function(queryString) {
+    if(busy) throw new Error("Ajaxer "+responderUrl+" is busy");
     timer=Date.now();
     req=new XMLHttpRequest();
     req.open("GET",urlOffset+responderUrl+"?"+queryString); // GET
@@ -161,9 +163,12 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
   };
   
   function receive() {
+    var rdata,rmime;
+    
     if (req.readyState != 4) return;
     if(req.status != 200 && req.status != 204 && req.status != 304) {
       console.log(responderUrl+" ajax returned error "+req.status);
+      req=null;
       return;
     }
     lag=Date.now()-timer;
@@ -172,18 +177,22 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
     if(req.status != 200  && req.status != 304) {
       console.log("ajax returned code "+req.status);
       //onDataReceived(req.status);
+      req=null;
       return;
     }
     if(req.status == 304) {
       //console.log("304 "+lag);
       onDataReceived({ alert : "No changes", lag : lag });
+      req=null;
       return;
     }
-    var rdata=req.responseText;
-    var rmime=req.responseType;
+    rdata=req.responseText;
+    rmime=req.responseType;
+    req=null;
     //alert(rmime);
     if(rmime === "" || rmime == "json" || rmime == "text") rdata=tryJsonParse(rdata);
     onDataReceived(rdata);
+    //setTimeout(function() { onDataReceived(rdata) }, 0);
   }
   
   function tryJsonParse(responseText) {
