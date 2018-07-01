@@ -13,7 +13,7 @@ mc.rb.RecorderBox=function() {
     viewR=new mc.rb.ViewR();
     viewR.applyServerParams(serverParams);
     userParams=viewR.getParams();
-    console.log(mc.utils.dumpArray(userParams));
+    //console.log(mc.utils.dumpArray(userParams));
     
     ajaxerR=new mc.utils.Ajaxer(fromServer.pathBias+"upload.php", takeResponseR, viewR.uploadIndicator);
     
