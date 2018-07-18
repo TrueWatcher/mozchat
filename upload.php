@@ -126,18 +126,23 @@ abstract class MailHelper {
   private static function check($targetPath, PageRegistry $pr) {
     return (! $pr->g("allowStream")) && $pr->g("notifyUsers") && file_exists($targetPath."notify.ini");
   }
+  
+  private static function baseUri($server) {
+    $url = 'http://';
+    if ( (array_key_exists("HTTPS",$server)) && $server['HTTPS'] ) $url = 'https://';
+    $url .= $server['HTTP_HOST'];
+    $dir=dirname($server['PHP_SELF']);
+    //echo(" url=$url, dir=$dir, ");
+    if( ! empty($dir) && $dir !== "/") $url.=$dir;
+    $url.="/";
+    return $uri;
+  }
 
   private static function notifyUsers($input, $targetPath, $n, $uploadedBytes,  PageRegistry $pr) {
     $title="";
     if($input["description"]) $title=" \"".$input["description"]."\" ";
-    $valid=date("M_d_H:i:s",time()+3600*$pr->g("timeShiftHrs")+$pr->g("lifetimeMediaSec"));
-    $url = 'http://';
-    if ( (array_key_exists("HTTPS",$_SERVER)) && $_SERVER['HTTPS'] ) $url = 'https://';
-    $url .= $_SERVER['HTTP_HOST'];
-    $dir=dirname($_SERVER['REQUEST_URI']);
-    //echo(" url=$url, dir=$dir, ");
-    if( ! empty($dir) && $dir !== "/") $url.=$dir;
-    $url.="/";
+    $valid=date("M_d_H:i:s",time()+3600*$pr->g("timeShiftHrs")+$pr->g("clipLifetimeSec"));
+    $uri=self::baseUri($_SERVER);
     $enterLink=$url;
     if($targetPath) $directLink=$url.$targetPath;
     $directLink.=Inventory::checkMediaFolderName($pr->g("mediaFolder"))."/";

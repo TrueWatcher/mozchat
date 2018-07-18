@@ -23,7 +23,7 @@ try {
     "state"=>"operational", "user"=>$input["user"], "realm"=>$input["realm"]
   ];
   $serverParams=$pr->exportByList( [
-    "maxBlobBytes", "maxMediaFolderBytes", "lifetimeMediaSec", "title", "allowVideo", "videoOn", "chunkSize", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder", "pathBias"
+    "maxBlobBytes", "maxMediaFolderBytes", "clipLifetimeSec", "title", "allowVideo", "videoOn", "maxClipSizeSec", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder", "pathBias", "userStatusFadeS"
   ] , $serverParams);
   $serverParams["mediaFolder"]=Inventory::checkMediaFolderName($serverParams["mediaFolder"]);
   $mimeDictionary=MimeDecoder::getDictionary();
@@ -32,6 +32,7 @@ try {
 } 
 catch (NoCredentialsException $nce) {
   $serverParams=["state"=>"zero","alert"=>$nce->getMessage()];
+  if(realmIsOk($pathBias,$input)) { $serverParams["realm"]=$input["realm"]; }
   include("scripts/templates/client.php");
 }
 catch (DataException $de) {
@@ -43,8 +44,12 @@ function checkUserRealm($pathBias,$input) {
   if( ! isset($input["user"]) || ! isset($input["realm"]) ) $r="Missing USER or REALM";
   else if( charsInString($input["user"],"<>&\"':;()") ) $r="Forbidden symbols in username";
   else if( strlen($input["user"]) > 30 ) $r="Too long username";
-  else if( ! file_exists($pathBias.$input["realm"]) || ! is_dir($pathBias.$input["realm"])) $r="Thread folder not found";
+  else if( ! realmIsOk($pathBias,$input)) $r="Thread folder not found";
   if($r !== true) throw new NoCredentialsException($r);
+}
+
+function realmIsOk($pathBias,$input) {
+  return isset($input["realm"]) && file_exists($pathBias.$input["realm"]) && is_dir($pathBias.$input["realm"]);
 }
 
 function charsInString($object,$charsString) {

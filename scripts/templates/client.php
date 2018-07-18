@@ -59,7 +59,7 @@
   <input type="button" id="stopAfterBtn" value="Stop after current" />
   &nbsp;&nbsp;
   <span id="playerControlsDiv">
-    Refresh <input type="radio" name="refreshRad" value="4" />0.4s&nbsp;<input type="radio" name="refreshRad" value="10" checked="checked" />1s&nbsp;<input type="radio" name="refreshRad" value="100" />10s
+    Refresh <input type="radio" name="refreshRad" value="4" />0.4s&nbsp;<input type="radio" name="refreshRad" value="10" />1s&nbsp;<input type="radio" name="refreshRad" value="30" checked="checked" />3s&nbsp;<input type="radio" name="refreshRad" value="100" />10s
     &nbsp;&nbsp;
     Play new clips<input type="checkbox" id="playNewChkb" checked="checked" />,
     only from others<input type="checkbox" id="skipMineChkb" checked="checked" />
@@ -90,6 +90,7 @@
 <script src="scripts/RecorderBox.js"></script>
 <script src="scripts/PlayerBox.js"></script>
 <script>
+"use strict";
 mc.mimeDictionary='<?php print(json_encode($mimeDictionary)); ?>';
 mc.mimeDictionary=JSON.parse(mc.mimeDictionary);
 
@@ -112,7 +113,8 @@ mc.TopManager=function() {
   function initZero() {
     recorderPanel.style.display="none";
     playerPanel.style.display="none";
-    accountTopAlertP.innerHTML="Please introduce yourself and choose your thread";    
+    accountTopAlertP.innerHTML="Please introduce yourself and choose your thread";
+    if(sp.realm) realmInput.value=sp.realm;
   }
   
   function initFull() {

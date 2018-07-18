@@ -102,7 +102,7 @@ class Inventory {
     if( ! $r) throw new DataException("Moving failed");
     $clipBytes=filesize($this->mediaFolder."/".$newName);
     $dt=date("M_d_H:i:s", time()+3600*$pr->g("timeShiftHrs"));
-    $expire=time()+$pr->g("lifetimeMediaSec");
+    $expire=time()+$pr->g("clipLifetimeSec");
     $this->addLine(
       $newName, $input["user"], $dt, $input["mime"], $input["duration"], $clipBytes, $expire, $input["description"]
     );

@@ -89,16 +89,16 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "notifyUsers"=>0,
       "maxBlobBytes"=>50000,
       "maxMediaFolderBytes"=>400000,
-      "lifetimeMediaSec"=>300,
+      "clipLifetimeSec"=>300,
       "allowVideo"=>0,
       "videoOn"=>0,// if allowVideo==0 this will be considered 0
       "allowStream"=>0,
       "onRecorded"=>"stop",// if allowStream==0 this will be considered "stop"
-      "chunkSize"=>2,
-      "pollFactor"=>10,
+      "maxClipSizeSec"=>2,
+      "pollFactor"=>30,
       "playNew"=>1,
       "skipMine"=>1,
-      "userStatusFadeS"=>3,
+      "userStatusFadeS"=>5,
       "removeExpiredFromDir"=>0
     ];
     return $a;
@@ -122,9 +122,9 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "notifyUsers"=>0,
       "maxBlobBytes"=>50000,
       "maxMediaFolderBytes"=>400000,
-      "lifetimeMediaSec"=>300,
+      "clipLifetimeSec"=>300,
       "allowStream"=>0,
-      "userStatusFadeS"=>3,
+      "userStatusFadeS"=>5,
       "removeExpiredFromDir"=>0
     ];
     return $a;
@@ -138,7 +138,6 @@ class PageRegistry extends SingletAssocArrayWrapper {
     $a=[
       "scriptsPath"=>"scripts/",
       "pathBias"=>"",
-      "csvPath"=>"data/csv/",
       "lang"=>"en",
       "timeShiftHrs"=>0
     ];

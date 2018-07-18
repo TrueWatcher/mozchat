@@ -18,7 +18,7 @@ $serverParams=[
   "state"=>"operational", "user"=>$input["user"], "realm"=>$input["realm"]
 ];
 $serverParams=$pr->exportByList( [
-  "maxBlobBytes", "maxMediaFolderBytes", "lifetimeMediaSec", "userStatusFadeS", "title", "allowVideo", "videoOn", "chunkSize", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder", "pathBias"
+  "maxBlobBytes", "maxMediaFolderBytes", "clipLifetimeSec", "title", "allowVideo", "videoOn", "maxClipSizeSec", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder", "pathBias", "userStatusFadeS"
 ] , $serverParams);
 $serverParams["mediaFolder"]=Inventory::checkMediaFolderName($serverParams["mediaFolder"]);
 $mimeDictionary=MimeDecoder::getDictionary();
@@ -278,7 +278,7 @@ var testScript=[
  playerBox.sendDir();',
 '',
 'elapsed=Date.now()/1000-storedTime1; \
- assertTrue(elapsed <= sp.lifetimeMediaSec, "Increase the lifetime", "No new files have expired yet")',
+ assertTrue(elapsed <= sp.clipLifetimeSec, "Increase the lifetime", "No new files have expired yet")',
 'free=parseInt(folderFreeInp.value); \
  assertTrue(free <= blobKb, "Wrong FREE after salvo", "Free space is less than clip size"); \
  var tr=medialistT.firstChild.innerHTML; \
@@ -291,7 +291,7 @@ var testScript=[
 'println("Testing clip expiration");',
 'ci.loop();',
 'elapsed=Date.now()/1000-storedTime1; \
- if(elapsed > (1+parseInt(sp.lifetimeMediaSec)) ) { ci.inc(); };',
+ if(elapsed > (1+parseInt(sp.clipLifetimeSec)) ) { ci.inc(); };',
 'ci.noLoop();', 
 'playerBox.sendDir();',
 '',
@@ -299,7 +299,7 @@ var testScript=[
  assertTrue(freeAfterOneLifetime > free, "Wrong FREE after expiration="+freeAfterOneLifetime, "Some clips have expired");',
 'ci.loop();',
 'elapsed=Date.now()/1000-storedTime2; \
- if(elapsed > sp.lifetimeMediaSec) { ci.inc(); };',
+ if(elapsed > sp.clipLifetimeSec) { ci.inc(); };',
 'ci.noLoop();', 
 'playerBox.sendDir();',
 '',
