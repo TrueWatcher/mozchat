@@ -9,7 +9,6 @@
 /videoChat/media
 /videoChat/media*
 /test0/media
-*/notify.ini
 */catalog.json
 */users.json
 browser.log
