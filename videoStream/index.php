@@ -19,13 +19,11 @@ function absUpperUri($server) {
   $url .= $server['HTTP_HOST'];
   $dir=dirname($server['PHP_SELF']);
   $lastSlash=strrpos($dir,'/');
-  if($lastSlash) {
-    $myFolder=substr($dir,$lastSlash+1);
-    $dir=substr($dir,0,$lastSlash);
-  }
+  $myFolder=substr($dir,$lastSlash+1);
+  $dir=substr($dir,0,$lastSlash);
   if( ! empty($dir) && $dir !== "/") $url.=$dir;
   $url.="/";
-  //echo(" url=$url, dir=$dir, myFolder=$myFolder");
+  //echo(" url=$url, lastSlash=$lastSlash, dir=$dir, myFolder=$myFolder\r\n");
   return [$url,$myFolder];
 }
 
