@@ -1,5 +1,5 @@
 "use strict";
-if( ! mc) mc={};//namespace
+if ( ! mc) mc={};//namespace
 mc.rb={};
 
 mc.rb.RecorderBox=function() {
@@ -30,11 +30,11 @@ mc.rb.RecorderBox=function() {
   
   function checkMime() {
     var rma=mc.utils.checkRecorderMime(mc.mimeDictionary, "audio"), rmv={ outcome : true }, fail="";
-    if(serverParams.allowVideo) rmv=mc.utils.checkRecorderMime(mc.mimeDictionary, "video");
+    if (serverParams.allowVideo) rmv=mc.utils.checkRecorderMime(mc.mimeDictionary, "video");
     console.log(mc.utils.dumpArray(rma.recorderMimes));
-    if(rma.outcome !== true) fail=rma.outcome;
-    else if(rmv.outcome !== true) fail=rmv.outcome;
-    if(fail) {
+    if (rma.outcome !== true) fail=rma.outcome;
+    else if (rmv.outcome !== true) fail=rmv.outcome;
+    if (fail) {
       reportMimeFault(rma.recorderMimes);// requires ajaxerR
       viewR.showMessage(fail);
       console.log(mc.utils.dumpArray(rma))
@@ -44,14 +44,14 @@ mc.rb.RecorderBox=function() {
   }
   
   _this.onTick=function() {
-    if( ! timingOn) return;
+    if ( ! timingOn) return;
     recordingTime+=1;
     viewR.showTiming(recordingTime);
-    if(recordingTime < userParams.chunkSizeS) return;
-    if(userParams.onrecorded == "stop") {
+    if (recordingTime < userParams.chunkSizeS) return;
+    if (userParams.onrecorded == "stop") {
       _this.recorderOff();
     }
-    else if(userParams.onrecorded == "upload") _this.recorderRestart();
+    else if (userParams.onrecorded == "upload") _this.recorderRestart();
   };
   
   _this.recorderInit=function() { 
@@ -88,7 +88,7 @@ mc.rb.RecorderBox=function() {
   
   _this.recorderToggle=function() {
     var s=recorder.getState();
-    if(s) _this.recorderOff();
+    if (s) _this.recorderOff();
     else _this.recorderOn();
     return false;
   };
@@ -103,8 +103,8 @@ mc.rb.RecorderBox=function() {
   };
   
   function onBlobReady(blobPlusData) {    
-    if(userParams.onrecorded == "upload" && serverParams.allowStream && serverParams.allowStream !== "0") uploadBlobAndData(blobPlusData);
-    else if(userParams.onrecorded == "stop") allowLocalDownload(blobPlusData);
+    if (userParams.onrecorded == "upload" && serverParams.allowStream && serverParams.allowStream !== "0") uploadBlobAndData(blobPlusData);
+    else if (userParams.onrecorded == "stop") allowLocalDownload(blobPlusData);
     else throw new Error("Not to get here");
   }
 
@@ -117,7 +117,7 @@ mc.rb.RecorderBox=function() {
 
   function uploadBlobAndData(blobPlusData) {
     var stuff;
-    if( true !== checkBlobSize(blobPlusData) || true !== checkUplinkOverload() ) return;
+    if ( true !== checkBlobSize(blobPlusData) || true !== checkUplinkOverload() ) return;
     stuff=new FormData();
     stuff.append("act","uploadBlob");
     stuff.append("user",userParams.user);
@@ -131,14 +131,14 @@ mc.rb.RecorderBox=function() {
   }
   
   function checkBlobSize(blobPlusData) {
-    if(serverParams.maxBlobBytes && (blobPlusData.size < serverParams.maxBlobBytes)) return true;
+    if (serverParams.maxBlobBytes && (blobPlusData.size < serverParams.maxBlobBytes)) return true;
     var errmsg="Error! You have "+mc.utils.b2kb(blobPlusData.size)+", server allows only "+mc.utils.b2kb(serverParams.maxBlobBytes);
     viewR.showMessage(errmsg);
     return errmsg;
   }
   
   function checkUplinkOverload() {
-    if( ! ajaxerR.isBusy()) return true;
+    if ( ! ajaxerR.isBusy()) return true;
     var errmsg="Error! Uplink is busy. Your network or server is too slow for instant uploads. Try bigger chuncks sent after recording";
     viewR.showMessage(errmsg);
     console.log(errmsg);
@@ -166,22 +166,22 @@ mc.rb.RecorderBox=function() {
 
   function takeResponseR(resp) { 
     //alert(resp);
-    if(resp.error) viewR.showMessage("Error! "+resp.error);
-    else if(resp.alert) viewR.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms");
+    if (resp.error) viewR.showMessage("Error! "+resp.error);
+    else if (resp.alert) viewR.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms");
     else viewR.showMessage(resp.alert || mc.utils.dumpArray(resp) || "<empty>");
   }
 
 }// end RecorderBox
 
 mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {  
-  if(typeof receiveBlob != "function") throw new Error("No receiver callback given");
+  if (typeof receiveBlob != "function") throw new Error("No receiver callback given");
   
   var chunks = [];
   var _this=this;
   var isOn=0;
-  var mime,ext;
+  var mime,ext,params={};
   
-  if(typeof indicate != "function") {
+  if (typeof indicate != "function") {
     console.log("RecorderMR: wrong INDICATE");
     indicate=function(){};
   }
@@ -190,11 +190,14 @@ mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {
   
   this.init=function(userParams) {
     var constraints={ audio: true }, aov=userParams.audioOrVideo, rm;
-    if(aov == "video") constraints.video=true;
-    navigator.mediaDevices.getUserMedia(constraints).then(operate).catch(logError);
+    if (aov == "video") constraints.video=true;
     rm=mc.utils.checkRecorderMime(mc.mimeDictionary, aov);
+    if ( ! rm) throw new Error("Something is wrong with MIME detection");
     mime=rm.chosenMime; 
     ext=rm.chosenExtension;
+    params=rm.chosenParams;
+    params.mimeType=mime;
+    navigator.mediaDevices.getUserMedia(constraints).then(operate).catch(logError);    
   };
   
   function logError(err) { 
@@ -203,15 +206,17 @@ mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {
   }
   
   function operate(stream) {
-    var mediaRecorder = new MediaRecorder(stream);
+    var mediaRecorder;
+    if (params) mediaRecorder=new MediaRecorder(stream,params);
+    else mediaRecorder=new MediaRecorder(stream);
     
     indicate("ready");
     
     _this.onOff=function(a) {
-      if(a === "*") a= ! isOn;
-      else if(a == isOn) return false;
+      if (a === "*") a= ! isOn;
+      else if (a == isOn) return false;
       
-      if(a) {
+      if (a) {
         isOn=1;
         mediaRecorder.start();
         indicate("recording");
@@ -226,17 +231,21 @@ mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {
     };
     
     _this.restart=function() {
+      //mediaRecorder.requestData(); // Tryout
       mediaRecorder.stop();
       mediaRecorder.start();
     };
     
     _this.getState=function() { return isOn };
 
-    mediaRecorder.onstop=function() { receiveBlob(makeBlob()); };
+    mediaRecorder.onstop=function() { 
+      receiveBlob(makeBlob());
+    };
 
     mediaRecorder.ondataavailable = function(e) {
       // encoding chunks without stopping the recorder gives unaudible blobs !
-      chunks.push(e.data);      
+      chunks.push(e.data);
+      //receiveBlob(makeBlob());// Tryout
     }
   }
   
@@ -259,7 +268,7 @@ mc.rb.ViewR=function() {
   var _this=this;
   
   _this.setIndicator=function(s) {
-    switch(s) {
+    switch (s) {
     case "ready":
       recordBtn.innerHTML="Record";
       recordBtn.classList.remove("recording");
@@ -299,25 +308,25 @@ mc.rb.ViewR=function() {
   _this.clearMessage=function(m) { recorderAlertP.innerHTML=""; };
   
   _this.applyServerParams=function(sp) {
-    if(sp.maxBlobBytes) maxSizeInp.value=mc.utils.b2kb(sp.maxBlobBytes);
-    if(sp.lifetimeMediaSec) lifetimeInp.value=mc.utils.s2dhms(sp.lifetimeMediaSec);
-    if(sp.maxMediaFolderBytes) folderSizeInp.value=mc.utils.b2kb(sp.maxMediaFolderBytes);
-    if(sp.allowVideo && sp.allowVideo === "0") sp.allowVideo=0;
-    if(sp.videoOn && sp.videoOn === "0") sp.videoOn=false;
-    if(sp.allowVideo) {
+    if (sp.maxBlobBytes) maxSizeInp.value=mc.utils.b2kb(sp.maxBlobBytes);
+    if (sp.clipLifetimeSec) lifetimeInp.value=mc.utils.s2dhms(sp.clipLifetimeSec);
+    if (sp.maxMediaFolderBytes) folderSizeInp.value=mc.utils.b2kb(sp.maxMediaFolderBytes);
+    if (sp.allowVideo && sp.allowVideo === "0") sp.allowVideo=0;
+    if (sp.videoOn && sp.videoOn === "0") sp.videoOn=false;
+    if (sp.allowVideo) {
       audioOrVideoS.style.display="";
       //alert(sp.videoOn+" "+mc.utils.getRadio("audioOrVideoRad"));
-      if(sp.videoOn) mc.utils.setRadio("audioOrVideoRad","video");
+      if (sp.videoOn) mc.utils.setRadio("audioOrVideoRad","video");
     }
     else { audioOrVideoS.style.display="none"; }
-    if(sp.chunkSize) {
-      chunkInp.value=sp.chunkSize;
+    if (sp.maxClipSizeSec) {
+      chunkInp.value=sp.maxClipSizeSec;
       mc.utils.setRadio("chunkRad","custom");
     }
-    if(sp.allowStream && sp.allowStream === "0") sp.allowStream=0;
-    if(sp.allowStream) {
+    if (sp.allowStream && sp.allowStream === "0") sp.allowStream=0;
+    if (sp.allowStream) {
       onrecordedS.style.display="";
-      if(sp.onRecorded) { mc.utils.setRadio("onrecordedRad",sp.onRecorded); }
+      if (sp.onRecorded) { mc.utils.setRadio("onrecordedRad",sp.onRecorded); }
     }
     else { 
       onrecordedS.style.display="none";
@@ -328,10 +337,10 @@ mc.rb.ViewR=function() {
   
   _this.getParams=function() {
     var chunkSizeS=mc.utils.getRadio("chunkRad");
-    if(chunkSizeS == "custom") {
+    if (chunkSizeS == "custom") {
       var c=chunkSizeS=parseInt(chunkInp.value,10);
       //alert(chunkInp.value+"/"+c);
-      if( ( ! c ) || (c != c) ) {// empty or nan
+      if ( ( ! c ) || (c != c) ) {// empty or nan
         chunkSizeS=1;
         mc.utils.setRadio("chunkRad",1);
       }

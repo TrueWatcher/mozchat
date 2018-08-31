@@ -12,6 +12,7 @@
   <p id="accountTopAlertP"></p>
   <input type="text" id="userInput" placeholder="Your name" name="user" value="Me" />
   <input type="text" id="realmInput" placeholder="Thread" name="realm" />
+  <br />
   <input type="submit" id="exitBtn" value="Register" />
   <a href="?">Exit</a>
   <p id="accountBottomAlertP"></p>
@@ -61,8 +62,8 @@
   <span id="playerControlsDiv">
     Refresh <input type="radio" name="refreshRad" value="4" />0.4s&nbsp;<input type="radio" name="refreshRad" value="10" />1s&nbsp;<input type="radio" name="refreshRad" value="30" checked="checked" />3s&nbsp;<input type="radio" name="refreshRad" value="100" />10s
     &nbsp;&nbsp;
-    Play new clips<input type="checkbox" id="playNewChkb" checked="checked" />,
-    only from others<input type="checkbox" id="skipMineChkb" checked="checked" />
+    <label for="playNewChkb">Play new clips</label><input type="checkbox" id="playNewChkb" checked="checked" />,
+    <label for="skipMineChkb">only from others</label><input type="checkbox" id="skipMineChkb" checked="checked" />
   </span>
   <p>
     Online: <span id="usersS" ></span>

@@ -37,6 +37,7 @@ $mimeDictionary=MimeDecoder::getDictionary();
   <p id="accountTopAlertP"></p>
   <input type="text" id="userInput" placeholder="Your name" name="user" value="TestUser1" />
   <input type="text" id="realmInput" placeholder="Thread" name="realm" value="test0" />
+  <br />
   <input type="submit" id="exitBtn" value="Register" />
   <a href="?">Exit</a>
   <p id="accountBottomAlertP"></p>

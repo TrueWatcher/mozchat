@@ -1,5 +1,5 @@
 "use strict";
-if( ! mc) mc={};//namespace
+if ( ! mc) mc={};//namespace
 mc.pb={};
 
 mc.pb.PlayerBox=function() {
@@ -17,9 +17,9 @@ mc.pb.PlayerBox=function() {
     inventory=new mc.pb.Inventory();
     
     ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", takeResponseP, {});
-    if(serverParams.pollFactor < 3600) setInterval(_this.onTick, 100);
+    if (serverParams.pollFactor < 3600) setInterval(_this.onTick, 100);
     
-    if( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
+    if ( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
     urlprefix=serverParams.pathBias+userParams.realm+"/"+serverParams.mediaFolder+"/";
     serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP, onMediaError);
     
@@ -29,28 +29,28 @@ mc.pb.PlayerBox=function() {
   function takeResponseP(resp) { 
     var ps,toPlay;
 
-    if(resp.catalogBytes) catalogBytes=resp.catalogBytes;
-    if(resp.timestamp) catalogTime=resp.timestamp;
-    if(resp.free) viewP.showFreeSpace(resp.free);
-    if(resp.users) viewP.showUsers(resp.users);
-    if(resp.list) {
+    if (resp.catalogBytes) catalogBytes=resp.catalogBytes;
+    if (resp.timestamp) catalogTime=resp.timestamp;
+    if (resp.free) viewP.showFreeSpace(resp.free);
+    if (resp.users) viewP.showUsers(resp.users);
+    if (resp.list) {
       //console.log(mc.utils.dumpArray(userParams));
       changesMap=inventory.consumeNewCatalog(resp.list, userParams);
       viewP.applyDiff(changesMap);
       //console.log(mc.utils.dumpArray(changesMap));
       toPlay=changesMap.toPlay;
-      if(toPlay && ! firstResponse) {
+      if (toPlay && ! firstResponse) {
         ps=serialPlayer.getState();         
-        if(ps == "idle") serialPlayer.play({id : toPlay[0], mime: toPlay[3], el:false});
-        else if(ps == "playing") serialPlayer.tryFeed();
+        if (ps == "idle") serialPlayer.play({id : toPlay[0], mime: toPlay[3], el:false});
+        else if (ps == "playing") serialPlayer.tryFeed();
       }
       firstResponse=0;// allows playing new items
     } 
     
-    if(resp.error) viewP.showMessage("Error! "+resp.error);
+    if (resp.error) viewP.showMessage("Error! "+resp.error);
     ps=serialPlayer.getState();
-    if(ps != "playing" && ps !="playingNLoading") {
-      if(resp.alert) { viewP.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms"); }
+    if (ps != "playing" && ps !="playingNLoading") {
+      if (resp.alert) { viewP.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms"); }
       //else viewP.showMessage(resp.alert || mc.utils.dumpArray(resp) || "<empty>");
     }
     response=resp;
@@ -61,7 +61,7 @@ mc.pb.PlayerBox=function() {
   
   _this.onTick=function() {
     ticks+=1;
-    if(ticks < userParams.pollFactor) return;
+    if (ticks < userParams.pollFactor) return;
     ticks=0;
     _this.sendDir();
   };
@@ -77,13 +77,13 @@ mc.pb.PlayerBox=function() {
   _this.listClicked=function(event) {
     //alert("click");
     var c=viewP.locateClick(event);
-    if( ! c || ! c.command) return false;
+    if ( ! c || ! c.command) return false;
     //alert(c.id+" "+c.command);
-    if(c.command == "play") mc.utils.play(urlprefix+c.id, _this.isVideo(c.id),"playerRoom",onMediaError);
-    else if(c.command == "playDown") serialPlayer.play({
+    if (c.command == "play") mc.utils.play(urlprefix+c.id, _this.isVideo(c.id),"playerRoom",onMediaError);
+    else if (c.command == "playDown") serialPlayer.play({
       id : c.id, mime : _this.isVideo(c.id), el : false}
     );
-    else if(c.command == "delete") sendDelete(c.id);
+    else if (c.command == "delete") sendDelete(c.id);
     return false;    
   };
   
@@ -122,15 +122,15 @@ mc.pb.Inventory=function() {
     var i=0, l=catalog.length, idd, j=1;
     for(;i<l;i+=1) {
       idd=catalog[i][0];
-      if(id == idd) {
-        if( ! userParams.skipMine) {
-          if(i+1 < l) return {
+      if (id == idd) {
+        if ( ! userParams.skipMine) {
+          if (i+1 < l) return {
             id : catalog[i+j][0], mime : catalog[i+j][3]
           };;
           return false
         }
         while(i+j < l) {
-          if(catalog[i+j][1] != userParams.user ) return {
+          if (catalog[i+j][1] != userParams.user ) return {
             id : catalog[i+j][0], mime : catalog[i+j][3]
           };
           j+=1;
@@ -144,8 +144,8 @@ mc.pb.Inventory=function() {
     userParams=aUserParams;
     var diff=diffCatalogsById(newCat);
     catalog=newCat;
-    if( ! userParams.playNew || ! diff.added.length) diff.toPlay=false;
-    else if( ! userParams.skipMine) diff.toPlay=diff.added[0];
+    if ( ! userParams.playNew || ! diff.added.length) diff.toPlay=false;
+    else if ( ! userParams.skipMine) diff.toPlay=diff.added[0];
     else diff.toPlay=findFirstNotMine(diff.added);
     return diff;
   }
@@ -153,7 +153,7 @@ mc.pb.Inventory=function() {
   function removeMyClips(clipList) {
     var r=[], i=0, l=clipList.length;
     for(; i<l; i+=1) {
-      if(clipList[i][1] != userParams.user) r.push(clipList[i]);
+      if (clipList[i][1] != userParams.user) r.push(clipList[i]);
     }
     return r;
   }
@@ -161,7 +161,7 @@ mc.pb.Inventory=function() {
   function findFirstNotMine(clipList) {
     var i=0, l=clipList.length;
     for(; i<l; i+=1) {
-      if(clipList[i][1] != userParams.user) return clipList[i];
+      if (clipList[i][1] != userParams.user) return clipList[i];
     }
     return false;
   }
@@ -170,11 +170,11 @@ mc.pb.Inventory=function() {
     var removed=[],added=[],lOld=catalog.length,lNew=newCat.length,i=0,j=0,r={},id;
     for(i=0; i < lNew; i+=1) {
       id=newCat[i][0];
-      if( ! _this.findId(catalog,lOld,id) ) added.push(newCat[i]);
+      if ( ! _this.findId(catalog,lOld,id) ) added.push(newCat[i]);
     }
     for(i=0; i < lOld; i+=1) {
       id=catalog[i][0];
-      if( ! _this.findId(newCat,lNew,id) ) removed.push(catalog[i]);
+      if ( ! _this.findId(newCat,lNew,id) ) removed.push(catalog[i]);
     }
     r={removed:removed, added:added};
     return r;
@@ -182,14 +182,14 @@ mc.pb.Inventory=function() {
   
   _this.findId=function(clipList,l,id) {
     var j=0;
-    for(; j<l; j++) { if(clipList[j][0]  == id ) return clipList[j]; }
+    for(; j<l; j++) { if (clipList[j][0]  == id ) return clipList[j]; }
     return false;
   };
   
   _this.isVideo=function(id) { 
     var mime =_this.findId(catalog, catalog.length, id)[3];
-    if(mime.indexOf("video") === 0) return "video";
-    else if(mime.indexOf("audio") === 0) return "audio";
+    if (mime.indexOf("video") === 0) return "video";
+    else if (mime.indexOf("audio") === 0) return "audio";
     throw new Error("Unknown mime type="+mime);
   };
   
@@ -201,9 +201,9 @@ mc.pb.ViewP=function() {
   var playerRoom=document.getElementById("playerRoom");
   
   this.applyServerParams=function(sp) {
-    if(sp.pollFactor) { mc.utils.setRadio("refreshRad",sp.pollFactor); }
-    if(sp.hasOwnProperty("playNew")) { mc.utils.setCheckbox("playNewChkb",sp.playNew); }
-    if(sp.hasOwnProperty("skipMine")) { mc.utils.setCheckbox("skipMineChkb",sp.skipMine); }
+    if (sp.pollFactor) { mc.utils.setRadio("refreshRad",sp.pollFactor); }
+    if (sp.hasOwnProperty("playNew")) { mc.utils.setCheckbox("playNewChkb",sp.playNew); }
+    if (sp.hasOwnProperty("skipMine")) { mc.utils.setCheckbox("skipMineChkb",sp.skipMine); }
   };
   
   this.getParams=function() {
@@ -237,13 +237,15 @@ mc.pb.ViewP=function() {
   
   // @return HTMLElement tr
   function renderLine(l) {
-    if( ! l instanceof Array) throw new Error("Wrong argument type "+(typeof l));
-    var r="", i=0, ll=l.length, del="<td></td>", descr="";
+    if ( ! l instanceof Array) throw new Error("Wrong argument type "+(typeof l));
+    var r="", i=0, ll=l.length, del="<td></td>", descr="",aov="",aovPlusTitle="";
     var tr=document.createElement("TR");
-    if(l[1] == user) del='<td class="delete">'+"delete"+"</td>";
-    if(l[7]) descr="<br />"+l[7];
+    if (l[1] == user) del='<td class="delete">'+"delete"+"</td>";
+    if (l[7]) descr="<br />"+l[7];
     r+="<td>"+l[1]+" "+l[2]+descr+"</td>";
-    r+="<td>"+l[3]+"</td>";
+    aov=l[3].substr(0,5);
+    aovPlusTitle='<b title="'+l[3]+'">'+aov+'</b>';
+    r+="<td>"+aovPlusTitle+"</td>";//l[3]
     r+="<td>"+l[4]+"s</td>";
     r+="<td>"+mc.utils.b2kb(l[5])+'</td>';
     r+=del;
@@ -260,8 +262,8 @@ mc.pb.ViewP=function() {
     var tdClass="",trId="";
 
     while(target.nodeName != 'TABLE') {
-      if(target.nodeName == 'TD' && target.className) { tdClass=target.className; }
-      else if(target.nodeName == 'TR') { 
+      if (target.nodeName == 'TD' && target.className) { tdClass=target.className; }
+      else if (target.nodeName == 'TR') { 
         trId=target.id; 
         return {id:trId, command:tdClass};
       } 
@@ -272,7 +274,7 @@ mc.pb.ViewP=function() {
   
   this.highlightLine=function(id,mode) {
     var l=document.getElementById(id);
-    if( ! l) return;
+    if ( ! l) return;
     l.className=mode;
   };
   
@@ -288,7 +290,10 @@ mc.pb.ViewP=function() {
   
   this.setHandlers=function(listClicked, applyParams, stopAfter, clear) {    
     medialistT.onclick=listClicked;
-    playerControlsDiv.onclick=applyParams;
+    playerControlsDiv.onclick=function() { 
+      document.activeElement.blur();
+      applyParams();
+    }  
     stopAfterBtn.onclick=stopAfter;
     clearBtn.onclick=clear;
     // onkeydown 27 = clear SEE top controller
@@ -296,15 +301,15 @@ mc.pb.ViewP=function() {
 }
 
 mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) {
-  if(typeof getNextId != "function") throw new Error("Non-function argument");
-  if(errorHandler && typeof errorHandler != "function") throw new Error("Invalid ERRORHANDLER");
+  if (typeof getNextId != "function") throw new Error("Non-function argument");
+  if (errorHandler && typeof errorHandler != "function") throw new Error("Invalid ERRORHANDLER");
   var actual=false, next=false, _this=this, stopping=false, state="idle";
   
   _this.play=function(idPlus) {   
-    if( ! idPlus.id) throw new Error("Element without ID");
-    if( ! idPlus.el) {
+    if ( ! idPlus.id) throw new Error("Element without ID");
+    if ( ! idPlus.el) {
       actual=createMediaElement(idPlus,true,errorHandler);
-      if(actual.mime == "video") viewP.showClip(actual.el);
+      if (actual.mime == "video") viewP.showClip(actual.el);
       next=false;
     }
     console.log("playing from "+actual.id);
@@ -313,8 +318,8 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
   };
   
   _this.tryEnqueue=function(idPlus) {
-    if(next) return false;
-    if( ! idPlus) return false;
+    if (next) return false;
+    if ( ! idPlus) return false;
     next=createMediaElement(idPlus,false,errorHandler);
     //console.log("loading "+next.id+" "+next.mime);
     viewP.highlightLine(next.id,"l");
@@ -322,29 +327,29 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
   
   function runNext() {
     // first things first
-    if(next && ! stopping && next.mime == "video") {
-      if(actual.mime == "video") { viewP.replaceClip(next.el, actual.el); }
+    if (next && ! stopping && next.mime == "video") {
+      if (actual.mime == "video") { viewP.replaceClip(next.el, actual.el); }
       else { viewP.showClip(next.el); }
     }
-    else if(actual.mime == "video") { viewP.clearClips(); }
+    else if (actual.mime == "video") { viewP.clearClips(); }
     // play() after appendChild() is important for Chromium and unimportant for FF
-    if(next && ! stopping) next.el.play();    
+    if (next && ! stopping) next.el.play();    
   }
   
   function tryHandover() {
     //console.log("<<"+Date.now());    
     
     viewP.highlightLine(actual.id,"g");
-    if(stopping) {
+    if (stopping) {
       actual=false;
-      if(next) viewP.highlightLine(next.id,"n");
+      if (next) viewP.highlightLine(next.id,"n");
       next=false;
       stopping=false;
       console.log("player stopped by user");
       return;
     }
-    if( ! next) { _this.tryFeed(); }
-    if( ! next) {
+    if ( ! next) { _this.tryFeed(); }
+    if ( ! next) {
       actual=false;
       console.log("queue ended");
       return;
@@ -359,16 +364,16 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
   function createMediaElement(idPlus,autoplay,errorHandler) {
     var el, id, mime;
     
-    if( ! idPlus.mime) { throw new Error("Argument must contain id and mime"); }
+    if ( ! idPlus.mime) { throw new Error("Argument must contain id and mime"); }
     id=idPlus.id;
     mime=idPlus.mime;
-    if(mime.length > 5) mime=mime.substr(0,5);
-    if(mime == "audio") el=new Audio();
-    else if(mime == "video") {
+    if (mime.length > 5) mime=mime.substr(0,5);
+    if (mime == "audio") el=new Audio();
+    else if (mime == "video") {
       el=document.createElement('video');
     }
     else throw new Error("Wrong MIME="+mime);
-    if(errorHandler) {
+    if (errorHandler) {
       el.onerror=function() { 
         viewP.highlightLine(actual.id,"e");
         errorHandler(el.error.message);
@@ -388,26 +393,26 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
   }
   
   _this.tryFeed=function() {
-    if( ! next) this.tryEnqueue(getNextId(actual.id));
+    if ( ! next) this.tryEnqueue(getNextId(actual.id));
   };
   
   _this.stopAfter=function() { stopping=true; };
   
   _this.stop=function() {
-    if(actual.el && ! actual.el.paused) actual.el.pause();
-    if(actual.id) viewP.highlightLine(actual.id,"n");
-    if(next.id) viewP.highlightLine(next.id,"n");
+    if (actual.el && ! actual.el.paused) actual.el.pause();
+    if (actual.id) viewP.highlightLine(actual.id,"n");
+    if (next.id) viewP.highlightLine(next.id,"n");
     actual=false;
     next=false;
     viewP.clearClips();
   };
   
   this.getState=function() {
-    if(stopping) return "stopping";
-    if( ! actual && ! next) return "idle";
-    if( ! actual && next) throw new Error("NEXT set without ACTUAL");
-    if( actual && ! next) return "playing";
-    if( actual && next) return "playingNLoading";    
+    if (stopping) return "stopping";
+    if ( ! actual && ! next) return "idle";
+    if ( ! actual && next) throw new Error("NEXT set without ACTUAL");
+    if ( actual && ! next) return "playing";
+    if ( actual && next) return "playingNLoading";    
   };
 
 }// end SerialPlayer

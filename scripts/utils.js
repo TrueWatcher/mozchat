@@ -31,17 +31,19 @@ mc.utils.checkRecorderMime=function(te, audioOrVideo) {
     ]
   };
   var recorderMimes = { audio:[], video:[] }, t;
-  var tex,ext,chosenMime=false,chosenExtension=false;
+  var mime,tex,ext,chosenMime=false,chosenExtension=false,chosenParams={};
   var outcome="?";
   
   for(t in mimes.audio) { if (MediaRecorder.isTypeSupported(mimes.audio[t])) recorderMimes.audio.push(mimes.audio[t]); }
   for(t in mimes.video) { if (MediaRecorder.isTypeSupported(mimes.video[t])) recorderMimes.video.push(mimes.video[t]); }
   tex=new mc.utils.TypesExtensions(te, audioOrVideo);
   for(t in recorderMimes[audioOrVideo]) { 
-    ext=tex.mime2ext(recorderMimes[audioOrVideo][t]);
+    mime=recorderMimes[audioOrVideo][t]
+    ext=tex.mime2ext(mime);
     if(ext) {
-      chosenMime=recorderMimes[audioOrVideo][t];
+      chosenMime=mime;
       chosenExtension=ext;
+      chosenParams=tex.mime2params(chosenMime);
       break;
     }      
   }
@@ -54,42 +56,46 @@ mc.utils.checkRecorderMime=function(te, audioOrVideo) {
     recorderMimes:recorderMimes,
     chosenMime:chosenMime,
     chosenExtension:chosenExtension,
+    chosenParams:chosenParams,
     outcome:outcome
   };
 };
 
 mc.utils.TypesExtensions=function(te,audioOrVideo) {
-  /*var te={
-    audio : {
-      "oga":"audio/ogg\;codecs=opus", "webm": "audio/webm\;codecs=opus", "wav":"audio/wav"
-    },
-    video : {
-      "webm":"video/webm;codecs=vp8"
-    }
-  };*/
   if( ! te.audio || ! te.video) throw new Error("Wrong dictionary");
   
   this.ext2mime=function(ext) {
     var mime;
     //return false;// DEBUG mime fault logging
-    for(mime in te[audioOrVideo]) {
-      if( te[audioOrVideo].hasOwnProperty(mime) && te[audioOrVideo][mime] === ext ) return mime;
+    for (mime in te[audioOrVideo]) {
+      if ( te[audioOrVideo].hasOwnProperty(mime) && te[audioOrVideo][mime][0] === ext ) return mime;
     }
     return false;
   };
   
   this.mime2ext=function(mime) {
-    if( te[audioOrVideo].hasOwnProperty(mime) ) return te[audioOrVideo][mime];
+    if ( te[audioOrVideo].hasOwnProperty(mime) ) return te[audioOrVideo][mime][0];
+    return false;
+  };
+  
+  this.mime2params=function(mime) {
+    var str="";
+    if ( te[audioOrVideo].hasOwnProperty(mime) ) {
+      str=te[audioOrVideo][mime][1];
+      //alert("Params:"+JSON.stringify(str));
+      if (str) return str;
+      else return {};
+    }  
     return false;
   };
 };
 
 mc.utils.dumpArray=function(x) {
   var res="",i,expanded;
-  if(typeof x == "object") {
+  if (typeof x == "object") {
     res+="{ ";
-    for(i in x) {
-      if(x.hasOwnProperty(i)) {
+    for (i in x) {
+      if (x.hasOwnProperty(i)) {
         res+=" "+i+":"+mc.utils.dumpArray(x[i]);
       }  
     }
