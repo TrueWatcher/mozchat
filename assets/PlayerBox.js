@@ -201,7 +201,7 @@ mc.pb.ViewP=function() {
   var playerRoom=document.getElementById("playerRoom");
   
   this.applyServerParams=function(sp) {
-    if (sp.pollFactor) { mc.utils.setRadio("refreshRad",sp.pollFactor); }
+    if (sp.pollFactor) { mc.utils.setSelect("refreshSelect",sp.pollFactor); }
     if (sp.hasOwnProperty("playNew")) { mc.utils.setCheckbox("playNewChkb",sp.playNew); }
     if (sp.hasOwnProperty("skipMine")) { mc.utils.setCheckbox("skipMineChkb",sp.skipMine); }
   };
@@ -211,7 +211,7 @@ mc.pb.ViewP=function() {
     return {
       user : userInput.value,
       realm : realmInput.value,
-      pollFactor : mc.utils.getRadio("refreshRad"),
+      pollFactor : mc.utils.getSelect("refreshSelect"),
       playNew : playNewChkb.checked,
       skipMine : skipMineChkb.checked
     };
@@ -286,18 +286,20 @@ mc.pb.ViewP=function() {
   
   _this.showClip=function(a) { playerRoom.appendChild(a); };
   _this.clearClips=function() { playerRoom.innerHTML=""; };
-  _this.replaceClip=function(newc,oldc) { playerRoom.replaceChild(newc,oldc); };// replaceChild(new, old)
+  _this.replaceClip=function(newc,oldc) { playerRoom.replaceChild(newc,oldc); };
   
   this.setHandlers=function(listClicked, applyParams, stopAfter, clear) {    
     medialistT.onclick=listClicked;
-    playerControlsDiv.onclick=function() { 
-      document.activeElement.blur();
-      applyParams();
-    }  
+    refreshSelect.onchange=applyParams;
+    playNewChkb.onchange=applyParams;
+    skipMineChkb.onchange=applyParams;
+    // applyParams > setSelect > activeElement.blur, so no explicit blur calls
     stopAfterBtn.onclick=stopAfter;
     clearBtn.onclick=clear;
     // onkeydown 27 = clear SEE top controller
   };
+  
+  function blurActive() { document.activeElement.blur(); }
 }
 
 mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) {

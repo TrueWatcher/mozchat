@@ -308,9 +308,9 @@ mc.rb.ViewR=function() {
   _this.clearMessage=function(m) { recorderAlertP.innerHTML=""; };
   
   _this.applyServerParams=function(sp) {
-    if (sp.maxBlobBytes) maxSizeInp.value=mc.utils.b2kb(sp.maxBlobBytes);
-    if (sp.clipLifetimeSec) lifetimeInp.value=mc.utils.s2dhms(sp.clipLifetimeSec);
-    if (sp.maxMediaFolderBytes) folderSizeInp.value=mc.utils.b2kb(sp.maxMediaFolderBytes);
+    if (sp.maxBlobBytes) maxSizeS.innerHTML=mc.utils.b2kb(sp.maxBlobBytes);
+    if (sp.clipLifetimeSec) lifetimeS.innerHTML=mc.utils.s2dhms(sp.clipLifetimeSec);
+    if (sp.maxMediaFolderBytes) folderSizeS.innerHTML=mc.utils.b2kb(sp.maxMediaFolderBytes);
     if (sp.allowVideo && sp.allowVideo === "0") sp.allowVideo=0;
     if (sp.videoOn && sp.videoOn === "0") sp.videoOn=false;
     if (sp.allowVideo) {
@@ -321,7 +321,8 @@ mc.rb.ViewR=function() {
     else { audioOrVideoS.style.display="none"; }
     if (sp.maxClipSizeSec) {
       chunkInp.value=sp.maxClipSizeSec;
-      mc.utils.setRadio("chunkRad","custom");
+      //mc.utils.setRadio("chunkRad","custom");
+      mc.utils.setSelect("chunkSelect","custom");
     }
     if (sp.allowStream && sp.allowStream === "0") sp.allowStream=0;
     if (sp.allowStream) {
@@ -336,15 +337,16 @@ mc.rb.ViewR=function() {
   };
   
   _this.getParams=function() {
-    var chunkSizeS=mc.utils.getRadio("chunkRad");
+    var chunkSizeS=mc.utils.getSelect("chunkSelect");//mc.utils.getRadio("chunkRad");
     if (chunkSizeS == "custom") {
       var c=chunkSizeS=parseInt(chunkInp.value,10);
       //alert(chunkInp.value+"/"+c);
       if ( ( ! c ) || (c != c) ) {// empty or nan
         chunkSizeS=1;
-        mc.utils.setRadio("chunkRad",1);
+        mc.utils.setSelect("chunkSelect",1);
       }
     }
+    else { chunkInp.value=""; }
     
     return {
       user : userInput.value,
@@ -364,5 +366,12 @@ mc.rb.ViewR=function() {
     uploadStoredBtn.onclick=uploadStoredBlob;
     // keyboard events are managed at the higher level by KeyboardMonitor
   };
+  
+  function blurSelect() {
+    chunkSelect.onchange=function() { 
+      document.activeElement.blur();// otherwise it will catch onkeypressed 
+    };    
+  }
+  blurSelect();
 
 }// end ViewR

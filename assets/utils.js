@@ -234,6 +234,18 @@ mc.utils.setRadio=function(name,value) {
   }
 };
 
+mc.utils.getSelect=function(id) {
+  var el=document.getElementById(id);
+  var v=el.options[el.selectedIndex].value;
+  return v;  
+};
+
+mc.utils.setSelect=function(id,value) {
+  var el=document.getElementById(id);
+  el.value=value;
+  document.activeElement.blur();// otherwise it will catch onkeypressed
+};
+
 mc.utils.setCheckbox=function(id,value) {
   var el=document.getElementById(id);
   if(value === "0" || value === 0 || value === false) el.checked="";
