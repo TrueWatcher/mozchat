@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>Multimedia chat</title>
-  <link rel="stylesheet" type="text/css" href="assets/<?php print(version($cssLink)); ?>" media="all" />
+  <link rel="stylesheet" type="text/css" href="<?php print($pathBias."assets/".version($cssLink,$pathBias)); ?>" media="all" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.5" />
 </head>
 <body>
@@ -83,6 +83,7 @@
     <option value="10" selected="selected" >1s</option>
     <option value="30" >3s</option>
     <option value="100">10s</option>
+    <option value="10000">off</option>
   </select>
   &nbsp;
   <label for="playNewChkb">Play new clips</label><input type="checkbox" id="playNewChkb" checked="checked" />,
@@ -92,9 +93,9 @@
 <script>
   var mc={};// namespace root
 </script>
-<script src="assets/<?php print(version("utils.js")); ?>"></script>
-<script src="assets/<?php print(version("RecorderBox.js")); ?>"></script>
-<script src="assets/<?php print(version("PlayerBox.js")); ?>"></script>
+<script src="<?php print($pathBias."assets/".version("utils.js",$pathBias)); ?>"></script>
+<script src="<?php print($pathBias."assets/".version("RecorderBox.js",$pathBias)); ?>"></script>
+<script src="<?php print($pathBias."assets/".version("PlayerBox.js",$pathBias)); ?>"></script>
 <script>
 "use strict";
 mc.mimeDictionary='<?php print(json_encode($mimeDictionary)); ?>';
@@ -104,7 +105,7 @@ mc.serverParams='<?php print(json_encode($serverParams)); ?>';
 mc.serverParams=JSON.parse(mc.serverParams);
 
 mc.TopManager=function() {
-  var sp=mc.serverParams;
+  var recorderBox={}, playerBox={}, kbm={}, sp=mc.serverParams;
   
   this.go=function() {
     if(sp.title) document.title=sp.title;
@@ -139,13 +140,13 @@ mc.TopManager=function() {
       throw new Error(found.outcome);
     }
 
-    var recorderBox=new mc.rb.RecorderBox();
+    recorderBox=new mc.rb.RecorderBox();
     recorderBox.init(mc.serverParams);
 
-    var playerBox=new mc.pb.PlayerBox();
+    playerBox=new mc.pb.PlayerBox();
     playerBox.init(mc.serverParams);
     
-    var kbm=new mc.utils.KeyboardMonitor(recorderBox.recorderOn, recorderBox.recorderOff, playerBox.clear);    
+    kbm=new mc.utils.KeyboardMonitor(recorderBox.recorderOn, recorderBox.recorderOff, playerBox.clear);    
   }
     
   function adjustLayout(screenParams) {
@@ -161,6 +162,9 @@ mc.TopManager=function() {
     var videoHeight=Math.floor(screenParams.height-15);
     mc.utils.addCss("video { max-height:"+videoHeight+"px; }");
   }
+  
+  this.getRB=function() { return recorderBox; };
+  this.getPB=function() { return playerBox; };
 };
 
 mc.tm=new mc.TopManager();
@@ -168,5 +172,7 @@ mc.tm.go();
 
 </script>
 
+<?php if ( ! isset($disableTail)) { ?>
 </body>
 </html>
+<?php }?>

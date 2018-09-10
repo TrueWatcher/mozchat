@@ -242,12 +242,14 @@ mc.utils.getSelect=function(id) {
 
 mc.utils.setSelect=function(id,value) {
   var el=document.getElementById(id);
+  if ( ! el) throw new Error("Wrong id="+id);
   el.value=value;
   document.activeElement.blur();// otherwise it will catch onkeypressed
 };
 
 mc.utils.setCheckbox=function(id,value) {
   var el=document.getElementById(id);
+  if ( ! el) throw new Error("Wrong id="+id);
   if(value === "0" || value === 0 || value === false) el.checked="";
   else el.checked="checked";
   document.activeElement.blur();

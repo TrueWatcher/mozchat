@@ -30,10 +30,12 @@ abstract class AssetsVersionMonitor {
   }
 
   protected static function getVersionNumber($pathBias) {
+    //echo("reading ".$pathBias.self::$myFolder.self::$myFile);
     $buf=file_get_contents($pathBias.self::$myFolder.self::$myFile);
     $buf=trim($buf);
     $buf=str_replace(".",self::$sep,$buf);
     if (count(explode(self::$sep,$buf)) !== 3) return false;
+    //echo("version $buf\n");
     return $buf;
   }
   
