@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>Audio chat</title>
-  <link rel="stylesheet" type="text/css" href="assets/<?php print($cssLink); ?>" media="all" />
+  <title>Multimedia chat</title>
+  <link rel="stylesheet" type="text/css" href="assets/<?php print(version($cssLink)); ?>" media="all" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
 </head>
 <body>
 
@@ -20,7 +21,7 @@
 </form>
 
 <fieldset id="recorderPanel">
-  Server limits: clip size <span id="maxSizeS"></span>, lifetime <span id="lifetimeS"></span>, folder size <span id="folderSizeS"></span>
+  Server limits: clip <span id="maxSizeS"></span>, lifetime <span id="lifetimeS"></span>, folder <span id="folderSizeS"></span>
   <br />
   <span id="audioOrVideoS">
     <label for="audioOrVideoRad1">audio</label><input type="radio" id="audioOrVideoRad1" name="audioOrVideoRad" value="audio" checked="checked" />
@@ -91,9 +92,9 @@
 <script>
   var mc={};// namespace root
 </script>
-<script src="assets/utils.js"></script>
-<script src="assets/RecorderBox.js"></script>
-<script src="assets/PlayerBox.js"></script>
+<script src="assets/<?php print(version("utils.js")); ?>"></script>
+<script src="assets/<?php print(version("RecorderBox.js")); ?>"></script>
+<script src="assets/<?php print(version("PlayerBox.js")); ?>"></script>
 <script>
 "use strict";
 mc.mimeDictionary='<?php print(json_encode($mimeDictionary)); ?>';
@@ -123,7 +124,8 @@ mc.TopManager=function() {
   }
   
   function initFull() {
-    adjustPanels();
+    mc.screenParams=mc.utils.getScreenParams();
+    adjustLayout(mc.screenParams);
     
     userInput.value=sp.user;
     realmInput.value=sp.realm;
@@ -145,28 +147,20 @@ mc.TopManager=function() {
     
     var kbm=new mc.utils.KeyboardMonitor(recorderBox.recorderOn, recorderBox.recorderOff, playerBox.clear);    
   }
-  
-  function adjustPanels() {
-    var portrait=0;
-    var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-    var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-    if (portrait || height > width) {
+    
+  function adjustLayout(screenParams) {
+    var isPortrait=0;
+    isPortrait=isPortrait || screenParams.isPortrait;
+    if (isPortrait) {
       //console.log("portrait screen");
-      blockMobileZoom();
       playerRoom.style="display: table-cell; padding:5px";
     }
     else {
       playerRoom.style="position: fixed; bottom:5px; right:5px";
     }
+    var videoHeight=Math.floor(screenParams.height-15);
+    mc.utils.addCss("video { max-height:"+videoHeight+"px; }");
   }
-  
-  function blockMobileZoom() {
-    var meta=document.createElement("meta");
-    meta.name="viewport";
-    meta.content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0";
-    document.head.appendChild(meta);
-  }
-
 };
 
 mc.tm=new mc.TopManager();

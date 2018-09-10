@@ -7,6 +7,7 @@ require_once("scripts/AssocArrayWrapper.php");
 require_once("scripts/MyExceptions.php");
 require_once("scripts/registries.php");
 require_once("scripts/Inventory.php");
+require_once("scripts/AssetsVersionMonitor.php");
 $input=$_REQUEST;
 $mimeDictionary=[];
 $cssLink="blue.css";
@@ -56,6 +57,11 @@ function charsInString($object,$charsString) {
   if ( empty($object) ) return false;
   if (strtok($object,$charsString) !== $object) return true;
   return false;
+}
+
+function version($fn) {
+  if ( ! class_exists("AssetsVersionMonitor")) return $fn;
+  else return AssetsVersionMonitor::addVersion($fn);
 }
 
 ?>

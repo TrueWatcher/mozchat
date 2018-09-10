@@ -253,6 +253,27 @@ mc.utils.setCheckbox=function(id,value) {
   document.activeElement.blur();
 };
 
+mc.utils.blockMobileZoom=function() {
+  var meta=document.createElement("meta");
+  meta.name="viewport";
+  meta.content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0";
+  document.head.appendChild(meta);
+};
+
+mc.utils.getScreenParams=function() {
+  var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+  var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+  var isPortrait=(width < height);
+  return { isPortrait:isPortrait, width:width, height:height };
+}
+
+mc.utils.addCss=function(str) {
+  var css = document.createElement("style");
+  css.type = "text/css";
+  css.innerHTML = str;
+  document.body.appendChild(css);
+};
+
 mc.utils.play=function(url,audioOrVideo,playerRoom,errorHandler) {    
   var a, plr;
   if( playerRoom instanceof HTMLElement) plr=playerRoom=document.getElementById(playerRoom);
