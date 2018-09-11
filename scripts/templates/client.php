@@ -84,7 +84,7 @@
     <option value="10" selected="selected" >1s</option>
     <option value="30" >3s</option>
     <option value="100">10s</option>
-    <option value="10000">off</option>
+    <option value="off">off</option>
   </select>
   &nbsp;
   <label for="playNewChkb">Play new clips</label><input type="checkbox" id="playNewChkb" checked="checked" />,

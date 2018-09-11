@@ -1,5 +1,5 @@
 "use strict";
-if( ! mc) mc={};
+if ( ! mc) mc={};
 mc.utils={};
 
 mc.utils.checkBrowser=function() {
@@ -8,8 +8,8 @@ mc.utils.checkBrowser=function() {
   var plainGetUserMedia= !! navigator.getUserMedia;
   var outcome="?";
   
-  if( ! mediaDevices) outcome="No navigator.mediaDevices";
-  else if( ! mediaRecorder) outcome="No MediaRecorder";
+  if ( ! mediaDevices) outcome="No navigator.mediaDevices";
+  else if ( ! mediaRecorder) outcome="No MediaRecorder";
   else outcome=true;
   
   return {
@@ -21,7 +21,7 @@ mc.utils.checkBrowser=function() {
 };
 
 mc.utils.checkRecorderMime=function(te, audioOrVideo) {
-  if(audioOrVideo != "audio" && audioOrVideo != "video") throw new Error("Wrong argument="+audioOrVideo+"!");
+  if (audioOrVideo != "audio" && audioOrVideo != "video") throw new Error("Wrong argument="+audioOrVideo+"!");
   var mimes =  {
     audio : [
       "audio/webm", "audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mpeg3", "audio/mpeg", "audio/midi", "audio/wav", "audio/flac"
@@ -40,7 +40,7 @@ mc.utils.checkRecorderMime=function(te, audioOrVideo) {
   for(t in recorderMimes[audioOrVideo]) { 
     mime=recorderMimes[audioOrVideo][t]
     ext=tex.mime2ext(mime);
-    if(ext) {
+    if (ext) {
       chosenMime=mime;
       chosenExtension=ext;
       chosenParams=tex.mime2params(chosenMime);
@@ -48,8 +48,8 @@ mc.utils.checkRecorderMime=function(te, audioOrVideo) {
     }      
   }
   
-  if( ! recorderMimes[audioOrVideo].length) outcome="Empty mime types list";
-  else if( ! chosenMime) outcome="Unknown mime types";
+  if ( ! recorderMimes[audioOrVideo].length) outcome="Empty mime types list";
+  else if ( ! chosenMime) outcome="Unknown mime types";
   else outcome=true;
   
   return {
@@ -62,7 +62,7 @@ mc.utils.checkRecorderMime=function(te, audioOrVideo) {
 };
 
 mc.utils.TypesExtensions=function(te,audioOrVideo) {
-  if( ! te.audio || ! te.video) throw new Error("Wrong dictionary");
+  if ( ! te.audio || ! te.video) throw new Error("Wrong dictionary");
   
   this.ext2mime=function(ext) {
     var mime;
@@ -110,34 +110,34 @@ mc.utils.b2kb=function (b) { return Math.ceil(b/1000)+"KB" };
 mc.utils.s2dhms=function(sec) {
   var r="", day=86400, hour=3600, min=60, d, h, m, s;
   d=Math.floor(sec/day);
-  if(d) { 
+  if (d) { 
     r+=d+"d"; 
     sec=sec-d*day;
   }
   h=Math.floor(sec/hour);
-  if(h) {
-    if(d) r+=" ";
+  if (h) {
+    if (d) r+=" ";
     r+=h+"h"; 
     sec=sec-h*hour;
-    if(d) return r;
+    if (d) return r;
   }
   m=Math.floor(sec/min);
-  if(m) {
-    if(h) r+=" ";
+  if (m) {
+    if (h) r+=" ";
     r+=m+"m";
     sec=sec-m*min;
-    if(h) return r;
+    if (h) return r;
   }
-  if(sec) {
-    if(m) r+=" ";
+  if (sec) {
+    if (m) r+=" ";
     r+=sec+"s";
   }
   return r;
 };
 
 mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
-  if(typeof onDataReceived != "function") throw new Error("Non-function callback argument");
-  if( ! indicator.on) indicator={on:function(){}, off:function(){}}; 
+  if (typeof onDataReceived != "function") throw new Error("Non-function callback argument");
+  if ( ! indicator.on) indicator={on:function(){}, off:function(){}}; 
   var urlOffset="";
   if (typeof URLOFFSET != "undefined") urlOffset=URLOFFSET;
   var lag=0, timer=false, busy=false;
@@ -146,7 +146,7 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
     
   this.postRequest=function(what) {
     if ( ! what) throw new Error ("no data");
-    if(busy) throw new Error("Ajaxer "+responderUrl+" is busy");
+    if (busy) throw new Error("Ajaxer "+responderUrl+" is busy");
     timer=Date.now();
     req=new XMLHttpRequest();
     req.open("POST",urlOffset+responderUrl,true); // POST
@@ -158,7 +158,7 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
   };
   
   this.getRequest=function(queryString) {
-    if(busy) throw new Error("Ajaxer "+responderUrl+" is busy");
+    if (busy) throw new Error("Ajaxer "+responderUrl+" is busy");
     timer=Date.now();
     req=new XMLHttpRequest();
     req.open("GET",urlOffset+responderUrl+"?"+queryString); // GET
@@ -172,7 +172,7 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
     var rdata,rmime;
     
     if (req.readyState != 4) return;
-    if(req.status != 200 && req.status != 204 && req.status != 304) {
+    if (req.status != 200 && req.status != 204 && req.status != 304) {
       console.log(responderUrl+" ajax returned error "+req.status);
       req=null;
       return;
@@ -180,13 +180,13 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
     lag=Date.now()-timer;
     indicator.off();
     busy=false;
-    if(req.status != 200  && req.status != 304) {
+    if (req.status != 200  && req.status != 304) {
       console.log("ajax returned code "+req.status);
       //onDataReceived(req.status);
       req=null;
       return;
     }
-    if(req.status == 304) {
+    if (req.status == 304) {
       //console.log("304 "+lag);
       onDataReceived({ alert : "No changes", lag : lag });
       req=null;
@@ -196,13 +196,13 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
     rmime=req.responseType;
     req=null;
     //alert(rmime);
-    if(rmime === "" || rmime == "json" || rmime == "text") rdata=tryJsonParse(rdata);
+    if (rmime === "" || rmime == "json" || rmime == "text") rdata=tryJsonParse(rdata);
     onDataReceived(rdata);
     //setTimeout(function() { onDataReceived(rdata) }, 0);
   }
   
   function tryJsonParse(responseText) {
-    if( ! responseText) return responseText;
+    if ( ! responseText) return responseText;
     var responseObj={};
     try { 
       responseObj=JSON.parse(responseText); 
@@ -228,10 +228,11 @@ mc.utils.getRadio=function(name) {
 
 mc.utils.setRadio=function(name,value) {
   var btn=document.querySelector('input[name="'+name+'"][value="'+value+'"]');
-  if(btn) {
+  if (btn) {
     btn.checked="checked";
     document.activeElement.blur();// otherwise it will catch onkeypressed
   }
+  else throw new Error("Invalid value="+value+" for "+name);
 };
 
 mc.utils.getSelect=function(id) {
@@ -244,13 +245,14 @@ mc.utils.setSelect=function(id,value) {
   var el=document.getElementById(id);
   if ( ! el) throw new Error("Wrong id="+id);
   el.value=value;
+  if (el.selectedIndex < 0) throw new Error("Invalid value="+value+" for "+id);
   document.activeElement.blur();// otherwise it will catch onkeypressed
 };
 
 mc.utils.setCheckbox=function(id,value) {
   var el=document.getElementById(id);
   if ( ! el) throw new Error("Wrong id="+id);
-  if(value === "0" || value === 0 || value === false) el.checked="";
+  if (value === "0" || value === 0 || value === false) el.checked="";
   else el.checked="checked";
   document.activeElement.blur();
 };
@@ -278,21 +280,21 @@ mc.utils.addCss=function(str) {
 
 mc.utils.play=function(url,audioOrVideo,playerRoom,errorHandler) {    
   var a, plr;
-  if( playerRoom instanceof HTMLElement) plr=playerRoom=document.getElementById(playerRoom);
+  if ( playerRoom instanceof HTMLElement) plr=playerRoom=document.getElementById(playerRoom);
   else plr=document.getElementById(playerRoom);
-  if( ! plr) throw new Error("Wrong PLAYERROOM");
-  if( ! url) { console.log("Empty url"); return; }
-  if(audioOrVideo == "audio") {
+  if ( ! plr) throw new Error("Wrong PLAYERROOM");
+  if ( ! url) { console.log("Empty url"); return; }
+  if (audioOrVideo == "audio") {
     a=new Audio();
   }
-  else if(audioOrVideo == "video") {
+  else if (audioOrVideo == "video") {
     a = document.createElement('video');
   }
   else throw new Error("Wrong AUDIOORVIDEO="+audioOrVideo);
-  if(errorHandler && typeof errorHandler != "function") throw new Error("Invalid ERRORHANDLER");
+  if (errorHandler && typeof errorHandler != "function") throw new Error("Invalid ERRORHANDLER");
   a.src=url;
   a.controls="controls";
-  if(plr.hasChildNodes()) plr.innerHTML="";
+  if (plr.hasChildNodes()) plr.innerHTML="";
   plr.appendChild(a);
   a.play();
   
@@ -300,7 +302,7 @@ mc.utils.play=function(url,audioOrVideo,playerRoom,errorHandler) {
     setTimeout( function() { plr.innerHTML=""; }, 1 ); 
   };
   
-  if(errorHandler) a.onerror=function() { errorHandler(a.error.message); return false; };
+  if (errorHandler) a.onerror=function() { errorHandler(a.error.message); return false; };
 };
 
 mc.utils.KeyboardMonitor=function(onSpacePressed, onSpaceReleased, onEsc) {
@@ -309,16 +311,16 @@ mc.utils.KeyboardMonitor=function(onSpacePressed, onSpaceReleased, onEsc) {
   
   document.onkeydown = function(e){
     var keycode = window.event ? window.event.keyCode : e.which;
-    if(keycode == 27) {
+    if (keycode == 27) {
       onEsc();
       return false;
     }
-    if(document.activeElement.type == "text") { return; }
-    if(keycode == 32) {
-      if( ! watching && ! counter) onSpacePressed();
+    if (document.activeElement.type == "text") { return; }
+    if (keycode == 32) {
+      if ( ! watching && ! counter) onSpacePressed();
       counter+=1;
       //console.log(" keydown "+counter);
-      if( ! watching) {
+      if ( ! watching) {
         watching=true;
         to=setTimeout(
           checkout
@@ -326,11 +328,11 @@ mc.utils.KeyboardMonitor=function(onSpacePressed, onSpaceReleased, onEsc) {
       }
       return false;
     }
-    if(keycode == 32) return false;// prevents scrolling to the bottom
+    if (keycode == 32) return false;// prevents scrolling to the bottom
   };
   
   function checkout() {
-    if(counter == 0) { 
+    if (counter == 0) { 
       //console.log(" release ");
       watching=false;
       onSpaceReleased();

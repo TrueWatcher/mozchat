@@ -4,7 +4,7 @@ mc.pb={};
 
 mc.pb.PlayerBox=function() {
   var viewP={}, timerP={}, ajaxerP={}, /*player={},*/ serialPlayer={}, _this=this;
-  var catalogTime=0, catalogBytes=0, myUsersList="", ticks=0, userParams={}, serverParams={}, inventory={}, firstResponse=1, response={}, changesMap={};
+  var catalogTime=0, catalogBytes=0, usersListTime=0, myUsersList="", ticks=0, userParams={}, serverParams={}, inventory={}, firstResponse=1, response={}, changesMap={};
   var urlprefix="";
   //var mediaFolder="media";
   
@@ -17,7 +17,7 @@ mc.pb.PlayerBox=function() {
     inventory=new mc.pb.Inventory();
     
     ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", takeResponseP, {});
-    if (serverParams.pollFactor < 3600) setInterval(_this.onTick, 100);
+    if (serverParams.pollFactor != "off") setInterval(_this.onTick, 100);
     
     if ( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
     urlprefix=serverParams.pathBias+userParams.realm+"/"+serverParams.mediaFolder+"/";
@@ -26,6 +26,8 @@ mc.pb.PlayerBox=function() {
     viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear);
   };
   
+  this.startPoller=function() { setInterval(_this.onTick, 100); };
+  
   function takeResponseP(resp) { 
     var ps,toPlay;
 
@@ -33,13 +35,14 @@ mc.pb.PlayerBox=function() {
     if (resp.timestamp) catalogTime=resp.timestamp;
     if (resp.free) viewP.showFreeSpace(resp.free);
     if (resp.users) { 
+      usersListTime=resp.timestamp;
       myUsersList=resp.users;
       viewP.showUsers(resp.users);
     }
     if (resp.list) {
       //console.log(mc.utils.dumpArray(userParams));
       changesMap=inventory.consumeNewCatalog(resp.list, userParams);
-      viewP.applyDiff(changesMap);
+      viewP.applyDiff(changesMap,userParams.pollFactor);
       //console.log(mc.utils.dumpArray(changesMap));
       toPlay=changesMap.toPlay;
       if (toPlay && ! firstResponse) {
@@ -48,8 +51,7 @@ mc.pb.PlayerBox=function() {
         else if (ps == "playing") serialPlayer.tryFeed();
       }
       firstResponse=0;// allows playing new items
-    } 
-    
+    }     
     if (resp.error) viewP.showMessage("Error! "+resp.error);
     ps=serialPlayer.getState();
     if (ps != "playing" && ps !="playingNLoading") {
@@ -63,6 +65,7 @@ mc.pb.PlayerBox=function() {
   this.getChangesMap=function() { return changesMap; };
   
   _this.onTick=function() {
+    if (userParams.pollFactor === "off") return;
     if (userParams.pollFactor === "l") {
       if ( ! ajaxerP.isBusy()) _this.sendLongPoll();
       return;
@@ -76,7 +79,7 @@ mc.pb.PlayerBox=function() {
   _this.sendPoll=function() {
     var qs="";
     qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=poll&since="+catalogTime+"&catBytes="+catalogBytes;
+    qs+="&act=poll&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
     qs+="&pollFactor="+userParams.pollFactor;
     ajaxerP.getRequest(qs);    
   }
@@ -84,7 +87,7 @@ mc.pb.PlayerBox=function() {
   _this.sendLongPoll=function() {
     var qs="";
     qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=longPoll&since="+catalogTime+"&catBytes="+catalogBytes;
+    qs+="&act=longPoll&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
     qs+="&myUsersList="+encodeURIComponent(myUsersList);
     var longPollFactor=serverParams.longPollPeriodS+1;
     qs+="&pollFactor="+longPollFactor;
@@ -234,9 +237,10 @@ mc.pb.ViewP=function() {
     };
   };
   
-  this.applyDiff=function(diff) {
+  this.applyDiff=function(diff,pollFactor) {
     var rml=diff.removed.length;
     var adl=diff.added.length;
+    var pollIsLong=(pollFactor == "l");
     var i,tr;
 
     for(i=0; i<rml; i+=1) {
@@ -245,7 +249,7 @@ mc.pb.ViewP=function() {
       tr=null;
     }
     for(i=0; i<adl; i+=1) {
-      tr=renderLine(diff.added[i]);
+      tr=renderLine(diff.added[i],pollIsLong);
       //medialistT.appendChild(tr); // latest at bottom
       medialistT.insertBefore(tr, medialistT.firstChild);// latest at top
       tr=null;
@@ -253,11 +257,11 @@ mc.pb.ViewP=function() {
   };
   
   // @return HTMLElement tr
-  function renderLine(l) {
+  function renderLine(l,pollIsLong) {
     if ( ! l instanceof Array) throw new Error("Wrong argument type "+(typeof l));
-    var r="", i=0, ll=l.length, del="<td></td>", descr="",aov="",aovPlusTitle="";
+    var r="", i=0, ll=l.length, delLink="<td></td>", descr="",aov="",aovPlusTitle="";
     var tr=document.createElement("TR");
-    if (l[1] == user) del='<td class="delete">'+"delete"+"</td>";
+    if (l[1] == user && ! pollIsLong) delLink='<td class="delete">'+"delete"+"</td>";
     if (l[7]) descr="<br />"+l[7];
     r+="<td>"+l[1]+" "+l[2]+descr+"</td>";
     aov=l[3].substr(0,5);
@@ -265,7 +269,7 @@ mc.pb.ViewP=function() {
     r+="<td>"+aovPlusTitle+"</td>";//l[3]
     r+="<td>"+l[4]+"s</td>";
     r+="<td>"+mc.utils.b2kb(l[5])+'</td>';
-    r+=del;
+    r+=delLink;
     r+='<td class="play">'+"play"+"</td>";
     r+='<td class="playDown">'+"play_from"+"</td>";
     tr.innerHTML=r;

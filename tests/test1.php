@@ -38,7 +38,7 @@ function Shadow() {
   var serverParams={user:"Shadow",realm:"test0",pathBias:"../",playNew:1,skipMine:1};
   var userParams=serverParams;
   var response={},changesMap={};
-  var catalogBytes=0, catalogTime=0;
+  var catalogBytes=0, catalogTime=0, usersListTime=0, myUsersList="";
   
   var ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", takeResponseSh, {});
   var inventory=new mc.pb.Inventory();
@@ -46,6 +46,10 @@ function Shadow() {
   function takeResponseSh(resp) {
     if(resp.catalogBytes) catalogBytes=resp.catalogBytes;
     if(resp.timestamp) catalogTime=resp.timestamp;
+    if (resp.users) { 
+      usersListTime=resp.timestamp;
+      myUsersList=resp.users;
+    }
     if(resp.list) { changesMap=inventory.consumeNewCatalog(resp.list, userParams); }     
     if(resp.alert) { resp.alert+=" fulfiled in "+resp.lag+"ms"; }
     response=resp;
@@ -58,7 +62,7 @@ function Shadow() {
   this.sendPoll=function() {
     var qs="";
     qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=poll&since="+catalogTime+"&catBytes="+catalogBytes;
+    qs+="&act=poll&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
     //qs+="&pollFactor="+userParams.pollFactor;
     console.log("Shadow's request : "+qs);
     ajaxerP.getRequest(qs);    

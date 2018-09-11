@@ -31,9 +31,6 @@ try {
   
   case "delete":
     if( ! isset($input["id"])) throw new DataException("Missing ID");
-    //$id=explode(".",$input["id"]) [0]; 
-    $um=new UsersMonitor();
-    $rmo=$um->markOnlineAndReport($targetPath,$input,$pr);
     
     $inv=new Inventory();
     $inv->init($targetPath,$pr->g("mediaFolder"));
@@ -93,8 +90,8 @@ exit();
 
 function anyNews($pr,$input,$targetPath) {
   $r=[];
-  $inventoryUpdated = ( $pr->checkNotEmpty("removeExpiredFromDir") || ! Inventory::isStillValid($targetPath,$input["since"],$input["catBytes"]) );
-  $usersToBeUpdated= ! UsersMonitor::isStillValid($targetPath,$input["since"],$pr);
+  $inventoryUpdated = ( $pr->checkNotEmpty("removeExpiredFromDir") || ! Inventory::isStillValid($targetPath,$input["catSince"],$input["catBytes"]) );
+  $usersToBeUpdated= ! UsersMonitor::isStillValid($targetPath,$input["usersSince"],$pr);
   //$delta=filemtime($targetPath."users.json")-$input["since"];
   
   if ($inventoryUpdated) {
