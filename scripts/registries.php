@@ -99,6 +99,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "playNew"=>1,
       "skipMine"=>1,
       "userStatusFadeS"=>5,
+      "longPollPeriodS"=>15,
       "removeExpiredFromDir"=>0
     ];
     return $a;
@@ -125,6 +126,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "clipLifetimeSec"=>300,
       "allowStream"=>0,
       "userStatusFadeS"=>5,
+      "longPollPeriodS"=>15,
       "removeExpiredFromDir"=>0
     ];
     return $a;

@@ -55,10 +55,10 @@ function Shadow() {
   this.getChangesMap=function() { return changesMap; };
   this.getUser=function() { return userParams.user; };
   
-  this.sendDir=function() {
+  this.sendPoll=function() {
     var qs="";
     qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=dir&since="+catalogTime+"&catBytes="+catalogBytes;
+    qs+="&act=poll&since="+catalogTime+"&catBytes="+catalogBytes;
     //qs+="&pollFactor="+userParams.pollFactor;
     console.log("Shadow's request : "+qs);
     ajaxerP.getRequest(qs);    
@@ -79,7 +79,7 @@ var testScript=[
 '',
 'ok=recorderAlertP.innerHTML.indexOf("cleared") >= 0; \
  assertTrue(ok, "wrong message="+recorderAlertP.innerHTML, "server agreed");',
-'playerBox.sendDir();',
+'playerBox.sendPoll();',
 '',
 'ok= ! medialistT.hasChildren; \
  assertTrue(ok,"Some data are present in the catalog","catalog cleared"); \
@@ -118,7 +118,7 @@ var testScript=[
 '',
 'ok=recorderAlertP.innerHTML.indexOf("Server got ") >= 0; \
  assertTrue(ok, "wrong upload message","message ok" );',
-'playerBox.sendDir();',
+'playerBox.sendPoll();',
 '',
 'assertTrue(medialistT.firstChild, "Empty catalog","catalog got some data");', 
 'var tr=medialistT.firstChild.innerHTML; \
@@ -138,7 +138,7 @@ var testScript=[
 'uploadStoredBtn.click(); i+=1; print(" "+i+" "); if(i >= toSend) { ci.inc(); };',
 'ci.noLoop();',
 'storedTime2=Date.now()/1000; \
- playerBox.sendDir();',
+ playerBox.sendPoll();',
 '',
 'elapsed=Date.now()/1000-storedTime1; \
  assertTrue(elapsed <= sp.clipLifetimeSec, "Increase the lifetime", "No new files have expired yet")',
@@ -156,7 +156,7 @@ var testScript=[
 'elapsed=Date.now()/1000-storedTime1; \
  if(elapsed > (1+parseInt(sp.clipLifetimeSec)) ) { ci.inc(); };',
 'ci.noLoop();', 
-'playerBox.sendDir();',
+'playerBox.sendPoll();',
 '',
 'var freeAfterOneLifetime=parseInt(folderFreeInp.value); \
  assertTrue(freeAfterOneLifetime > free, "Wrong FREE after expiration="+freeAfterOneLifetime, "Some clips have expired");',
@@ -164,7 +164,7 @@ var testScript=[
 'elapsed=Date.now()/1000-storedTime2; \
  if(elapsed > sp.clipLifetimeSec) { ci.inc(); };',
 'ci.noLoop();', 
-'playerBox.sendDir();',
+'playerBox.sendPoll();',
 '',
 'var freeFinally=parseInt(folderFreeInp.value); \
  assertEqualsPrim(sp.maxMediaFolderBytes/1000, freeFinally, "Wrong free space", "All space is eventually free"); \
@@ -173,9 +173,9 @@ var testScript=[
  
 'println("Testing users list basic operations");',
 'storedTime1=Date.now()/1000; \
- playerBox.sendDir();',
+ playerBox.sendPoll();',
 '',
-'shadow.sendDir();',
+'shadow.sendPoll();',
 '',
 'shResp=shadow.getResponce(); \
  console.log(mc.utils.dumpArray(shResp)); \
@@ -186,15 +186,15 @@ var testScript=[
 '',// fine tune of delay: the responder shoul be open to me without expiring Shadow's record
 'elapsed=Date.now()/1000-storedTime1; \
  assertTrue(elapsed > sp.userStatusFadeS, "Increase delay, elapsed="+elapsed+" of "+sp.userStatusFadeS, "Delay has passed"); \
- playerBox.sendDir();',
+ playerBox.sendPoll();',
 '',
 //'console.log(mc.utils.dumpArray(playerBox.getResponse()));',
 'ok=usersS.innerHTML.indexOf(sp.user) >= 0; \
  assertTrue(ok, "Missing my username", "My username is listed"); \
  ok=usersS.innerHTML.indexOf(shUser) >= 0; \
  assertTrue(ok, "Missing Shadow username", "Shadow username is listed"); ',
-'','',// another tune: waiting for Shadow's record to expire
-'playerBox.sendDir();',
+'','','','',// another tune: waiting for Shadow's record to expire
+'playerBox.sendPoll();',
 '',
 //'console.log(mc.utils.dumpArray(playerBox.getResponse()));',
 'ok=usersS.innerHTML.indexOf(sp.user) >= 0; \
@@ -214,8 +214,8 @@ var testScript=[
 'elapsed=Date.now()/1000-storedTime1; \
  if(elapsed >= 2) { recordBtn.click(); ci.inc();}',
 'ci.noLoop();',
-'shadow.sendDir();',
-'playerBox.sendDir();',
+'shadow.sendPoll();',
+'playerBox.sendPoll();',
 '',
 'shResp=shadow.getResponce(); \
  console.log(mc.utils.dumpArray(shResp)); \

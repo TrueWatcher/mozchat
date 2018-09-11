@@ -79,6 +79,7 @@
   &nbsp;
   Refresh 
   <select id="refreshSelect" >
+    <option value="l" >long</option>
     <option value="4" >0.4s</option>
     <option value="10" selected="selected" >1s</option>
     <option value="30" >3s</option>

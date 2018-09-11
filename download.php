@@ -24,10 +24,17 @@ try {
   //if( ! isset($input["act"])) throw new DataException("Missing ACT");
   $act=$input["act"];
   
-  switch($act){
+  switch ($act) {
+  case "echo":
+    $r["alert"]="Echo response";
+    break;
+  
   case "delete":
     if( ! isset($input["id"])) throw new DataException("Missing ID");
     //$id=explode(".",$input["id"]) [0]; 
+    $um=new UsersMonitor();
+    $rmo=$um->markOnlineAndReport($targetPath,$input,$pr);
+    
     $inv=new Inventory();
     $inv->init($targetPath,$pr->g("mediaFolder"));
     $id=$input["id"];
@@ -45,30 +52,21 @@ try {
     $r["alert"]="Clip deleted";
     break;
   
-  case "dir":    
-    $inventoryUpdated = ( $pr->checkNotEmpty("removeExpiredFromDir") || ! Inventory::isStillValid($targetPath,$input["since"],$input["catBytes"]) );
-    $usersToBeUpdated= ! UsersMonitor::isStillValid($targetPath,$input["since"],$pr);
-    //$delta=filemtime($targetPath."users.json")-$input["since"];
-    
-    if($inventoryUpdated) {
-      $inv=new Inventory();
-      $inv->init($targetPath,$pr->g("mediaFolder"));
-      if($pr->checkNotEmpty("removeExpiredFromDir")) { $inv->removeExpired(); }
-      $r["list"]=$inv->getCatalog();
-      $r["catalogBytes"]=$inv->getCatalogBytes();
-      $r["timestamp"]=time();
-      $r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes();     
+  case "poll":
+    $r=anyNews($pr,$input,$targetPath);
+    break;
+  
+  case "longPoll":
+    $longPollPeriodS=$pr->g("longPollPeriodS");
+    $longPollStepMs=300;
+    $cycles=ceil($longPollPeriodS*1000/$longPollStepMs);
+    for ($i=0; $i<=$cycles; $i+=1) {
+      $rr=anyNews($pr,$input,$targetPath);
+      if ($rr !== 304) break;
+      usleep(1000*$longPollStepMs);
     }
-    if($usersToBeUpdated) {
-      $um=new UsersMonitor();
-      $r["users"]=$um->markOnlineAndReport($targetPath,$input,$pr);
-      $r["timestamp"]=time();
-      $r["alert"]="Users updated";//, delta=$delta, statusFade=".$pr->g("userStatusFadeS");
-    }
-    if( ! $inventoryUpdated && ! $usersToBeUpdated) {
-      $r=304;
-      //$r["alert"]="No changes, delta=$delta";
-    }
+    if ($rr === 304) { $r["alert"]="long poll expired"; }
+    else $r=$rr;
     break;
   
   case "clearMedia":
@@ -93,6 +91,41 @@ if($r === 304) {
 print(json_encode($r));
 exit();
 
+function anyNews($pr,$input,$targetPath) {
+  $r=[];
+  $inventoryUpdated = ( $pr->checkNotEmpty("removeExpiredFromDir") || ! Inventory::isStillValid($targetPath,$input["since"],$input["catBytes"]) );
+  $usersToBeUpdated= ! UsersMonitor::isStillValid($targetPath,$input["since"],$pr);
+  //$delta=filemtime($targetPath."users.json")-$input["since"];
+  
+  if ($inventoryUpdated) {
+    $inv=new Inventory();
+    $inv->init($targetPath,$pr->g("mediaFolder"));
+    if ($pr->checkNotEmpty("removeExpiredFromDir")) { $inv->removeExpired(); }
+    $r["list"]=$inv->getCatalog();
+    $r["catalogBytes"]=$inv->getCatalogBytes();
+    $r["timestamp"]=time();
+    $r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
+    $r["alert"]="Catalog updated";
+  }
+  if ($usersToBeUpdated) {
+    $um=new UsersMonitor();
+    $rmo=$um->markOnlineAndReport($targetPath,$input,$pr);
+    $userListIsSame=($rmo === true);
+    if ( ! $userListIsSame) {
+      $r["users"]=$rmo;
+      $r["timestamp"]=time();
+      if (isset($r["alert"])) { $r["alert"].=" users updated"; }
+      else { $r["alert"]="Users updated";}
+      //, delta=$delta, statusFade=".$pr->g("userStatusFadeS");
+    }
+  }
+  $dataUnchanged=( ! $inventoryUpdated && ( ! $usersToBeUpdated || $userListIsSame));
+  if ($dataUnchanged) {
+    $r=304;
+    //$r["alert"]="No changes, delta=$delta";
+  }
+  return $r;
+}
 
 function checkFields($input) {
   $r=true;
@@ -123,15 +156,23 @@ class UsersMonitor {
     $this->read($tp);
     $this->removeExpired();
     self::$statusFadeS=$pr->g("userStatusFadeS");
-    $valid=self::$statusFadeS;
+    $validFor=2+self::$statusFadeS;
     $aPollFactor=0;
     if(isset($input["pollFactor"]) && $input["pollFactor"]) $aPollFactor=$input["pollFactor"];
-    if($aPollFactor > self::$statusFadeS*10) $valid=ceil($aPollFactor/10);
-    $this->mark($input["user"],"online",$valid);
+    if($aPollFactor > self::$statusFadeS*10) $validFor=2+ceil($aPollFactor/10);
+    $this->mark($input["user"],"online",$validFor);
+    $after=$this->presentOnline();    
     file_put_contents($this->myFileFull,json_encode($this->data));
-    return $this->presentOnline();
+    if ( $this->checkUsersAgainstInput($input,$after) ) return true;
+    return $after;
   }
   
+  private function checkUsersAgainstInput($input,$list) {
+    if ( ! is_string($list)) throw new Exception("Wrong LIST type");
+    if ( ! isset($input["myUsersList"]) || empty($input["myUsersList"])) return false;
+    if ($input["myUsersList"] !== $list) return false;
+    return true;
+  }
   
   private function read($tp) {
     $this->myFileFull=$tp.self::$myFileName;
@@ -160,7 +201,9 @@ class UsersMonitor {
   }
   
   private function presentOnline() {
-    return implode(", ",array_keys($this->data["online"]));
+    $dok=array_keys($this->data["online"]);
+    sort($dok);
+    return implode(", ",$dok);
   }
   
 }// end UsersMonitor

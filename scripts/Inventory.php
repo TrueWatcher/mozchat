@@ -12,18 +12,20 @@ class Inventory {
   static function getMyFileName() { return self::$myFileName; }
   
   static function isStillValid($tp, $since, $catBytes) {
-    if(is_null($since) || ! $since) return false;
-    if( ! file_exists($tp.self::$myFileName)) return false;
-    if(filesize($tp.self::$myFileName) != $catBytes) return false;
-    if(filemtime($tp.self::$myFileName) >= $since) return false;
-    return 304;
+    $res=304;
+    if (is_null($since) || ! $since) $res=false;
+    else if ( ! file_exists($tp.self::$myFileName)) $res=false;
+    else if (filesize($tp.self::$myFileName) != $catBytes) $res=false;
+    else if (filemtime($tp.self::$myFileName) > $since) $res=false;
+    clearstatcache();
+    return $res;
   }
   
   function init($tp,$mfn) {
     // media must be stored in "mediaBLABLA" folder
     $mfn=self::checkMediaFolderName($mfn);
     $mediaFolder=$tp.$mfn;
-    if( ! file_exists($mediaFolder)) mkdir($mediaFolder);
+    if ( ! file_exists($mediaFolder)) mkdir($mediaFolder);
     //|| ! is_dir($mediaFolder)) throw new DataException ("Target folder ".$mediaFolder." not found");
     $this->targetPath=$tp;
     $this->mediaFolderName=$mfn;
@@ -33,7 +35,7 @@ class Inventory {
     array_shift($filesFound); array_shift($filesFound);// "." and ".." are always there
     //print_r($filesFound);
     $folderIsEmpty=(count($filesFound) == 0);
-    if($folderIsEmpty) {
+    if ($folderIsEmpty) {
       //echo(" empty folder ");
       $this->data=[];
       $this->total=0;
@@ -46,20 +48,20 @@ class Inventory {
   }
   
   static function checkMediaFolderName($mfn) {
-    if( strpos($mfn, "media") !== 0 ) { $mfn="media".$mfn; }
+    if ( strpos($mfn, "media") !== 0 ) { $mfn="media".$mfn; }
     return $mfn;
   }
   
   private function checkCatalog($scanned) {
     $scannedLength=count($scanned);
     $myLength=count($this->data);
-    if($myLength != $scannedLength) { 
+    if ($myLength != $scannedLength) { 
       var_dump($scanned);
       throw new DataException("Inventory has $myLength records, the folder has $scannedLength files"); 
     }
-    foreach($this->data as $e) {
+    foreach ($this->data as $e) {
       $ee=array_combine($this->keys,$e);
-      if( ! in_array($ee["fileName"],$scanned) ) throw new DataException("Inventory entry {$ee["fileName"]} is missing from the folder");
+      if ( ! in_array($ee["fileName"],$scanned) ) throw new DataException("Inventory entry {$ee["fileName"]} is missing from the folder");
     }
   }
   
@@ -75,8 +77,8 @@ class Inventory {
     $path=$this->mediaFolder;
     $bytestotal = 0;
     $path = realpath($path);
-    if($path!==false && $path!='' && file_exists($path)){
-        foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS)) as $object){
+    if ($path!==false && $path!='' && file_exists($path)) {
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS)) as $object){
             $bytestotal += $object->getSize();
         }
     }
@@ -88,7 +90,7 @@ class Inventory {
   function newName($ext) {
     $inc=0;
     $n=$this->makeName($ext,$inc);
-    while($this->getLine($n)) {
+    while ($this->getLine($n)) {
       $inc+=1;
       $n=$this->makeName($ext,$inc);
     }
@@ -97,9 +99,9 @@ class Inventory {
   
   function pickUploadedBlob($newName,$input,PageRegistry $pr) {
     // overcheck
-    if(file_exists($this->mediaFolder."/".$newName)) throw new DataException("File ".$newName." already exists");
+    if (file_exists($this->mediaFolder."/".$newName)) throw new DataException("File ".$newName." already exists");
     $r=move_uploaded_file($_FILES['blob']['tmp_name'], $this->mediaFolder."/".$newName);
-    if( ! $r) throw new DataException("Moving failed");
+    if ( ! $r) throw new DataException("Moving failed");
     $clipBytes=filesize($this->mediaFolder."/".$newName);
     $dt=date("M_d_H:i:s", time()+3600*$pr->g("timeShiftHrs"));
     $expire=time()+$pr->g("clipLifetimeSec");
@@ -108,13 +110,13 @@ class Inventory {
     );
     //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
     $overdraft=$this->getTotalBytes()-$pr->g("maxMediaFolderBytes");
-    if($overdraft > 0) $this->freeSomeRoom($overdraft);
+    if ($overdraft > 0) $this->freeSomeRoom($overdraft);
     return $clipBytes;
   }
   
   // user,realm,blob,mime,ext,duration
   function addLine($fileName,$author,$dateTime,$mime,$duration,$bytes,$expire,$description) {
-    if($duration == 0) $duration="1";
+    if ($duration == 0) $duration="1";
     $e=[$fileName,$author,$dateTime,$mime,$duration,$bytes,$expire,$description];
     $this->data[]=$e;
     $this->total+=$bytes;
@@ -125,7 +127,7 @@ class Inventory {
     $t=time();
     $resData=[];
     $counter=0;
-    foreach($this->data as $e) {
+    foreach ($this->data as $e) {
       $ee=array_combine($this->keys,$e);
       if($ee["expire"] < $t) {
         unlink($this->mediaFolder."/".$ee["fileName"]);
@@ -133,7 +135,7 @@ class Inventory {
       }
       else { $resData[]=$e; }
     }
-    if($counter) {
+    if ($counter) {
       $this->data=$resData;
       $this->sumUpBytes();
       file_put_contents($this->targetPath.self::$myFileName, json_encode($this->data));
@@ -157,7 +159,7 @@ class Inventory {
   
   private function sumUpBytes() {
     $sum=0;
-    foreach($this->data as $e) {
+    foreach ($this->data as $e) {
       $ee=array_combine($this->keys,$e);
       $sum+=$ee["bytes"];
     }
@@ -171,9 +173,9 @@ class Inventory {
   function getCatalogBytes() { return filesize($this->targetPath.self::$myFileName); }
   
   function getLineById($id) {
-    if(empty($id)) return false;
+    if (empty($id)) return false;
     //print_r($this->data);
-    foreach($this->data as $e) {
+    foreach ($this->data as $e) {
       $ee=array_combine($this->keys,$e);
       //print_r($ee);
       if(self::idFromName($ee["fileName"]) == $id) { return $ee; }
@@ -182,12 +184,12 @@ class Inventory {
   }
   
   function getLine($fileName) {
-    if(empty($fileName)) return false;
+    if (empty($fileName)) return false;
     //print_r($this->data);
-    foreach($this->data as $e) {
+    foreach ($this->data as $e) {
       $ee=array_combine($this->keys,$e);
       //print_r($ee);
-      if($ee["fileName"] == $fileName) { return $ee; }
+      if ($ee["fileName"] == $fileName) { return $ee; }
     }
     return false;
   }
@@ -195,9 +197,9 @@ class Inventory {
   static function idFromName($fn) { return explode(".",$fn) [0]; }
   
   function deleteLine($fileName) {
-    if(empty($fileName)) return false;
+    if (empty($fileName)) return false;
     $res=[];
-    foreach($this->data as $e) {
+    foreach ($this->data as $e) {
       $ee=array_combine($this->keys,$e);
       if($ee["fileName"] != $fileName) { $res[]=$e; }
     }
@@ -211,7 +213,7 @@ class Inventory {
     // media must be stored in "mediaBLABLA" folder
     $mfn=self::checkMediaFolderName($mfn);
     $mediaFolder=$tp.$mfn;
-    if( ! file_exists($mediaFolder)) return true;
+    if ( ! file_exists($mediaFolder)) return true;
     array_map('unlink', glob($mediaFolder."/*.*"));
   } 
 

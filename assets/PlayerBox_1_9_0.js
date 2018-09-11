@@ -4,7 +4,7 @@ mc.pb={};
 
 mc.pb.PlayerBox=function() {
   var viewP={}, timerP={}, ajaxerP={}, /*player={},*/ serialPlayer={}, _this=this;
-  var catalogTime=0, catalogBytes=0, ticks=0, userParams={}, serverParams={}, inventory={}, firstResponse=1, response={}, changesMap={};
+  var catalogTime=0, catalogBytes=0, myUsersList="", ticks=0, userParams={}, serverParams={}, inventory={}, firstResponse=1, response={}, changesMap={};
   var urlprefix="";
   //var mediaFolder="media";
   
@@ -32,7 +32,10 @@ mc.pb.PlayerBox=function() {
     if (resp.catalogBytes) catalogBytes=resp.catalogBytes;
     if (resp.timestamp) catalogTime=resp.timestamp;
     if (resp.free) viewP.showFreeSpace(resp.free);
-    if (resp.users) viewP.showUsers(resp.users);
+    if (resp.users) { 
+      myUsersList=resp.users;
+      viewP.showUsers(resp.users);
+    }
     if (resp.list) {
       //console.log(mc.utils.dumpArray(userParams));
       changesMap=inventory.consumeNewCatalog(resp.list, userParams);
@@ -60,18 +63,32 @@ mc.pb.PlayerBox=function() {
   this.getChangesMap=function() { return changesMap; };
   
   _this.onTick=function() {
+    if (userParams.pollFactor === "l") {
+      if ( ! ajaxerP.isBusy()) _this.sendLongPoll();
+      return;
+    }
     ticks+=1;
     if (ticks < userParams.pollFactor) return;
     ticks=0;
-    _this.sendDir();
+    _this.sendPoll();
   };
   
-  _this.sendDir=function() {
+  _this.sendPoll=function() {
     var qs="";
     qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=dir&since="+catalogTime+"&catBytes="+catalogBytes;
+    qs+="&act=poll&since="+catalogTime+"&catBytes="+catalogBytes;
     qs+="&pollFactor="+userParams.pollFactor;
     ajaxerP.getRequest(qs);    
+  }
+  
+  _this.sendLongPoll=function() {
+    var qs="";
+    qs+="user="+userParams.user+"&realm="+userParams.realm;
+    qs+="&act=longPoll&since="+catalogTime+"&catBytes="+catalogBytes;
+    qs+="&myUsersList="+encodeURIComponent(myUsersList);
+    var longPollFactor=serverParams.longPollPeriodS+1;
+    qs+="&pollFactor="+longPollFactor;
+    ajaxerP.getRequest(qs);     
   }
   
   _this.listClicked=function(event) {
