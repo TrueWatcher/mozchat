@@ -21,7 +21,7 @@ try {
   $pr->overrideValuesBy($iniParams["common"]);
   //$pr->overrideValuesBy($iniParams["inventory"]);
   //$pr->dump();  
-  //if( ! isset($input["act"])) throw new DataException("Missing ACT");
+  //if ( ! isset($input["act"])) throw new DataException("Missing ACT");
   $act=$input["act"];
   
   switch ($act) {
@@ -30,7 +30,7 @@ try {
     break;
   
   case "delete":
-    if( ! isset($input["id"])) throw new DataException("Missing ID");
+    if ( ! isset($input["id"])) throw new DataException("Missing ID");
     $id=$input["id"];    
     $inv=new Inventory();
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
@@ -51,8 +51,10 @@ try {
     $longPollPeriodS=$pr->g("longPollPeriodS");
     $longPollStepMs=300;
     $cycles=ceil($longPollPeriodS*1000/$longPollStepMs);
+    $usersCycle=floor(UsersMonitor::fileFadeS($pr)*1000/$longPollStepMs);
     for ($i=0; $i<=$cycles; $i+=1) {
-      $rr=anyNews($pr,$input,$targetPath);
+      $forceUpdateUsers=( $i % $usersCycle === 0 );
+      $rr=anyNews($pr,$input,$targetPath,$forceUpdateUsers);
       if ($rr !== 304) break;
       usleep(1000*$longPollStepMs);
     }
@@ -76,7 +78,7 @@ try {
   $r["error"]=$de->getMessage();
 }
 
-if($r === 304) {
+if ($r === 304) {
   header("HTTP/1.0 304 Not Modified");
   exit();
 }
@@ -85,10 +87,10 @@ exit();
 
 function unlinkById($id,Inventory $inv,$input) {
   $l=$inv->getLine($id);
-  if( ! $l) throw new DataException("No data about this file");
-  if($l["author"] != $input["user"]) throw new DataException("You are not permitted");
+  if ( ! $l) throw new DataException("No data about this file");
+  if ($l["author"] != $input["user"]) throw new DataException("You are not permitted");
   $target=$inv->getMediaPath().$l["fileName"];
-  if( ! file_exists($target)) throw new DataException("No such file $target");
+  if ( ! file_exists($target)) throw new DataException("No such file $target");
   unlink($target);
 }
 
@@ -103,10 +105,13 @@ function refreshCatalog(PageRegistry $pr,$targetPath) {
   return $r;
 }
 
-function anyNews(PageRegistry $pr,$input,$targetPath) {
+function anyNews(PageRegistry $pr,$input,$targetPath,$forceUpdateUsers=null) {
   $r=[];
   $inventoryUpdated = ( $pr->checkNotEmpty("removeExpiredFromDir") || isset($input["removeExpired"]) || ! Inventory::isStillValid($targetPath,$input["catSince"],$input["catBytes"]) );
-  $usersToBeUpdated= ! UsersMonitor::isStillValid($targetPath,$input["usersSince"],$pr);
+  if (is_null($forceUpdateUsers)) {
+    $usersToBeUpdated = ! UsersMonitor::isStillValid($targetPath,$input["usersSince"],$pr);
+  }
+  else { $usersToBeUpdated = $forceUpdateUsers; }
   //$delta=filemtime($targetPath."users.json")-$input["since"];
   
   if ($inventoryUpdated) {
@@ -143,9 +148,9 @@ function anyNews(PageRegistry $pr,$input,$targetPath) {
 
 function checkFields($input) {
   $r=true;
-  if( ! isset($input["user"]) || ! isset($input["realm"]) ) $r="Missing USER or REALM";
-  else if( ! isset($input["act"])) $r="Missing ACT";
-  if($r !== true) throw new DataException($r);
+  if ( ! isset($input["user"]) || ! isset($input["realm"]) ) $r="Missing USER or REALM";
+  else if ( ! isset($input["act"])) $r="Missing ACT";
+  if ($r !== true) throw new DataException($r);
 }
 
 class UsersMonitor {
@@ -159,12 +164,14 @@ class UsersMonitor {
   static function getMyFileName() { return self::$myFileName; }
   
   static function isStillValid($tp, $since, PageRegistry $pr) {
-    if(is_null($since) || ! $since) return false;
-    if( ! file_exists($tp.self::$myFileName)) return false;
-    self::$fileFadeS=$pr->g("userStatusFadeS")-1;
-    if( time()-$since <  self::$fileFadeS ) return 304;
+    if (is_null($since) || ! $since) return false;
+    if ( ! file_exists($tp.self::$myFileName)) return false;
+    self::$fileFadeS=self::fileFadeS($pr);
+    if ( time()-$since <  self::$fileFadeS ) return 304;
     return false;
   }
+  
+  static function fileFadeS($pr) { return $pr->g("userStatusFadeS")-1; }
   
   function markOnlineAndReport($tp,$input,PageRegistry $pr) {
     $this->read($tp);
@@ -172,8 +179,8 @@ class UsersMonitor {
     self::$statusFadeS=$pr->g("userStatusFadeS");
     $validFor=2+self::$statusFadeS;
     $aPollFactor=0;
-    if(isset($input["pollFactor"]) && $input["pollFactor"]) $aPollFactor=$input["pollFactor"];
-    if($aPollFactor > self::$statusFadeS*10) $validFor=2+ceil($aPollFactor/10);
+    if (isset($input["pollFactor"]) && $input["pollFactor"]) $aPollFactor=$input["pollFactor"];
+    if ($aPollFactor > self::$statusFadeS*10) $validFor=2+ceil($aPollFactor/10);
     $this->mark($input["user"],"online",$validFor);
     $after=$this->presentOnline();    
     file_put_contents($this->myFileFull,json_encode($this->data));
@@ -190,7 +197,7 @@ class UsersMonitor {
   
   private function read($tp) {
     $this->myFileFull=$tp.self::$myFileName;
-    if( ! file_exists($this->myFileFull)) {
+    if ( ! file_exists($this->myFileFull)) {
       $this->data=["online"=>[]];
     }
     else {      
@@ -204,7 +211,7 @@ class UsersMonitor {
     $res=[];
     $t=time();
     foreach($this->data[$status] as $u=>$expire) {
-      if($expire > $t) { $res[$u]=$expire; }
+      if ($expire > $t) { $res[$u]=$expire; }
     }
     $this->data[$status]=$res;  
   }
