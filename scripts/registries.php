@@ -70,39 +70,43 @@ class PageRegistry extends SingletAssocArrayWrapper {
     $empty=[];
     $this->session = $empty;// =&$empty does nothing
   }
-
+  
+  private static $commonParams=[
+    "pathBias"=>"",
+    "timeShiftHrs"=>0,
+    "lang"=>"en",
+    "mailFrom"=>"Crazy Ghost <nobody@example.com>",
+    "mailReplyTo"=>"",
+    "mediaFolder"=>"media",
+    "notifyUsers"=>0,
+    "maxBlobBytes"=>50000,
+    "maxMediaFolderBytes"=>400000,
+    "clipLifetimeSec"=>300,
+    "allowStream"=>0,
+    "userStatusFadeS"=>5,
+    "longPollPeriodS"=>15,
+    "removeExpiredFromDir"=>0,
+    "hideExpired"=>0
+  ];
+  
   /**
    *
    * @return Array
    */  
   public static function getDefaultsClient() {
     $a=[
-      //"scriptsPath"=>"scripts/",
-      "pathBias"=>"",
-      "timeShiftHrs"=>0,
-      "lang"=>"en",
-      //"skipPlayerAuth"=>0,// if set, allowPlayerNameInInput must be set also
-      "mailFrom"=>"Crazy Ghost <nobody@example.com>",
-      "mailReplyTo"=>"",
+      //"scriptsPath"=>"scripts/",      
+      //"skipPlayerAuth"=>0,// if set, allowPlayerNameInInput must be set also      
       "title"=>"Audio chat",
-      "mediaFolder"=>"media",
-      "notifyUsers"=>0,
-      "maxBlobBytes"=>50000,
-      "maxMediaFolderBytes"=>400000,
-      "clipLifetimeSec"=>300,
       "allowVideo"=>0,
-      "videoOn"=>0,// if allowVideo==0 this will be considered 0
-      "allowStream"=>0,
+      "videoOn"=>0,// if allowVideo==0 this will be considered 0      
       "onRecorded"=>"stop",// if allowStream==0 this will be considered "stop"
       "maxClipSizeSec"=>2,
       "pollFactor"=>30,
       "playNew"=>1,
       "skipMine"=>1,
-      "userStatusFadeS"=>5,
-      "longPollPeriodS"=>15,
-      "removeExpiredFromDir"=>0
     ];
-    return $a;
+    return array_merge(self::$commonParams,$a);
   }
 
     /**
@@ -111,39 +115,11 @@ class PageRegistry extends SingletAssocArrayWrapper {
    */  
   public static function getDefaultsAjax() {
     $a=[
-      //"scriptsPath"=>"scripts/",
-      "pathBias"=>"",
-      "timeShiftHrs"=>0,
-      "lang"=>"en",
+      //"scriptsPath"=>"scripts/",,
       //"allowAuthByRequestId"=>1,// Credentials
       //"allowPlayerNameInInput"=>1,// Credentials
-      "mailFrom"=>"Crazy Ghost <nobody@example.com>",
-      "mailReplyTo"=>"",
-      "mediaFolder"=>"media",
-      "notifyUsers"=>0,
-      "maxBlobBytes"=>50000,
-      "maxMediaFolderBytes"=>400000,
-      "clipLifetimeSec"=>300,
-      "allowStream"=>0,
-      "userStatusFadeS"=>5,
-      "longPollPeriodS"=>15,
-      "removeExpiredFromDir"=>0
     ];
-    return $a;
-  }
-  
-  /**
-   *
-   * @return Array
-   */  
-  public static function getDefaultsBackend() {
-    $a=[
-      "scriptsPath"=>"scripts/",
-      "pathBias"=>"",
-      "lang"=>"en",
-      "timeShiftHrs"=>0
-    ];
-    return $a;
+    return array_merge(self::$commonParams,$a);
   }
   
   public function overrideSubarrayValues($subarrayIndex,Array $data) {

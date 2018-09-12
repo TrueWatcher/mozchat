@@ -43,7 +43,7 @@
     <label for="onrecordedRad2">stop</label><input type="radio" id="onrecordedRad2" name="onrecordedRad" value="stop" />
   </span>
   <br />
-  <input type="text" id="decriptionInput" placeholder="You may type here a decription before recording" style="width:100%; max-width : 40em;" />
+  <input type="text" id="descriptionInput" placeholder="You may type here a description before recording" style="width:100%; max-width : 40em;" />
   <br />
   <button id="recordBtn">Wait...</button>
   <input type="text" id="timerInd" style="width : 3em;" class="inline" value="0" />s&nbsp;

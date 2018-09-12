@@ -168,6 +168,12 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
     busy=true;
   };
   
+  this.reset=function() {
+    req.abort();
+    busy=false;
+    indicator.off();
+  }
+  
   function receive() {
     var rdata,rmime;
     

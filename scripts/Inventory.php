@@ -8,6 +8,7 @@ class Inventory {
   private $data=[];
   private $total;
   private $keys=["fileName","author","dateTime","mime","duration","bytes","expire","description"];
+  private $hideExpired=0;
   
   static function getMyFileName() { return self::$myFileName; }
   
@@ -21,8 +22,9 @@ class Inventory {
     return $res;
   }
   
-  function init($tp,$mfn) {
+  function init($tp,$mfn,$hideExpired=0) {
     // media must be stored in "mediaBLABLA" folder
+    if ($hideExpired) $this->hideExpired=$hideExpired;
     $mfn=self::checkMediaFolderName($mfn);
     $mediaFolder=$tp.$mfn;
     if ( ! file_exists($mediaFolder)) mkdir($mediaFolder);
@@ -37,6 +39,7 @@ class Inventory {
     $folderIsEmpty=(count($filesFound) == 0);
     if ($folderIsEmpty) {
       //echo(" empty folder ");
+      if (empty($this->data)) return;// to avoid rewriting and changing modtime
       $this->data=[];
       $this->total=0;
       file_put_contents($myFile,"[]");
@@ -124,29 +127,34 @@ class Inventory {
   }
   
   function removeExpired() {
-    $t=time();
-    $resData=[];
-    $counter=0;
-    foreach ($this->data as $e) {
+    list($valid,$counter,$expired)=$this->withoutExpired();
+    if ( ! $counter) return;
+    $this->data=$valid;
+    $this->sumUpBytes();
+    file_put_contents($this->targetPath.self::$myFileName, json_encode($this->data));
+    foreach ($expired as $e) {
       $ee=array_combine($this->keys,$e);
-      if($ee["expire"] < $t) {
-        unlink($this->mediaFolder."/".$ee["fileName"]);
-        $counter+=1;
-      }
-      else { $resData[]=$e; }
-    }
-    if ($counter) {
-      $this->data=$resData;
-      $this->sumUpBytes();
-      file_put_contents($this->targetPath.self::$myFileName, json_encode($this->data));
+      unlink($this->mediaFolder."/".$ee["fileName"]);
     }
   }
   
+  private function withoutExpired() {
+    $t=time();
+    $valid=[];
+    $expired=[];
+    foreach ($this->data as $e) {
+      $ee=array_combine($this->keys,$e);
+      if ($ee["expire"] < $t) { $expired[]=$e; }
+      else { $valid[]=$e; }
+    }  
+    return [$valid,count($expired),$expired];
+  }
+  
   function freeSomeRoom($bytes) {
-    if($bytes > $this->total) throw new Exception("Cannot remove $bytes from the total {$this->total}");
+    if ($bytes > $this->total) throw new Exception("Cannot remove $bytes from the total {$this->total}");
     $freed=0;
     $d=$this->data;
-    while($freed < $bytes) {
+    while ($freed < $bytes) {
       $e=array_shift($d);
       $ee=array_combine($this->keys,$e);
       unlink($this->mediaFolder."/".$ee["fileName"]);
@@ -167,7 +175,12 @@ class Inventory {
     return $sum;
   }
   
-  function getCatalog() { return $this->data; }
+  function getCatalog() { 
+    if ( ! $this->hideExpired) return $this->data;
+    $valid=$this->withoutExpired()[0];
+    return $valid;
+  }
+  
   function getTotalBytes() { return $this->total; }
   
   function getCatalogBytes() { return filesize($this->targetPath.self::$myFileName); }

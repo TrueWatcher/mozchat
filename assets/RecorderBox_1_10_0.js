@@ -353,7 +353,7 @@ mc.rb.ViewR=function() {
       realm : realmInput.value,
       audioOrVideo : mc.utils.getRadio("audioOrVideoRad"),
       onrecorded : mc.utils.getRadio("onrecordedRad"),
-      description : decriptionInput.value,
+      description : descriptionInput.value,
       chunkSizeS : chunkSizeS
     };
   };

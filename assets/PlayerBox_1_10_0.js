@@ -4,7 +4,7 @@ mc.pb={};
 
 mc.pb.PlayerBox=function() {
   var viewP={}, timerP={}, ajaxerP={}, /*player={},*/ serialPlayer={}, _this=this;
-  var catalogTime=0, catalogBytes=0, usersListTime=0, myUsersList="", ticks=0, userParams={}, serverParams={}, inventory={}, firstResponse=1, response={}, changesMap={};
+  var catalogTime=0, catalogBytes=0, usersListTime=0, myUsersList="", ticks=0, pollWatch, userParams={}, serverParams={}, inventory={}, firstResponse=1, response={}, changesMap={};
   var urlprefix="";
   //var mediaFolder="media";
   
@@ -14,23 +14,20 @@ mc.pb.PlayerBox=function() {
     viewP.clearMessage();
     viewP.applyServerParams(serverParams);
     _this.applyParams();
-    inventory=new mc.pb.Inventory();
-    
-    ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", takeResponseP, {});
-    if (serverParams.pollFactor != "off") setInterval(_this.onTick, 100);
-    
+    inventory=new mc.pb.Inventory();    
+    ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", takeResponseP, {});    
     if ( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
     urlprefix=serverParams.pathBias+userParams.realm+"/"+serverParams.mediaFolder+"/";
-    serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP, onMediaError);
-    
-    viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear);
+    serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP, onMediaError);    
+    viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear); 
+    setInterval(_this.onTick, 100);
   };
   
   this.startPoller=function() { setInterval(_this.onTick, 100); };
   
   function takeResponseP(resp) { 
     var ps,toPlay;
-
+    if (resp && pollWatch) clearTimeout(pollWatch);
     if (resp.catalogBytes) catalogBytes=resp.catalogBytes;
     if (resp.timestamp) catalogTime=resp.timestamp;
     if (resp.free) viewP.showFreeSpace(resp.free);
@@ -73,16 +70,18 @@ mc.pb.PlayerBox=function() {
     ticks+=1;
     if (ticks < userParams.pollFactor) return;
     ticks=0;
-    _this.sendPoll();
+    if ( ! ajaxerP.isBusy()) _this.sendPoll();
   };
   
-  _this.sendPoll=function() {
+  _this.sendPoll=function(moreParams) {
     var qs="";
     qs+="user="+userParams.user+"&realm="+userParams.realm;
     qs+="&act=poll&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
     qs+="&pollFactor="+userParams.pollFactor;
-    ajaxerP.getRequest(qs);    
-  }
+    if (moreParams) qs+="&"+moreParams;
+    ajaxerP.getRequest(qs);
+    pollWatch=setTimeout(_this.onPollhangs,2000);    
+  };
   
   _this.sendLongPoll=function() {
     var qs="";
@@ -91,8 +90,17 @@ mc.pb.PlayerBox=function() {
     qs+="&myUsersList="+encodeURIComponent(myUsersList);
     var longPollFactor=serverParams.longPollPeriodS+1;
     qs+="&pollFactor="+longPollFactor;
-    ajaxerP.getRequest(qs);     
-  }
+    ajaxerP.getRequest(qs);    
+    pollWatch=setTimeout(_this.onPollhangs,serverParams.longPollPeriodS*1000+2000);
+  };
+  
+  this.linkIsBusy=function() { return ajaxerP.isBusy(); };
+  
+  _this.onPollhangs=function() { 
+    viewP.showMessage("The request has timed out");
+    console.log("The request has timed out");
+    ajaxerP.reset();
+  };
   
   _this.listClicked=function(event) {
     //alert("click");
@@ -124,7 +132,7 @@ mc.pb.PlayerBox=function() {
   
   _this.applyParams=function() { 
     userParams=viewP.getParams();
-    //console.log(mc.utils.dumpArray(userParams));
+    viewP.blurActive();
     // no return false !!!
   };
 
@@ -320,7 +328,7 @@ mc.pb.ViewP=function() {
     // onkeydown 27 = clear SEE top controller
   };
   
-  function blurActive() { document.activeElement.blur(); }
+  this.blurActive=function() { document.activeElement.blur(); }
 }
 
 mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) {

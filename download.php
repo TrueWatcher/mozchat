@@ -31,19 +31,12 @@ try {
   
   case "delete":
     if( ! isset($input["id"])) throw new DataException("Missing ID");
-    
+    $id=$input["id"];    
     $inv=new Inventory();
-    $inv->init($targetPath,$pr->g("mediaFolder"));
-    $id=$input["id"];
-    $l=$inv->getLine($id);
-    if( ! $l) throw new DataException("No data about this file");
-    if($l["author"] != $input["user"]) throw new DataException("You are not permitted");
-    $target=$inv->getMediaPath().$l["fileName"];
-    if( ! file_exists($target)) throw new DataException("No such file $target");
-    unlink($target);
+    $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
+    unlinkById($id,$inv,$input);    
     $inv->deleteLine($id);
-    $list=$inv->getCatalog();
-    $r["list"]=$list;
+    $r["list"]=$inv->getCatalog();
     $r["timestamp"]=time();
     $r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
     $r["alert"]="Clip deleted";
@@ -51,9 +44,10 @@ try {
   
   case "poll":
     $r=anyNews($pr,$input,$targetPath);
+    if (isset($input["hangS"])) sleep($input["hangS"]);
     break;
   
-  case "longPoll":
+  case "longPoll":    
     $longPollPeriodS=$pr->g("longPollPeriodS");
     $longPollStepMs=300;
     $cycles=ceil($longPollPeriodS*1000/$longPollStepMs);
@@ -62,8 +56,9 @@ try {
       if ($rr !== 304) break;
       usleep(1000*$longPollStepMs);
     }
-    if ($rr === 304) { $r["alert"]="long poll expired"; }
+    if ($rr === 304) { $r=refreshCatalog($pr,$targetPath); } 
     else $r=$rr;
+    if (isset($input["hangS"])) sleep($input["hangS"]);
     break;
   
   case "clearMedia":
@@ -88,16 +83,38 @@ if($r === 304) {
 print(json_encode($r));
 exit();
 
-function anyNews($pr,$input,$targetPath) {
+function unlinkById($id,Inventory $inv,$input) {
+  $l=$inv->getLine($id);
+  if( ! $l) throw new DataException("No data about this file");
+  if($l["author"] != $input["user"]) throw new DataException("You are not permitted");
+  $target=$inv->getMediaPath().$l["fileName"];
+  if( ! file_exists($target)) throw new DataException("No such file $target");
+  unlink($target);
+}
+
+function refreshCatalog(PageRegistry $pr,$targetPath) {
   $r=[];
-  $inventoryUpdated = ( $pr->checkNotEmpty("removeExpiredFromDir") || ! Inventory::isStillValid($targetPath,$input["catSince"],$input["catBytes"]) );
+  $inv=new Inventory();
+  $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
+  $r["list"]=$inv->getCatalog();
+  $r["timestamp"]=time();
+  $r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
+  $r["alert"]="Catalog refreshed";;
+  return $r;
+}
+
+function anyNews(PageRegistry $pr,$input,$targetPath) {
+  $r=[];
+  $inventoryUpdated = ( $pr->checkNotEmpty("removeExpiredFromDir") || isset($input["removeExpired"]) || ! Inventory::isStillValid($targetPath,$input["catSince"],$input["catBytes"]) );
   $usersToBeUpdated= ! UsersMonitor::isStillValid($targetPath,$input["usersSince"],$pr);
   //$delta=filemtime($targetPath."users.json")-$input["since"];
   
   if ($inventoryUpdated) {
     $inv=new Inventory();
-    $inv->init($targetPath,$pr->g("mediaFolder"));
-    if ($pr->checkNotEmpty("removeExpiredFromDir")) { $inv->removeExpired(); }
+    $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
+    if ( $pr->checkNotEmpty("removeExpiredFromDir") || isset($input["removeExpired"]) ) { 
+      $inv->removeExpired();
+    }
     $r["list"]=$inv->getCatalog();
     $r["catalogBytes"]=$inv->getCatalogBytes();
     $r["timestamp"]=time();
