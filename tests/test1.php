@@ -77,7 +77,7 @@ function Shadow() {
     qs+="&act=longPoll&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
     qs+="&myUsersList="+encodeURIComponent(myUsersList);
     var longPollFactor=serverParams.longPollPeriodS+1;
-    qs+="&pollFactor="+longPollFactor;
+    //qs+="&pollFactor="+longPollFactor;
     console.log("Shadow's request : "+qs);
     ajaxerP.getRequest(qs);     
   };

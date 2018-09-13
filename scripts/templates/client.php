@@ -144,7 +144,7 @@ mc.TopManager=function() {
     recorderBox=new mc.rb.RecorderBox();
     recorderBox.init(mc.serverParams);
 
-    playerBox=new mc.pb.PlayerBox();
+    playerBox=new mc.pb.PlayerBox(recorderBox.getUpConnection());
     playerBox.init(mc.serverParams);
     
     kbm=new mc.utils.KeyboardMonitor(recorderBox.recorderOn, recorderBox.recorderOff, playerBox.clear);    

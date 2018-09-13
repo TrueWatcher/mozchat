@@ -1,5 +1,5 @@
 [
-'recorderBox.sendClear();',
+'recorderBox.getUpConnection().sendClear();',
 'println("Testing long poll"); \
  println("catch others log in and log out");',
 'playerBox.sendPoll();',
@@ -11,15 +11,17 @@
 'console.log(mc.utils.dumpArray(playerBox.getResponse()))',
 'assertTrue(playerBox.linkIsBusy(),"Long request returned","Long request is active")',
 'shadow.sendPoll();',
-'assertTrue( ! playerBox.linkIsBusy(),"Missed userslist change","Returned on userslist change");\
+'',
+'assertTrue( ! playerBox.linkIsBusy(),"Missed user login","Returned on user login");\
  ul=playerBox.getResponse().users;\
  print(ul+" ");\
  assertEqualsPrim("Shadow, Test1", ul, "Wrong users list", "Users list Ok")',
+'','',
 'playerBox.sendLongPoll();',
 'assertTrue(playerBox.linkIsBusy(),"Long request returned","Long request is active")',
-'','','','','','','',
-'assertTrue( ! playerBox.linkIsBusy(),"Missed userslist change","Returned on userslist change");\
- ul=playerBox.getResponse().users;\
+'','','','','',
+'assertTrue( ! playerBox.linkIsBusy(),"Missed user logout","Returned on user logout");\
+ ul=usersS.innerHTML;\
  print(ul+" ");\
  assertEqualsPrim("Test1", ul, "Wrong users list", "Users list Ok")',
 'playerBox.sendPoll();',
@@ -37,7 +39,8 @@
  descriptionInput.value=clip1;',
 'recordBtn.click();',
 'recordBtn.click();',
-'assertTrue( ! playerBox.linkIsBusy(),"Missed clip upload","Returned on clip upload");\
+'',
+'assertTrue( ! shadow.linkIsBusy(),"Missed clip upload","Returned on clip upload");\
  shResp=shadow.getResponce(); \
  console.log(mc.utils.dumpArray(shResp)); \
  shResp=mc.utils.dumpArray(shResp); \
@@ -51,7 +54,7 @@
  delBtn=medialistT.getElementsByClassName("delete")[0]; \
  assertTrue(!!delBtn, "Missing DELETE link", "DELETE link found"); \
  delBtn.click();',
-'assertTrue( ! playerBox.linkIsBusy(),"Missed clip deletion","Returned on clip deletion");\
+'assertTrue( ! shadow.linkIsBusy(),"Missed clip deletion","Returned on clip deletion");\
  shResp=shadow.getResponce(); \
  console.log(mc.utils.dumpArray(shResp)); \
  shResp=mc.utils.dumpArray(shResp); \

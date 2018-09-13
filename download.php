@@ -177,10 +177,11 @@ class UsersMonitor {
     $this->read($tp);
     $this->removeExpired();
     self::$statusFadeS=$pr->g("userStatusFadeS");
-    $validFor=2+self::$statusFadeS;
-    $aPollFactor=0;
-    if (isset($input["pollFactor"]) && $input["pollFactor"]) $aPollFactor=$input["pollFactor"];
-    if ($aPollFactor > self::$statusFadeS*10) $validFor=2+ceil($aPollFactor/10);
+    $validFor=1+self::$statusFadeS;
+    if (isset($input["pollFactor"]) && $input["pollFactor"]) {
+      $aPollFactor=$input["pollFactor"];
+      if ($aPollFactor > self::$statusFadeS*10) $validFor=1+ceil($aPollFactor/10);
+    }  
     $this->mark($input["user"],"online",$validFor);
     $after=$this->presentOnline();    
     file_put_contents($this->myFileFull,json_encode($this->data));

@@ -136,6 +136,7 @@ class Inventory {
       $ee=array_combine($this->keys,$e);
       unlink($this->mediaFolder."/".$ee["fileName"]);
     }
+    return $counter;
   }
   
   private function withoutExpired() {

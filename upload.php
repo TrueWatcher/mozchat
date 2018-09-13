@@ -16,7 +16,7 @@ header('Content-type: text/plain; charset=utf-8');//application/json
 //print(implode(",",array_keys($_REQUEST)));
 //print(implode(",",array_keys($_FILES)));
 
-$input=$_POST;
+$input=$_REQUEST;
 try {
   $r=[];
   checkUserRealm($pathBias,$input);
@@ -26,10 +26,11 @@ try {
   //$pr->overrideValuesBy($pageEntryParams["PageRegistry"]);
   $pr->overrideValuesBy($iniParams["common"]);
   //$pr->dump();  
-  if( ! isset($input["act"])) throw new DataException("Missing ACT");
+  if ( ! isset($input["act"])) throw new DataException("Missing ACT");
   $act=$input["act"];
-
-  if($act == "uploadBlob") {
+  
+  switch ($act) {
+  case "uploadBlob":
     checkFields($input);
     checkBlob($_FILES,$pr);
     $inv=new Inventory();
@@ -41,27 +42,52 @@ try {
     //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
     $r["alert"]='Server got a record of '.$uploadedBytes;
     $r["alert"] .= MailHelper::go($input, $targetPath, $n, $uploadedBytes,  $pr);
-  }
-  else if($act == "reportMimeFault") {
+    break;
+  
+  case "reportMimeFault":
     reportMimeFault($pathBias,$input);
     $r=204;
-  }
-  else if($act == "clearMedia") {
+    break;
+  
+  case "clearMedia":
     $inv=new Inventory();
     //$inv->init($targetPath,$pr->g("mediaFolder"));
     $inv->clear($targetPath,$pr->g("mediaFolder"));
     $r["alert"]="files cleared";
+    break;
+    
+  case "delete":
+    if ( ! isset($input["id"])) throw new DataException("Missing ID");
+    $id=$input["id"];    
+    $inv=new Inventory();
+    $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
+    unlinkById($id,$inv,$input);    
+    $inv->deleteLine($id);
+    //$r["list"]=$inv->getCatalog();
+    //$r["timestamp"]=time();
+    //$r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
+    $r["alert"]="Clip deleted";
+    break;
+    
+  case "removeExpired":
+    $inv=new Inventory();
+    $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
+    $c=$inv->removeExpired();
+    $r["alert"]="$c expired clips deleted";
+    break;
+  
+  default:
+    throw new DataException("Unknown command=$act!");
   }
-  else throw new DataException("Unknown command=$act!");
   
 } catch (DataException $de) {
   $r["error"]=$de->getMessage();
 }
-if($r === 204) {
+if ($r === 204) {
   header("HTTP/1.0 204 No Content");
   exit();
 }
-if($r === 304) {
+if ($r === 304) {
   header("HTTP/1.0 304 Not Modified");
   exit();
 }
@@ -72,29 +98,29 @@ function checkExt($ext) { return MimeDecoder::ext2mime($ext); }
   
 function checkFields($input) {
   $r=true;
-  if( isset($input["description"]) ) $input["description"]=htmlspecialchars($input["description"]);
-  if( ! isset($input["mime"]) || ! isset($input["ext"]) ) $r="Missing MIME or EXT";
-  else if( ! checkExt($input["ext"])) $r="Unknown EXT=".$input["ext"]."!";
-  else if( isset($input["description"]) && strlen($input["description"]) > 200 ) {
+  if ( isset($input["description"]) ) $input["description"]=htmlspecialchars($input["description"]);
+  if ( ! isset($input["mime"]) || ! isset($input["ext"]) ) $r="Missing MIME or EXT";
+  else if ( ! checkExt($input["ext"])) $r="Unknown EXT=".$input["ext"]."!";
+  else if ( isset($input["description"]) && strlen($input["description"]) > 200 ) {
     $input["description"]=substr($input["description"],0,100);
   }
-  if($r !== true) throw new DataException($r);
+  if ($r !== true) throw new DataException($r);
 }
 
 function checkBlob($files,$pr) {
   $r=true;
-  if( ! isset($files["blob"])) $r="Missing the file";
-  else if( $files["blob"]["size"] > $pr->g("maxBlobBytes") ) $r="File is bigger than ".b2kb($pr->g("maxBlobBytes"));
-  if($r !== true) throw new DataException($r);
+  if ( ! isset($files["blob"])) $r="Missing the file";
+  else if ( $files["blob"]["size"] > $pr->g("maxBlobBytes") ) $r="File is bigger than ".b2kb($pr->g("maxBlobBytes"));
+  if ($r !== true) throw new DataException($r);
 }
 
 function checkUserRealm($pathBias,$input) {
   $r=true;
-  if( ! isset($input["user"]) || ! isset($input["realm"]) ) $r="Missing USER or REALM";
-  else if( charsInString($input["user"],"<>&\"':;()") ) $r="Forbidden symbols in username";
-  else if( strlen($input["user"]) > 30 ) $r="Too long username";
-  else if( ! file_exists($pathBias.$input["realm"]) || ! is_dir($pathBias.$input["realm"])) $r="Thread folder not found";
-  if($r !== true) throw new DataException($r);
+  if ( ! isset($input["user"]) || ! isset($input["realm"]) ) $r="Missing USER or REALM";
+  else if ( charsInString($input["user"],"<>&\"':;()") ) $r="Forbidden symbols in username";
+  else if ( strlen($input["user"]) > 30 ) $r="Too long username";
+  else if ( ! file_exists($pathBias.$input["realm"]) || ! is_dir($pathBias.$input["realm"])) $r="Thread folder not found";
+  if ($r !== true) throw new DataException($r);
 }
 
 function charsInString($object,$charsString) {
@@ -113,13 +139,21 @@ function reportMimeFault($pathBias,$input) {
   file_put_contents($browserLogFile,$rec);  
 }
 
+function unlinkById($id,Inventory $inv,$input) {
+  $l=$inv->getLine($id);
+  if ( ! $l) throw new DataException("No data about this file");
+  if ($l["author"] != $input["user"]) throw new DataException("You are not permitted");
+  $target=$inv->getMediaPath().$l["fileName"];
+  if ( ! file_exists($target)) throw new DataException("No such file $target");
+  unlink($target);
+}
 
 abstract class MailHelper {
 
   function go($input, $targetPath, $n, $uploadedBytes,  PageRegistry $pr) {
-    if( ! self::check($targetPath,$pr) ) return "";
+    if ( ! self::check($targetPath,$pr) ) return "";
     $counter=self::notifyUsers($input, $targetPath, $n, $uploadedBytes,  $pr);
-    if( ! $counter) return ", notifications failed";
+    if ( ! $counter) return ", notifications failed";
     return ", $counter notifications sent";
   }
   
@@ -133,18 +167,18 @@ abstract class MailHelper {
     $url .= $server['HTTP_HOST'];
     $dir=dirname($server['PHP_SELF']);
     //echo(" url=$url, dir=$dir, ");
-    if( ! empty($dir) && $dir !== "/") $url.=$dir;
+    if ( ! empty($dir) && $dir !== "/") $url.=$dir;
     $url.="/";
     return $uri;
   }
 
   private static function notifyUsers($input, $targetPath, $n, $uploadedBytes,  PageRegistry $pr) {
     $title="";
-    if($input["description"]) $title=" \"".$input["description"]."\" ";
+    if ($input["description"]) $title=" \"".$input["description"]."\" ";
     $valid=date("M_d_H:i:s",time()+3600*$pr->g("timeShiftHrs")+$pr->g("clipLifetimeSec"));
     $uri=self::baseUri($_SERVER);
     $enterLink=$url;
-    if($targetPath) $directLink=$url.$targetPath;
+    if ($targetPath) $directLink=$url.$targetPath;
     $directLink.=Inventory::checkMediaFolderName($pr->g("mediaFolder"))."/";
     $directLink.=$n;  
     $noteMain="{$input["realm"]} has received a message from {$input["user"]} $title of {$input["duration"]}s/$uploadedBytes, valid until $valid";
@@ -155,7 +189,7 @@ abstract class MailHelper {
     foreach($recipients as $rName=>$rAddr) {
       $welcome="Dear $rName,\n";
       $sent=self::sendEmail($rAddr,$welcome.$noteMain,$pr);
-      if($sent === true) $counter+=1;
+      if ($sent === true) $counter+=1;
     }
     return $counter;
   }
@@ -169,14 +203,14 @@ abstract class MailHelper {
     ];
     $subj="New message in media chat";
     
-    if(empty($recAddr) || false === strpos($recAddr,"@") || false===strpos($recAddr,".")) {
+    if (empty($recAddr) || false === strpos($recAddr,"@") || false===strpos($recAddr,".")) {
       return ([ $subj.$msgBody,"Invalid recipient" ]);
       //throw new UsageException("Invalid recipient address:$recAddr!");
     }    
-    if( $pr->checkNotEmpty("mailFrom") ) { $from="From: ".$pr->g("mailFrom"); }
+    if ( $pr->checkNotEmpty("mailFrom") ) { $from="From: ".$pr->g("mailFrom"); }
     else { $from="From: ".$defaultSender; }
     $headers[]=$from;  
-    if( $pr->checkNotEmpty("mailReplyTo") ) { 
+    if ( $pr->checkNotEmpty("mailReplyTo") ) { 
       $replyto="Reply-To: ".$pr->g("mailReplyTo");
       $headers[]=$replyto;
     }

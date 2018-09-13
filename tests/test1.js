@@ -1,6 +1,6 @@
 [ 
 'println("Clearing files and reading the catalog");',
-'recorderBox.sendClear();',
+'recorderBox.getUpConnection().sendClear();',
 '',
 'ok=recorderAlertP.innerHTML.indexOf("cleared") >= 0; \
  assertTrue(ok, "wrong message="+recorderAlertP.innerHTML, "server agreed");',
@@ -63,7 +63,8 @@
 'uploadStoredBtn.click(); i+=1; print(" "+i+" "); if(i >= toSend) { ci.inc(); };',
 'ci.noLoop();',
 'storedTime2=Date.now()/1000; \
- playerBox.sendPoll("removeExpired=1");',
+ playerBox.sendRemoveExpired();',
+'playerBox.sendPoll();',
 '',
 'elapsed=Date.now()/1000-storedTime1; \
  assertTrue(elapsed <= sp.clipLifetimeSec, "Increase the lifetime", "No new files have expired yet")',
@@ -80,16 +81,18 @@
 'ci.loop();',
 'elapsed=Date.now()/1000-storedTime1; \
  if(elapsed > (1+parseInt(sp.clipLifetimeSec)) ) { ci.inc(); };',
-'ci.noLoop();', 
-'playerBox.sendPoll("removeExpired=1");',
+'ci.noLoop();',
+'playerBox.sendRemoveExpired();',
+'playerBox.sendPoll();',
 '',
 'var freeAfterOneLifetime=parseInt(folderFreeInp.value); \
  assertTrue(freeAfterOneLifetime > free, "Wrong FREE after expiration="+freeAfterOneLifetime, "Some clips have expired");',
 'ci.loop();',
 'elapsed=Date.now()/1000-storedTime2; \
  if(elapsed > sp.clipLifetimeSec) { ci.inc(); };',
-'ci.noLoop();', 
-'playerBox.sendPoll("removeExpired=1");',
+'ci.noLoop();',
+'playerBox.sendRemoveExpired();',
+'playerBox.sendPoll();',
 '',
 'var freeFinally=parseInt(folderFreeInp.value); \
  assertEqualsPrim(sp.maxMediaFolderBytes/1000, freeFinally, "Wrong free space", "All space is eventually free"); \

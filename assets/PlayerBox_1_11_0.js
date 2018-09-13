@@ -2,9 +2,9 @@
 if ( ! mc) mc={};//namespace
 mc.pb={};
 
-mc.pb.PlayerBox=function() {
-  var viewP={}, timerP={}, ajaxerP={}, /*player={},*/ serialPlayer={}, _this=this;
-  var catalogTime=0, catalogBytes=0, usersListTime=0, myUsersList="", ticks=0, pollWatch, userParams={}, serverParams={}, inventory={}, firstResponse=1, response={}, changesMap={};
+mc.pb.PlayerBox=function(upConnection) {
+  var viewP={}, serialPlayer={}, _this=this;
+  var userParams={}, serverParams={}, inventory={}, firstResponse=1, _response={}, changesMap={}, dataSource={};
   var urlprefix="";
   //var mediaFolder="media";
   
@@ -13,27 +13,21 @@ mc.pb.PlayerBox=function() {
     viewP=new mc.pb.ViewP();
     viewP.clearMessage();
     viewP.applyServerParams(serverParams);
-    _this.applyParams();
+    this.applyParams();
     inventory=new mc.pb.Inventory();    
-    ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", takeResponseP, {});    
+    dataSource=new mc.pb.Poller(serverParams.pathBias+"download.php", takeResponseP,  _this.onPollhangs, _this.getUserParams, serverParams);
     if ( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
     urlprefix=serverParams.pathBias+userParams.realm+"/"+serverParams.mediaFolder+"/";
     serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP, onMediaError);    
     viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear); 
-    setInterval(_this.onTick, 100);
   };
   
-  this.startPoller=function() { setInterval(_this.onTick, 100); };
+  //this.startPoller=function() { setInterval(_this.onTick, 100); };
   
   function takeResponseP(resp) { 
     var ps,toPlay;
-    if (resp && pollWatch) clearTimeout(pollWatch);
-    if (resp.catalogBytes) catalogBytes=resp.catalogBytes;
-    if (resp.timestamp) catalogTime=resp.timestamp;
     if (resp.free) viewP.showFreeSpace(resp.free);
     if (resp.users) { 
-      usersListTime=resp.timestamp;
-      myUsersList=resp.users;
       viewP.showUsers(resp.users);
     }
     if (resp.list) {
@@ -55,51 +49,22 @@ mc.pb.PlayerBox=function() {
       if (resp.alert) { viewP.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms"); }
       //else viewP.showMessage(resp.alert || mc.utils.dumpArray(resp) || "<empty>");
     }
-    response=resp;
+    //response=resp;
   }
   
-  this.getResponse=function() { return response; };
+  this.getResponse=function() { return dataSource.getResponse(); };
+  this.linkIsBusy=function() { return dataSource.linkIsBusy(); };
+  this.sendPoll=function(moreParams) { return dataSource.sendPoll(moreParams); };
+  this.sendLongPoll=function(moreParams) { return dataSource.sendLongPoll(moreParams); };
+  this.sendDelete=function(file) { return upConnection.sendDelete(file); };
+  //dataSource.sendDelete(file);
+  this.sendRemoveExpired=function(file) { return upConnection.sendRemoveExpired(); };
+  
   this.getChangesMap=function() { return changesMap; };
-  
-  _this.onTick=function() {
-    if (userParams.pollFactor === "off") return;
-    if (userParams.pollFactor === "l") {
-      if ( ! ajaxerP.isBusy()) _this.sendLongPoll();
-      return;
-    }
-    ticks+=1;
-    if (ticks < userParams.pollFactor) return;
-    ticks=0;
-    if ( ! ajaxerP.isBusy()) _this.sendPoll();
-  };
-  
-  _this.sendPoll=function(moreParams) {
-    var qs="";
-    qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=poll&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
-    qs+="&pollFactor="+userParams.pollFactor;
-    if (moreParams) qs+="&"+moreParams;
-    ajaxerP.getRequest(qs);
-    pollWatch=setTimeout(_this.onPollhangs,2000);    
-  };
-  
-  _this.sendLongPoll=function() {
-    var qs="";
-    qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=longPoll&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
-    qs+="&myUsersList="+encodeURIComponent(myUsersList);
-    var longPollFactor=serverParams.longPollPeriodS+1;
-    qs+="&pollFactor="+longPollFactor;
-    ajaxerP.getRequest(qs);    
-    pollWatch=setTimeout(_this.onPollhangs,serverParams.longPollPeriodS*1000+2000);
-  };
-  
-  this.linkIsBusy=function() { return ajaxerP.isBusy(); };
   
   _this.onPollhangs=function() { 
     viewP.showMessage("The request has timed out");
     console.log("The request has timed out");
-    ajaxerP.reset();
   };
   
   _this.listClicked=function(event) {
@@ -111,9 +76,11 @@ mc.pb.PlayerBox=function() {
     else if (c.command == "playDown") serialPlayer.play({
       id : c.id, mime : _this.isVideo(c.id), el : false}
     );
-    else if (c.command == "delete") sendDelete(c.id);
+    else if (c.command == "delete") _this.sendDelete(c.id);
     return false;    
   };
+  
+  _this.getUserParams=function() { return userParams; };
   
   function onMediaError(msg) { 
     console.log("Caught a media error:"+msg); 
@@ -122,17 +89,12 @@ mc.pb.PlayerBox=function() {
     return false;
   }
   
-  function sendDelete(file) {
-    var qs="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=delete&id="+encodeURIComponent(file);
-    ajaxerP.getRequest(qs);    
-  }
-  
-  _this.getNextId=function(id) { return inventory.getNextId(id,userParams); };
+  _this.getNextId=function(id) { return inventory.getNextId(id, userParams); };
   
   _this.applyParams=function() { 
     userParams=viewP.getParams();
     viewP.blurActive();
+    //console.log(mc.utils.dumpArray(userParams));
     // no return false !!!
   };
 
@@ -140,7 +102,71 @@ mc.pb.PlayerBox=function() {
   
   _this.clear=function() { serialPlayer.stop(); viewP.clearClips(); };
    
-}// end PlayerBox 
+}// end PlayerBox
+
+mc.pb.Poller=function(responderUri, onData, onHang, fUserParams, serverParams) {
+  var _this=this, ticks=0, catalogTime=0, catalogBytes=0, usersListTime=0, myUsersList="", response;
+  var userParams=fUserParams();
+  
+  var ajaxerP=new mc.utils.Ajaxer(responderUri, takeResponseInner, {}, onHang); 
+    
+  _this.onTick=function() {
+    userParams=fUserParams();// otherwise uses only a copy, not live params
+    //console.log(userParams.pollFactor);
+    if (userParams.pollFactor === "off") return;
+    if (userParams.pollFactor === "l") {
+      if ( ! ajaxerP.isBusy()) _this.sendLongPoll();
+      return;
+    }
+    ticks+=1;
+    if (ticks < userParams.pollFactor) return;
+    ticks=0;
+    if ( ! ajaxerP.isBusy()) _this.sendPoll();
+  };
+  
+  this.sendPoll=function(moreParams) {
+    var qs="";
+    qs+="user="+userParams.user+"&realm="+userParams.realm;
+    qs+="&act=poll&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
+    qs+="&pollFactor="+userParams.pollFactor;
+    if (moreParams) qs+="&"+moreParams;
+    ajaxerP.getRequest(qs, 2000);   
+  };
+  
+  this.sendLongPoll=function() {
+    var qs="";
+    qs+="user="+userParams.user+"&realm="+userParams.realm;
+    qs+="&act=longPoll&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
+    qs+="&myUsersList="+encodeURIComponent(myUsersList);
+    //var longPollFactor=serverParams.longPollPeriodS+1;
+    //qs+="&pollFactor="+longPollFactor;
+    ajaxerP.getRequest(qs, serverParams.longPollPeriodS*1000+2000);    
+  };
+  
+  this._sendDelete=function(file) {
+    var qs="user="+userParams.user+"&realm="+userParams.realm;
+    qs+="&act=delete&id="+encodeURIComponent(file);
+    ajaxerP.getRequest(qs);    
+  };
+  
+  this.linkIsBusy=function() { return ajaxerP.isBusy(); };
+  
+  this.getResponse=function() { return response; };
+  
+  function takeResponseInner(resp) {
+    response=resp;
+    if (resp.catalogBytes) catalogBytes=resp.catalogBytes;
+    if (resp.timestamp) catalogTime=resp.timestamp;
+    if (resp.users) { 
+      usersListTime=resp.timestamp;
+      myUsersList=resp.users;
+    }
+    onData(resp);
+  }
+  
+  setInterval(_this.onTick, 100);
+   
+};
 
 mc.pb.Inventory=function() {
   var catalog={}, oldCatalog={}, _this=this, userParams={};
@@ -245,10 +271,9 @@ mc.pb.ViewP=function() {
     };
   };
   
-  this.applyDiff=function(diff,pollFactor) {
+  this.applyDiff=function(diff) {
     var rml=diff.removed.length;
     var adl=diff.added.length;
-    var pollIsLong=(pollFactor == "l");
     var i,tr;
 
     for(i=0; i<rml; i+=1) {
@@ -257,7 +282,7 @@ mc.pb.ViewP=function() {
       tr=null;
     }
     for(i=0; i<adl; i+=1) {
-      tr=renderLine(diff.added[i],pollIsLong);
+      tr=renderLine(diff.added[i]);
       //medialistT.appendChild(tr); // latest at bottom
       medialistT.insertBefore(tr, medialistT.firstChild);// latest at top
       tr=null;
@@ -265,11 +290,11 @@ mc.pb.ViewP=function() {
   };
   
   // @return HTMLElement tr
-  function renderLine(l,pollIsLong) {
+  function renderLine(l) {
     if ( ! l instanceof Array) throw new Error("Wrong argument type "+(typeof l));
     var r="", i=0, ll=l.length, delLink="<td></td>", descr="",aov="",aovPlusTitle="";
     var tr=document.createElement("TR");
-    if (l[1] == user && ! pollIsLong) delLink='<td class="delete">'+"delete"+"</td>";
+    if (l[1] == user) delLink='<td class="delete">'+"delete"+"</td>";
     if (l[7]) descr="<br />"+l[7];
     r+="<td>"+l[1]+" "+l[2]+descr+"</td>";
     aov=l[3].substr(0,5);

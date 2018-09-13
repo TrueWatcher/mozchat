@@ -6,6 +6,7 @@ mc.rb.RecorderBox=function() {
   var viewR={}, timerR={}, ajaxerR={}, recorder={}, _this=this;
   var blobPlus={}, userParams={}, serverParams={};
   var recordingTime=0, lastRecordedTime=0, timingOn=0;
+  var upConnection={};
   
   this.init=function(fromServer) {
     serverParams=fromServer;
@@ -15,7 +16,7 @@ mc.rb.RecorderBox=function() {
     userParams=viewR.getParams();
     //console.log(mc.utils.dumpArray(userParams));
     
-    ajaxerR=new mc.utils.Ajaxer(fromServer.pathBias+"upload.php", takeResponseR, viewR.uploadIndicator);
+    upConnection=new mc.rb.UpConnection(fromServer.pathBias+"upload.php", takeResponseR, onHang,  serverParams, userParams, viewR.uploadIndicator);
     
     checkMime();
     
@@ -35,7 +36,7 @@ mc.rb.RecorderBox=function() {
     if (rma.outcome !== true) fail=rma.outcome;
     else if (rmv.outcome !== true) fail=rmv.outcome;
     if (fail) {
-      reportMimeFault(rma.recorderMimes);// requires ajaxerR
+      upConnection.reportMimeFault(rma.recorderMimes);
       viewR.showMessage(fail);
       console.log(mc.utils.dumpArray(rma))
       console.log(mc.utils.dumpArray(rmv));
@@ -102,8 +103,16 @@ mc.rb.RecorderBox=function() {
     uploadBlobAndData(blobPlus);
   };
   
+  this.getUpConnection=function() { return upConnection; };
+  
+  function onHang() {
+    viewR.showMessage("Request timed out");
+  }
+  
   function onBlobReady(blobPlusData) {    
-    if (userParams.onrecorded == "upload" && serverParams.allowStream && serverParams.allowStream !== "0") uploadBlobAndData(blobPlusData);
+    if (userParams.onrecorded == "upload" && serverParams.allowStream && serverParams.allowStream !== "0") {
+      uploadBlobAndData(blobPlusData); 
+    }
     else if (userParams.onrecorded == "stop") allowLocalDownload(blobPlusData);
     else throw new Error("Not to get here");
   }
@@ -116,18 +125,8 @@ mc.rb.RecorderBox=function() {
   }
 
   function uploadBlobAndData(blobPlusData) {
-    var stuff;
     if ( true !== checkBlobSize(blobPlusData) || true !== checkUplinkOverload() ) return;
-    stuff=new FormData();
-    stuff.append("act","uploadBlob");
-    stuff.append("user",userParams.user);
-    stuff.append("realm",userParams.realm);
-    stuff.append("description",userParams.description);
-    stuff.append("mime",blobPlusData.mime);
-    stuff.append("ext",blobPlusData.ext);
-    stuff.append("duration",lastRecordedTime);
-    stuff.append("blob",blobPlusData.blob);
-    ajaxerR.postRequest(stuff);
+    upConnection.sendBlobAndData(blobPlusData, lastRecordedTime, userParams.description);
   }
   
   function checkBlobSize(blobPlusData) {
@@ -138,30 +137,13 @@ mc.rb.RecorderBox=function() {
   }
   
   function checkUplinkOverload() {
-    if ( ! ajaxerR.isBusy()) return true;
+    if ( ! upConnection.linkIsBusy()) return true;
     var errmsg="Error! Uplink is busy. Your network or server is too slow for instant uploads. Try bigger chuncks sent after recording";
     viewR.showMessage(errmsg);
     console.log(errmsg);
     viewR.applyServerParams({ allowStream : serverParams.allowStream, onRecorded : "stop" });
     userParams=viewR.getParams();
     return errmsg;
-  }
-  
-  function reportMimeFault(recorderMimes) {
-    var  stuff=new FormData();
-    stuff.append("act","reportMimeFault");
-    stuff.append("user",userParams.user);
-    stuff.append("realm",userParams.realm);
-    stuff.append("mimesList",mc.utils.dumpArray(recorderMimes));
-    ajaxerR.postRequest(stuff);
-  }
-  
-  _this.sendClear=function() {
-    var  stuff=new FormData();
-    stuff.append("act","clearMedia");
-    stuff.append("user",userParams.user);
-    stuff.append("realm",userParams.realm);
-    ajaxerR.postRequest(stuff);
   }
 
   function takeResponseR(resp) { 
@@ -172,6 +154,62 @@ mc.rb.RecorderBox=function() {
   }
 
 }// end RecorderBox
+
+mc.rb.UpConnection=function(respondrUri, onData, onHang, serverParams, userParams, indicator) {
+  var _this=this;
+  var ajaxerR=new mc.utils.Ajaxer(respondrUri, onData, indicator, onHang);
+  
+  this.linkIsBusy=function() { return ajaxerR.isBusy(); };
+  
+  this.sendBlobAndData=function(blobPlusData,lastRecordedTime,description) {
+    var stuff;
+    stuff=new FormData();
+    stuff.append("act","uploadBlob");
+    stuff.append("user",userParams.user);
+    stuff.append("realm",userParams.realm);
+    stuff.append("description",description);
+    stuff.append("mime",blobPlusData.mime);
+    stuff.append("ext",blobPlusData.ext);
+    stuff.append("duration",lastRecordedTime);
+    stuff.append("blob",blobPlusData.blob);
+    ajaxerR.postRequest(stuff);
+  };
+
+  this.reportMimeFault=function(recorderMimes) {
+    var  stuff=new FormData();
+    stuff.append("act","reportMimeFault");
+    stuff.append("user",userParams.user);
+    stuff.append("realm",userParams.realm);
+    stuff.append("mimesList",mc.utils.dumpArray(recorderMimes));
+    ajaxerR.postRequest(stuff);
+  };
+  
+  _this.sendClear=function() {
+    var  stuff=new FormData();
+    stuff.append("act","clearMedia");
+    stuff.append("user",userParams.user);
+    stuff.append("realm",userParams.realm);
+    ajaxerR.postRequest(stuff);
+  }
+  
+  _this.sendDelete=function(file) {
+    var  stuff=new FormData();
+    stuff.append("act","delete");
+    stuff.append("user",userParams.user);
+    stuff.append("realm",userParams.realm);
+    stuff.append("id",file);
+    ajaxerR.postRequest(stuff);    
+  };
+  
+  _this.sendRemoveExpired=function() {
+    var  stuff=new FormData();
+    stuff.append("act","removeExpired");
+    stuff.append("user",userParams.user);
+    stuff.append("realm",userParams.realm);
+    ajaxerR.postRequest(stuff);  
+  };
+  
+};
 
 mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {  
   if (typeof receiveBlob != "function") throw new Error("No receiver callback given");

@@ -135,16 +135,16 @@ mc.utils.s2dhms=function(sec) {
   return r;
 };
 
-mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
+mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator,onTimeout) {
   if (typeof onDataReceived != "function") throw new Error("Non-function callback argument");
   if ( ! indicator.on) indicator={on:function(){}, off:function(){}}; 
   var urlOffset="";
   if (typeof URLOFFSET != "undefined") urlOffset=URLOFFSET;
-  var lag=0, timer=false, busy=false;
+  var lag=0, timer=false, busy=false, watch=false;
   
   var _this=this, req;
     
-  this.postRequest=function(what) {
+  this.postRequest=function(what,timeoutMs) {
     if ( ! what) throw new Error ("no data");
     if (busy) throw new Error("Ajaxer "+responderUrl+" is busy");
     timer=Date.now();
@@ -155,9 +155,10 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
     var q=req.send(what); // POST
     indicator.on();
     busy=true;
+    if (timeoutMs && onTimeout) watch=setTimeout(timeoutInner,timeoutMs);
   };
   
-  this.getRequest=function(queryString) {
+  this.getRequest=function(queryString,timeoutMs) {
     if (busy) throw new Error("Ajaxer "+responderUrl+" is busy");
     timer=Date.now();
     req=new XMLHttpRequest();
@@ -166,18 +167,28 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator) {
     var q=req.send(null); // GET
     indicator.on();
     busy=true;
+    if (timeoutMs && onTimeout) {
+      watch=window.setTimeout(_this.timeoutInner, timeoutMs);
+      //console.log("watching for "+timeoutMs);
+    }  
   };
+  
+  this.timeoutInner=function() {
+    _this.reset();
+    onTimeout();
+  }
   
   this.reset=function() {
     req.abort();
     busy=false;
     indicator.off();
-  }
+  };
   
   function receive() {
     var rdata,rmime;
     
     if (req.readyState != 4) return;
+    if (watch) clearTimeout(watch);
     if (req.status != 200 && req.status != 204 && req.status != 304) {
       console.log(responderUrl+" ajax returned error "+req.status);
       req=null;
