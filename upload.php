@@ -19,7 +19,8 @@ header('Content-type: text/plain; charset=utf-8');//application/json
 $input=$_REQUEST;
 try {
   $r=[];
-  checkUserRealm($pathBias,$input);
+  $p=[];
+  list($user,$realm)=checkUserRealm($pathBias,$input);
   $targetPath=$pathBias.$input["realm"]."/";
   $iniParams=IniParams::read($targetPath);
   $pr=PageRegistry::getInstance( 0, PageRegistry::getDefaultsAjax() );
@@ -41,7 +42,11 @@ try {
     $uploadedBytes=b2kb($uploadedBytes);
     //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
     $r["alert"]='Server got a record of '.$uploadedBytes;
-    $r["alert"] .= MailHelper::go($input, $targetPath, $n, $uploadedBytes,  $pr);
+    $r["alert"] .= MailHelper::go($input, $targetPath, $n, $uploadedBytes, $pr);
+    $p["list"]=$inv->getCatalog();
+    $p["timestamp"]=time();
+    $p["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
+    $rr=packAndSend($p,"",$realm);
     break;
   
   case "reportMimeFault":
@@ -63,9 +68,10 @@ try {
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
     unlinkById($id,$inv,$input);    
     $inv->deleteLine($id);
-    //$r["list"]=$inv->getCatalog();
-    //$r["timestamp"]=time();
-    //$r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
+    $p["list"]=$inv->getCatalog();
+    $p["timestamp"]=time();
+    $p["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
+    $rr=packAndSend($p,"",$realm);
     $r["alert"]="Clip deleted";
     break;
     
@@ -74,6 +80,17 @@ try {
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
     $c=$inv->removeExpired();
     $r["alert"]="$c expired clips deleted";
+    break;
+    
+  case "getCatalog":
+    $inv=new Inventory();
+    $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
+    $p["list"]=$inv->getCatalog();
+    $p["timestamp"]=time();
+    $p["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
+    $p["alert"]="Catalog refreshed";;
+    $rr=packAndSend($p,$user,$realm);
+    $r["alert"]="hub response:".$rr;
     break;
   
   default:
@@ -95,6 +112,28 @@ print(json_encode($r));
 exit();
 
 function checkExt($ext) { return MimeDecoder::ext2mime($ext); }
+
+function packAndSend(Array $payload, $user, $realm) {
+  $a=[];
+  $a["user"]=$user;
+  $a["realm"]=$realm;
+  $a["payload"]=json_encode($payload);
+  return sendWithGet($a);
+}
+
+function sendWithGet(Array $data) {
+  $opts=[
+    'http'=>[
+      'method'=>"GET",
+      'header'=>"Content-type: text/plain\r\n".
+                "User-Agent: SuperAgent/1.0\r\n",
+      //'content'=>http_build_query($data)
+    ]
+  ];
+  $context = stream_context_create($opts);
+  $resp = file_get_contents('http://localhost:8081?'.http_build_query($data), false, $context);
+  return $resp;
+}
   
 function checkFields($input) {
   $r=true;
@@ -121,6 +160,7 @@ function checkUserRealm($pathBias,$input) {
   else if ( strlen($input["user"]) > 30 ) $r="Too long username";
   else if ( ! file_exists($pathBias.$input["realm"]) || ! is_dir($pathBias.$input["realm"])) $r="Thread folder not found";
   if ($r !== true) throw new DataException($r);
+  return [$input["user"], $input["realm"]];
 }
 
 function charsInString($object,$charsString) {

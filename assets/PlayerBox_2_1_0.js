@@ -15,14 +15,19 @@ mc.pb.PlayerBox=function(upConnection) {
     viewP.applyServerParams(serverParams);
     this.applyParams();
     inventory=new mc.pb.Inventory();    
-    dataSource=new mc.pb.Poller(serverParams.pathBias+"download.php", takeResponseP,  _this.onPollhangs, _this.getUserParams, serverParams);
+    //dataSource=new mc.pb.Poller(serverParams.pathBias+"download.php", takeResponseP,  _this.onPollhangs, _this.getUserParams, serverParams);
+    
+    dataSource=new mc.pb.WsClient(onWsconnected, takeResponseP, _this.onPollhangs, userParams);
     if ( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
     urlprefix=serverParams.pathBias+userParams.realm+"/"+serverParams.mediaFolder+"/";
     serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP, onMediaError);    
     viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear); 
   };
   
-  //this.startPoller=function() { setInterval(_this.onTick, 100); };
+  function onWsconnected() {
+    console.log("requesting the catalog from uplink");
+    upConnection.sendGetCatalog(userParams.user, userParams.realm);
+  }
   
   function takeResponseP(resp) { 
     var ps,toPlay;
@@ -164,8 +169,32 @@ mc.pb.Poller=function(responderUri, onData, onHang, fUserParams, serverParams) {
     onData(resp);
   }
   
-  setInterval(_this.onTick, 100);
-   
+  setInterval(_this.onTick, 100);   
+};
+
+mc.pb.WsClient=function(onConnect, onData, onHang, userParams) {
+  var conn=new WebSocket('ws://localhost:8080');
+  var myHello=JSON.stringify({user:userParams.user, realm:userParams.realm});
+  var response=[];
+  
+  conn.onopen = function(e) {
+    console.log("Connection established!");
+    setTimeout(function() {
+      console.log(myHello);
+      conn.send(myHello); }
+    ,200);
+    setTimeout(onConnect,500);
+  };
+
+  conn.onmessage = function(e) {
+    console.log(e.data);
+    response=JSON.parse(e.data);
+    onData(response);
+  };
+  
+  this.sendData=function(data) { conn.send(data); }; 
+  this.linkIsBusy=function() { return false; };  
+  this.getResponse=function() { return response; };
 };
 
 mc.pb.Inventory=function() {

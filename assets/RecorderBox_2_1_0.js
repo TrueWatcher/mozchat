@@ -209,6 +209,14 @@ mc.rb.UpConnection=function(respondrUri, onData, onHang, serverParams, userParam
     ajaxerR.postRequest(stuff);  
   };
   
+  this.sendGetCatalog=function() {
+    var  stuff=new FormData();
+    stuff.append("act","getCatalog");
+    stuff.append("user",userParams.user);
+    stuff.append("realm",userParams.realm);
+    ajaxerR.postRequest(stuff);  
+  };
+  
 };
 
 mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {  
