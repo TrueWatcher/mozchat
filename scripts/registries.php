@@ -134,7 +134,10 @@ class PageRegistry extends SingletAssocArrayWrapper {
   
   function exportByList($keys,Array $target) {
     $r=$target;
-    foreach($keys as $k) { $r[$k]=$this->arr[$k]; }
+    foreach($keys as $k) { 
+      $r[$k]=$this->arr[$k];
+      if ($r[$k] === "0") $r[$k]=false;// to catch "0" equals to true in js
+    }
     return $r;
   }
 }

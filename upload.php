@@ -26,6 +26,9 @@ try {
   $pr=PageRegistry::getInstance( 0, PageRegistry::getDefaultsAjax() );
   //$pr->overrideValuesBy($pageEntryParams["PageRegistry"]);
   $pr->overrideValuesBy($iniParams["common"]);
+  $wsParams=parse_ini_file($pathBias."wshub/ws.ini", true, INI_SCANNER_RAW);
+  $pr->addFreshPairsFrom($wsParams["common"]);
+  $wsOn=$pr->g("wsOn");
   //$pr->dump();  
   if ( ! isset($input["act"])) throw new DataException("Missing ACT");
   $act=$input["act"];
@@ -43,10 +46,7 @@ try {
     //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
     $r["alert"]='Server got a record of '.$uploadedBytes;
     $r["alert"] .= MailHelper::go($input, $targetPath, $n, $uploadedBytes, $pr);
-    $p["list"]=$inv->getCatalog();
-    $p["timestamp"]=time();
-    $p["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
-    $rr=packAndSend($p,"",$realm);
+    $wsOn && sendCatalogToWs($inv,$pr,$realm,"");
     break;
   
   case "reportMimeFault":
@@ -68,10 +68,7 @@ try {
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
     unlinkById($id,$inv,$input);    
     $inv->deleteLine($id);
-    $p["list"]=$inv->getCatalog();
-    $p["timestamp"]=time();
-    $p["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
-    $rr=packAndSend($p,"",$realm);
+    $wsOn && sendCatalogToWs($inv,$pr,$realm,"");
     $r["alert"]="Clip deleted";
     break;
     
@@ -83,13 +80,10 @@ try {
     break;
     
   case "getCatalog":
+    if ( ! $wsOn) throw new DataException("Unappropriate command=$act!");
     $inv=new Inventory();
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
-    $p["list"]=$inv->getCatalog();
-    $p["timestamp"]=time();
-    $p["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
-    $p["alert"]="Catalog refreshed";;
-    $rr=packAndSend($p,$user,$realm);
+    $rr=sendCatalogToWs($inv,$pr,$realm,"Catalog refreshed");
     $r["alert"]="hub response:".$rr;
     break;
   
@@ -113,12 +107,22 @@ exit();
 
 function checkExt($ext) { return MimeDecoder::ext2mime($ext); }
 
-function packAndSend(Array $payload, $user, $realm) {
+function sendCatalogToWs(Inventory $inv, PageRegistry $pr,$realm,$alert) {
+  $p=[];
+  $p["list"]=$inv->getCatalog();
+  $p["timestamp"]=time();
+  $p["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
+  if ($alert) $p["alert"]=$alert;
+  return packAndSend("",$realm,"forward",$p);  
+}
+
+function packAndSend($user, $realm, $command, Array $payload) {
   $a=[];
   $a["user"]=$user;
   $a["realm"]=$realm;
+  $a["act"]=$command;
   $a["payload"]=json_encode($payload);
-  return sendWithGet($a);
+  return sendWithGet($a);// sendWithPost hangs after onOpen
 }
 
 function sendWithGet(Array $data) {
@@ -127,12 +131,43 @@ function sendWithGet(Array $data) {
       'method'=>"GET",
       'header'=>"Content-type: text/plain\r\n".
                 "User-Agent: SuperAgent/1.0\r\n",
-      //'content'=>http_build_query($data)
     ]
   ];
   $context = stream_context_create($opts);
   $resp = file_get_contents('http://localhost:8081?'.http_build_query($data), false, $context);
   return $resp;
+}
+
+function _sendWithPost(Array $data) {
+  $c=http_build_query($data);
+  $opts=[
+    'http'=>[
+      'method'=>"POST",
+      'header'=>"Content-type: application/x-www-form-urlencoded\r\n".
+                "Host: localhost:8081\r\n".
+                "User-Agent: SuperAgent/1.0",
+      'content'=>$c
+    ]
+  ];
+  $context = stream_context_create($opts);
+  $resp = file_get_contents('http://localhost:8081', false, $context);
+  return $resp;
+}
+
+function __sendWithPost(Array $data) {
+  $c=http_build_query($data);
+  $sUrl='http://localhost:8081';
+  $params = array('http' => array(
+      'method' => 'POST',
+      'content' => $c
+  ));
+  $ctx = stream_context_create($params);
+  $fp = @fopen($sUrl, 'rb', false, $ctx);
+  if (!$fp)  throw new Exception("Problem with $sUrl, $php_errormsg");
+
+  $response = @stream_get_contents($fp);
+  if ($response === false) throw new Exception("Problem reading data from $sUrl, $php_errormsg");
+  return $response;
 }
   
 function checkFields($input) {

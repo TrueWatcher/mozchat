@@ -19,12 +19,17 @@ try {
   //$pr->overrideValuesBy($pageEntryParams["PageRegistry"]);
   $pr->overrideValuesBy($iniParams["common"]);
   $pr->overrideValuesBy($iniParams["client"]);
+  $wsParams=parse_ini_file($pathBias."wshub/ws.ini", true, INI_SCANNER_RAW);
+  //var_dump($wsParams);
+  $pr->addFreshPairsFrom($wsParams["common"]);
+  $wsOn=$pr->g("wsOn");
+  if ($wsOn) checkWsCommandLink($pr->g("wsCommandUri"));
 
   $serverParams=[
     "state"=>"operational", "user"=>$input["user"], "realm"=>$input["realm"]
   ];
   $serverParams=$pr->exportByList( [
-    "maxBlobBytes", "maxMediaFolderBytes", "clipLifetimeSec", "title", "allowVideo", "videoOn", "maxClipSizeSec", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder", "pathBias", "longPollPeriodS", "userStatusFadeS"
+    "maxBlobBytes", "maxMediaFolderBytes", "clipLifetimeSec", "title", "allowVideo", "videoOn", "maxClipSizeSec", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder", "pathBias", "longPollPeriodS", "userStatusFadeS", "wsOn", "wsServerUri"
   ] , $serverParams);
   $serverParams["mediaFolder"]=Inventory::checkMediaFolderName($serverParams["mediaFolder"]);
   $mimeDictionary=MimeDecoder::getDictionary();
@@ -38,6 +43,13 @@ catch (NoCredentialsException $nce) {
 }
 catch (DataException $de) {
   print('{"error":"'.$de->getMessage().'"}');
+}
+
+function checkWsCommandLink($uri) {
+  $q=$uri."/?act=echo";
+  $ctx=stream_context_create(['http'=>['method'=>'get','header'=>'Content-type: text/plain']]);
+  $reply=@file_get_contents($q,false,$ctx);
+  if ( ! is_string($reply)) exit("Error! System is misconfigured, required websockets server does not respond");
 }
 
 function checkUserRealm($pathBias,$input) {

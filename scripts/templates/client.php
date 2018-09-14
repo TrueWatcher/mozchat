@@ -77,15 +77,16 @@
   <input type="button" id="clearBtn" value="Stop" />
   <input type="button" id="stopAfterBtn" value="Stop after current" />
   &nbsp;
-  Refresh 
-  <select id="refreshSelect" >
-    <option value="l" >long</option>
-    <option value="4" >0.4s</option>
-    <option value="10" selected="selected" >1s</option>
-    <option value="30" >3s</option>
-    <option value="100">10s</option>
-    <option value="off">off</option>
-  </select>
+  <span id="refreshS">Refresh 
+    <select id="refreshSelect" >
+      <option value="l" >long</option>
+      <option value="4" >0.4s</option>
+      <option value="10" selected="selected" >1s</option>
+      <option value="30" >3s</option>
+      <option value="100">10s</option>
+      <option value="off">off</option>
+    </select>
+  </span>  
   &nbsp;
   <label for="playNewChkb">Play new clips</label><input type="checkbox" id="playNewChkb" checked="checked" />,
   <label for="skipMineChkb">only from others</label><input type="checkbox" id="skipMineChkb" checked="checked" />

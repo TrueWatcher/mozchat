@@ -14,12 +14,16 @@ $pr=PageRegistry::getInstance( 0, PageRegistry::getDefaultsClient() );
 //$pr->overrideValuesBy($pageEntryParams["PageRegistry"]);
 $pr->overrideValuesBy($iniParams["common"]);
 $pr->overrideValuesBy($iniParams["client"]);
+$wsParams=parse_ini_file($pathBias."wshub/ws.ini", true, INI_SCANNER_RAW);
+//var_dump($wsParams);
+$pr->addFreshPairsFrom($wsParams["common"]);
+$wsOn=$pr->g("wsOn");
 
 $serverParams=[
   "state"=>"operational", "user"=>$input["user"], "realm"=>$input["realm"]
 ];
 $serverParams=$pr->exportByList( [
-  "maxBlobBytes", "maxMediaFolderBytes", "clipLifetimeSec", "title", "allowVideo", "videoOn", "maxClipSizeSec", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder", "pathBias", "longPollPeriodS", "userStatusFadeS"
+  "maxBlobBytes", "maxMediaFolderBytes", "clipLifetimeSec", "title", "allowVideo", "videoOn", "maxClipSizeSec", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "mediaFolder", "pathBias", "longPollPeriodS", "userStatusFadeS", "wsOn", "wsServerUri"
 ] , $serverParams);
 $serverParams["mediaFolder"]=Inventory::checkMediaFolderName($serverParams["mediaFolder"]);
 $mimeDictionary=MimeDecoder::getDictionary();

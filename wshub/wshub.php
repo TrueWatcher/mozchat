@@ -9,6 +9,7 @@ use Ratchet\ConnectionInterface;
 use React\EventLoop\Factory;
 use React\Socket\Server;
 //use React\Socket\ConnectionInterface;
+use \Exception;
 
 //require dirname(__DIR__) . '/vendor/autoload.php';
 $composerVendorPath="/home/alexander/";
@@ -47,48 +48,76 @@ class UserManager {
     $this->sendToGroup($realm,$s);
   }
   
-  function onOutermessage($from, $query) {
-    $pairs=explode("&",$query);
+  function onOutermessage($from, $dataString, $method) {
+    $r=false;
+    try {
+    $data=$this->decodeHttp($dataString, $method);
+    //echo "sata----\n"; var_dump($data);
+    
+    if ( ! isset($data["act"])) throw new Exception ("Missing ACT");
+    $act=$data["act"];
+    switch ($act) {
+    case "forward":
+      if ( ! isset($data["realm"]) || empty($data["realm"]) ) {
+        throw new Exception ("Error! An outer message without realm");
+      }
+      $realm=$data["realm"];
+      if ( ! array_key_exists($realm, $this->realms)) {
+        throw new Exception ("Error! An outer message with unknown realm=$realm!");
+      }
+      $group=$this->realms[$realm];
+      if (empty($group)) {
+        throw new Exception ("Cannot pass message as there are no clients in $realm");
+      }
+      $user=false;
+      if (isset($data["user"]) && strlen($data["user"])) {
+        $user=$data["user"];
+        $singleConn=$this->findConnectionByName($user,$group);
+        if ($singleConn === false) {
+          throw new Exception ("Cannot pass message as there is no client $user in $realm");
+        }
+      }
+      $this->sendHttpReply($from, 'Ok');      
+      if ($user) {
+        echo "Passing message to $user in $realm\n";
+        $singleConn->send($data["payload"]);
+        return;
+      }
+      echo "Passing message to ".count($group)." clients of $realm\n";
+      foreach ($group as $client) {
+        $conn=$this->getConnection($client);
+        $conn->send($data["payload"]);
+      }
+      break;
+
+    case "echo":
+      $this->sendHttpReply($from, 'Echo reply');
+      break;
+    default:
+      throw new Exception ("Unknown ACT=$act");
+    }// end switch    
+    }
+    catch (Exception $e) {
+      $em=$e->getMessage();
+      echo $em."\n";
+      $this->sendHttpReply($from, $em);
+    }
+  }
+  
+  private function decodeHttp($string,$method) {
+    if ($method == "POST") {
+      $bodySeparator="\r\n\r\n";
+      $parts=explode($bodySeparator,$string);
+      if (count($parts) != 2) throw new Exception("Wrong POST string");
+      $string=$parts[1];
+    }    
+    $pairs=explode("&",$string);
     $keyValues=[];
     foreach ($pairs as $pair) {
       list($k,$v)=explode('=',$pair);
       $keyValues[$k]=urldecode($v);
     }
-    $data=$keyValues;
-    //echo "sata----\n"; var_dump($data);
-    if ( ! isset($data["realm"]) || empty($data["realm"]) ) {
-      echo "Error! An outer message without realm\n";
-      return;
-    }
-    $realm=$data["realm"];
-    if ( ! array_key_exists($realm, $this->realms)) {
-      echo "Error! An outer message with unknown realm=$realm!\n";
-      return;
-    }
-    $group=$this->realms[$realm];
-    if (empty($group)) {
-       echo "Cannot pass message as there are no clients in $realm\n";
-       return;
-    }
-    $user=false;
-    if (isset($data["user"]) && strlen($data["user"])) {
-      $user=$data["user"];
-      $singleConn=$this->findConnectionByName($user,$group);
-      if ($singleConn === false) {
-        echo "Cannot pass message as there is no client $user in $realm\n";
-        return; 
-      }
-    }
-    if ($user) {
-      echo "Passing message to $user in $realm\n";
-      $singleConn->send($data["payload"]);
-      return;
-    }
-    echo "Passing message to ".count($group)." clients of $realm\n";
-    foreach ($group as $client) {
-      $conn=$this->getConnection($client);
-      $conn->send($data["payload"]);
-    }
+    return $keyValues;
   }
   
   function onClientmessage(ConnectionInterface $from, $data) {
@@ -121,6 +150,15 @@ class UserManager {
       if ($c[1] == $user) return $c[3];
     }
     return false;
+  }
+  
+  private function sendHttpReply($to, $string, $status="200 Ok") {
+    $headers=[
+      "HTTP/1.1 $status", "Content-Length: ".strlen($string), "Content-Type: text/plain", "Connection: Close"
+    ];// 
+    $r=implode("\r\n",$headers)."\r\n\r\n".$string."\r\n";
+    $to->send($r);
+    $to->close();
   }
   
   private function getConnection($client) { return $client[3]; }
@@ -198,23 +236,29 @@ class CmdRelay implements HttpServerInterface {
     echo "Command connection established with  ".$conn->remoteAddress."\n";
     //var_dump($request);
     //echo $request["uri"]["query"];
+    if ($request->getMethod() == "POST") { return; }
+    // echo "POST\n"; $conn->send($this->okPage()); 
     $query=$request->getUri()->getQuery();
     //echo "query=$query\n";
-    $this->userManager->onOutermessage($conn, $query);
+    $closed=$this->userManager->onOutermessage($conn, $query, "GET");
     //var_dump($conn);    
     //$conn->send($this->formPage());
-    $conn->send($this->okPage());
-    $conn->close();
+    if ( ! $closed) {
+      $conn->send($this->okPage());
+      $conn->close();
+    }
   }
   
-  public function onMessage(ConnectionInterface $from, $http) {
+  public function onMessage(ConnectionInterface $conn, $http) {
     echo "onMessage\n";
     //var_dump($http);
     //$data=$this->getData($http);
     //var_dump($data);
-    $this->userManager->onOutermessage($from, $this->getData($http));
-    $from->send($this->okPage());
-    $from->close();
+    $closed=$this->userManager->onOutermessage($conn, $http, "POST");
+    if ( ! $closed) {
+      $conn->send($this->okPage());
+      $conn->close();
+    }
   }
 
   public function onClose(ConnectionInterface $conn) {
@@ -224,21 +268,6 @@ class CmdRelay implements HttpServerInterface {
   public function onError(ConnectionInterface $conn, \Exception $e) {
     echo "An error has occurred: {$e->getMessage()}\n";
     $conn->close();
-  }
-  
-  private function getData($all) {
-    $bodySeparator="\r\n\r\n";
-    $bsPosition=strpos($all,$bodySeparator);
-    $body=substr($all,$bsPosition+strlen($bodySeparator));
-    //echo $body."\n\n";
-    $pairs=explode('&',$body);
-    $keyValues=[];
-    foreach ($pairs as $pair) {
-      list($k,$v)=explode('=',$pair);
-      $keyValues[$k]=urldecode($v);
-    }
-    //print_r($keyValues);
-    return $keyValues;
   }
   
   private function okPage() {

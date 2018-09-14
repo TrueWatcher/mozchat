@@ -15,9 +15,12 @@ mc.pb.PlayerBox=function(upConnection) {
     viewP.applyServerParams(serverParams);
     this.applyParams();
     inventory=new mc.pb.Inventory();    
-    //dataSource=new mc.pb.Poller(serverParams.pathBias+"download.php", takeResponseP,  _this.onPollhangs, _this.getUserParams, serverParams);
-    
-    dataSource=new mc.pb.WsClient(onWsconnected, takeResponseP, _this.onPollhangs, userParams);
+    if (serverParams.wsOn) {
+      dataSource=new mc.pb.WsClient(onWsconnected, takeResponseP, _this.onPollhangs, userParams, serverParams, upConnection);
+    }
+    else {
+      dataSource=new mc.pb.Poller(serverParams.pathBias+"download.php", takeResponseP,  _this.onPollhangs, _this.getUserParams, serverParams);
+    }    
     if ( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
     urlprefix=serverParams.pathBias+userParams.realm+"/"+serverParams.mediaFolder+"/";
     serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP, onMediaError);    
@@ -30,7 +33,7 @@ mc.pb.PlayerBox=function(upConnection) {
   }
   
   function takeResponseP(resp) { 
-    var ps,toPlay;
+    var ps,toPlay,al;
     if (resp.free) viewP.showFreeSpace(resp.free);
     if (resp.users) { 
       viewP.showUsers(resp.users);
@@ -51,7 +54,11 @@ mc.pb.PlayerBox=function(upConnection) {
     if (resp.error) viewP.showMessage("Error! "+resp.error);
     ps=serialPlayer.getState();
     if (ps != "playing" && ps !="playingNLoading") {
-      if (resp.alert) { viewP.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms"); }
+      if (resp.alert) { 
+        al=resp.alert;
+        if (resp.lag) al+=" fulfiled in "+resp.lag+"ms";
+        viewP.showMessage(al);
+      }
       //else viewP.showMessage(resp.alert || mc.utils.dumpArray(resp) || "<empty>");
     }
     //response=resp;
@@ -172,8 +179,8 @@ mc.pb.Poller=function(responderUri, onData, onHang, fUserParams, serverParams) {
   setInterval(_this.onTick, 100);   
 };
 
-mc.pb.WsClient=function(onConnect, onData, onHang, userParams) {
-  var conn=new WebSocket('ws://localhost:8080');
+mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upConnection) {
+  var conn=new WebSocket(serverParams.wsServerUri);//'ws://localhost:8080'
   var myHello=JSON.stringify({user:userParams.user, realm:userParams.realm});
   var response=[];
   
@@ -195,6 +202,10 @@ mc.pb.WsClient=function(onConnect, onData, onHang, userParams) {
   this.sendData=function(data) { conn.send(data); }; 
   this.linkIsBusy=function() { return false; };  
   this.getResponse=function() { return response; };
+  
+  setInterval(function() {
+    upConnection.sendGetCatalog(userParams.user, userParams.realm);
+  }, 15000);
 };
 
 mc.pb.Inventory=function() {
@@ -287,6 +298,7 @@ mc.pb.ViewP=function() {
     if (sp.pollFactor) { mc.utils.setSelect("refreshSelect",sp.pollFactor); }
     if (sp.hasOwnProperty("playNew")) { mc.utils.setCheckbox("playNewChkb",sp.playNew); }
     if (sp.hasOwnProperty("skipMine")) { mc.utils.setCheckbox("skipMineChkb",sp.skipMine); }
+    if (sp.wsOn) refreshS.style.display="none";
   };
   
   this.getParams=function() {
