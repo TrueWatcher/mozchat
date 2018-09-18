@@ -36,10 +36,7 @@ try {
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
     unlinkById($id,$inv,$input);    
     $inv->deleteLine($id);
-    $r["list"]=$inv->getCatalog();
-    $r["timestamp"]=time();
-    $r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
-    $r["alert"]="Clip deleted";
+    return makeCatalog($inv, $pr, "Clip deleted", $targetPath);
     break;
   
   case "poll":
@@ -94,20 +91,26 @@ function unlinkById($id,Inventory $inv,$input) {
   unlink($target);
 }
 
+function makeCatalog(Inventory $inv, PageRegistry $pr, $alert, $tp) {
+  $p=[];
+  $p["list"]=$inv->getCatalog();
+  $p["timestamp"]=time();
+  $r["catalogBytes"]=$inv->getCatalogBytes();
+  $p["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes();
+  $p["catCrc"]=$inv->getMyFileCrc($tp);
+  if ($alert) $p["alert"]=$alert;
+  return $p;  
+}
+
 function refreshCatalog(PageRegistry $pr,$targetPath) {
-  $r=[];
   $inv=new Inventory();
   $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
-  $r["list"]=$inv->getCatalog();
-  $r["timestamp"]=time();
-  $r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
-  $r["alert"]="Catalog refreshed";;
-  return $r;
+  return makeCatalog($inv, $pr, "Catalog refreshed", $targetPath);
 }
 
 function anyNews(PageRegistry $pr,$input,$targetPath,$forceUpdateUsers=null) {
   $r=[];
-  $inventoryUpdated = ( $pr->checkNotEmpty("removeExpiredFromDir") || isset($input["removeExpired"]) || ! Inventory::isStillValid($targetPath,$input["catSince"],$input["catBytes"]) );
+  $inventoryUpdated = ( $pr->checkNotEmpty("removeExpiredFromDir") || isset($input["removeExpired"]) || ! Inventory::isStillValid($targetPath,$input) );
   if (is_null($forceUpdateUsers)) {
     $usersToBeUpdated = ! UsersMonitor::isStillValid($targetPath,$input["usersSince"],$pr);
   }
@@ -120,11 +123,7 @@ function anyNews(PageRegistry $pr,$input,$targetPath,$forceUpdateUsers=null) {
     if ( $pr->checkNotEmpty("removeExpiredFromDir") || isset($input["removeExpired"]) ) { 
       $inv->removeExpired();
     }
-    $r["list"]=$inv->getCatalog();
-    $r["catalogBytes"]=$inv->getCatalogBytes();
-    $r["timestamp"]=time();
-    $r["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
-    $r["alert"]="Catalog updated";
+    $r=makeCatalog($inv, $pr, "Catalog updated", $targetPath);
   }
   if ($usersToBeUpdated) {
     $um=new UsersMonitor();

@@ -12,14 +12,26 @@ class Inventory {
   
   static function getMyFileName() { return self::$myFileName; }
   
-  static function isStillValid($tp, $since, $catBytes) {
+  static function isStillValid($tp, $input) {
     $res=304;
-    if (is_null($since) || ! $since) $res=false;
-    else if ( ! file_exists($tp.self::$myFileName)) $res=false;
-    else if (filesize($tp.self::$myFileName) != $catBytes) $res=false;
-    else if (filemtime($tp.self::$myFileName) > $since) $res=false;
+    $since=@$input["since"];
+    $catBytes=@$input["catBytes"];
+    $catCrc=@$input["catCrc"];
+    if ( ! $since && ! $catBytes && ! $catCrc) throw new Exception("No any update marks");
+    /*if (is_null($since) || ! $since) $res=false;
+    else*/ if ( ! file_exists($tp.self::$myFileName)) $res=false;
+    //else if (isset($catBytes) && filesize($tp.self::$myFileName) != $catBytes) $res=false;
+    else if (isset($catCrc) && (self::getMyFileCrc($tp) != $catCrc) ) {
+      $res=false;
+      //echo self::getMyFileCrc($tp);
+    }  
+    //else if (filemtime($tp.self::$myFileName) > $since) $res=false;
     clearstatcache();
     return $res;
+  }
+  
+  static function getMyFileCrc($tp) {
+    return hash_file("crc32",$tp.self::$myFileName);
   }
   
   function init($tp,$mfn,$hideExpired=0) {

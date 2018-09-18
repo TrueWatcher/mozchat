@@ -44,20 +44,21 @@ function Shadow() {
   };
   var userParams=serverParams;
   var response={},changesMap={};
-  var catalogBytes=0, catalogTime=0, usersListTime=0, myUsersList="";
+  var catalogBytes=0, catalogTime=0, usersListTime=0, myUsersList="", catCrc="1234";
   
   var ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", takeResponseSh, {});
   var inventory=new mc.pb.Inventory();
   
   function takeResponseSh(resp) {
-    if(resp.catalogBytes) catalogBytes=resp.catalogBytes;
-    if(resp.timestamp) catalogTime=resp.timestamp;
+    if (resp.catalogBytes) catalogBytes=resp.catalogBytes;
+    if (resp.timestamp) catalogTime=resp.timestamp;
+    if (resp.catCrc) catCrc=resp.catCrc;
     if (resp.users) { 
       usersListTime=resp.timestamp;
       myUsersList=resp.users;
     }
-    if(resp.list) { changesMap=inventory.consumeNewCatalog(resp.list, userParams); }     
-    if(resp.alert) { resp.alert+=" fulfiled in "+resp.lag+"ms"; }
+    if (resp.list) { changesMap=inventory.consumeNewCatalog(resp.list, userParams); }     
+    if (resp.alert) { resp.alert+=" fulfiled in "+resp.lag+"ms"; }
     response=resp;
   }
   
@@ -65,25 +66,32 @@ function Shadow() {
   this.getChangesMap=function() { return changesMap; };
   this.getUser=function() { return userParams.user; };
   
+  function addUpdatedMarks(qs) {
+    qs+="&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
+    if (catCrc !== false) qs+="&catCrc="+catCrc;
+    return qs;
+  }
+  
   this.sendPoll=function(moreParams) {
     var qs="";
     qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=poll&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
-    //qs+="&pollFactor="+userParams.pollFactor;
-    if (!!moreParams) qs+="&"+moreParams;
+    qs+="&act=poll";
+    qs=addUpdatedMarks(qs);
+    qs+="&pollFactor="+userParams.pollFactor;
+    if (moreParams) qs+="&"+moreParams;
     console.log("Shadow's request : "+qs);
-    ajaxerP.getRequest(qs);    
+    ajaxerP.getRequest(qs);   
   };
   
-  this.sendLongPoll=function() {
+  this.sendLongPoll=function(moreParams) {
     var qs="";
     qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=longPoll&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
+    qs+="&act=longPoll";
+    qs=addUpdatedMarks(qs);
     qs+="&myUsersList="+encodeURIComponent(myUsersList);
-    var longPollFactor=serverParams.longPollPeriodS+1;
-    //qs+="&pollFactor="+longPollFactor;
+    if (moreParams) qs+="&"+moreParams;
     console.log("Shadow's request : "+qs);
-    ajaxerP.getRequest(qs);     
+    ajaxerP.getRequest(qs); 
   };
   
   this.linkIsBusy=function() { return ajaxerP.isBusy(); };

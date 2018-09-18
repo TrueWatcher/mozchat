@@ -15,17 +15,21 @@ mc.pb.PlayerBox=function(upConnection) {
     viewP.applyServerParams(serverParams);
     this.applyParams();
     inventory=new mc.pb.Inventory();    
-    if (serverParams.wsOn) {
-      dataSource=new mc.pb.WsClient(onWsconnected, takeResponseP, _this.onPollhangs, userParams, serverParams, upConnection);
-    }
-    else {
-      dataSource=new mc.pb.Poller(serverParams.pathBias+"download.php", takeResponseP,  _this.onPollhangs, _this.getUserParams, serverParams);
-    }    
+    dataSource=getDataSource(serverParams.wsOn);   
     if ( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
     urlprefix=serverParams.pathBias+userParams.realm+"/"+serverParams.mediaFolder+"/";
     serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP, onMediaError);    
     viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear); 
   };
+  
+  function getDataSource(websocketsOn) {
+    if (websocketsOn) {
+      return new mc.pb.WsClient(onWsconnected, takeResponseP, _this.onPollhangs, userParams, serverParams, upConnection);
+    }
+    else {
+      return new mc.pb.Poller(serverParams.pathBias+"download.php", takeResponseP,  _this.onPollhangs, _this.getUserParams, serverParams);
+    }    
+  }
   
   function onWsconnected() {
     console.log("requesting the catalog from uplink");
@@ -117,10 +121,10 @@ mc.pb.PlayerBox=function(upConnection) {
 }// end PlayerBox
 
 mc.pb.Poller=function(responderUri, onData, onHang, fUserParams, serverParams) {
-  var _this=this, ticks=0, catalogTime=0, catalogBytes=0, usersListTime=0, myUsersList="", response;
+  var _this=this, ticks=0, catalogTime=0, catalogBytes=0, usersListTime=0, catCrc="1234", myUsersList="", response;
   var userParams=fUserParams();
   
-  var ajaxerP=new mc.utils.Ajaxer(responderUri, takeResponseInner, {}, onHang); 
+  var ajaxerP=new mc.utils.Ajaxer(responderUri, takeUpdatedMarks, {}, onHang); 
     
   _this.onTick=function() {
     userParams=fUserParams();// otherwise uses only a copy, not live params
@@ -136,22 +140,29 @@ mc.pb.Poller=function(responderUri, onData, onHang, fUserParams, serverParams) {
     if ( ! ajaxerP.isBusy()) _this.sendPoll();
   };
   
+  function addUpdatedMarks(qs) {
+    qs+="&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
+    if (catCrc !== false) qs+="&catCrc="+catCrc;
+    return qs;
+  }
+  
   this.sendPoll=function(moreParams) {
     var qs="";
     qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=poll&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
+    qs+="&act=poll";
+    qs=addUpdatedMarks(qs);
     qs+="&pollFactor="+userParams.pollFactor;
     if (moreParams) qs+="&"+moreParams;
     ajaxerP.getRequest(qs, 2000);   
   };
   
-  this.sendLongPoll=function() {
+  this.sendLongPoll=function(moreParams) {
     var qs="";
     qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=longPoll&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
+    qs+="&act=longPoll";
+    qs=addUpdatedMarks(qs);
     qs+="&myUsersList="+encodeURIComponent(myUsersList);
-    //var longPollFactor=serverParams.longPollPeriodS+1;
-    //qs+="&pollFactor="+longPollFactor;
+    if (moreParams) qs+="&"+moreParams;
     ajaxerP.getRequest(qs, serverParams.longPollPeriodS*1000+2000);    
   };
   
@@ -165,13 +176,17 @@ mc.pb.Poller=function(responderUri, onData, onHang, fUserParams, serverParams) {
   
   this.getResponse=function() { return response; };
   
-  function takeResponseInner(resp) {
+  function takeUpdatedMarks(resp) {
     response=resp;
     if (resp.catalogBytes) catalogBytes=resp.catalogBytes;
     if (resp.timestamp) catalogTime=resp.timestamp;
     if (resp.users) { 
       usersListTime=resp.timestamp;
       myUsersList=resp.users;
+    }
+    if (resp.catCrc) { 
+      //console.log("my crc="+catCrc+", server's="+resp.catCrc); 
+      catCrc=resp.catCrc;
     }
     onData(resp);
   }
@@ -181,7 +196,7 @@ mc.pb.Poller=function(responderUri, onData, onHang, fUserParams, serverParams) {
 
 mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upConnection) {
   var conn=new WebSocket(serverParams.wsServerUri);//'ws://localhost:8080'
-  var myHello=JSON.stringify({user:userParams.user, realm:userParams.realm});
+  var myHello=JSON.stringify({user:userParams.user, realm:userParams.realm, act:"userHello"});
   var response=[];
   
   conn.onopen = function(e) {
@@ -203,9 +218,9 @@ mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upC
   this.linkIsBusy=function() { return false; };  
   this.getResponse=function() { return response; };
   
-  setInterval(function() {
+  if (userParams.pollFactor != "off") setInterval(function() {
     upConnection.sendGetCatalog(userParams.user, userParams.realm);
-  }, 15000);
+  }, 1500000);
 };
 
 mc.pb.Inventory=function() {

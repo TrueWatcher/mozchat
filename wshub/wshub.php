@@ -20,22 +20,11 @@ class UserManager {
   protected $clients;
   protected $realms=["videoStream"=>[]];
   
-  public function __construct() {
-    $this->clients = new \SplObjectStorage;
-  }
-  
   function onClientconnects(ConnectionInterface $conn) {
-    $this->clients->attach($conn);
     echo "New connection! ({$conn->resourceId})\n";
   }
   
-  function onUsershowsup(Array $userData) {
-    var_dump($userData);
-  }
-  
   function onDisconnect(ConnectionInterface $conn) {
-    $this->clients->detach($conn);
-    //echo "Connection {$conn->resourceId} has disconnected\n";
     $found=$this->removeByConn($conn);
     if ( ! $found) { 
       echo "Error! No record found for connection {$conn->resourceId}\n";
@@ -121,6 +110,7 @@ class UserManager {
   }
   
   function onClientmessage(ConnectionInterface $from, $data) {
+    try {
     var_dump($data);
     $data=\json_decode($data,true);
     $credentialsPresent=(isset($data["realm"]) && strlen($data["realm"]) && isset($data["user"]) && strlen($data["user"]));
@@ -128,17 +118,40 @@ class UserManager {
     $user=$data["user"];
     $realm=$data["realm"];
     if ( ! array_key_exists($realm, $this->realms)) {
-      echo "Error! Client $user from unknown realm=$realm!\n";
-      $this->sendAlert($from, "Unknown realm=$realm");
+      throw new Exception ("Error! Client $user from unknown realm=$realm!";
       return;
     }
-    while ($this->removeByConn($from));// make sure she's not registered
-    $this->realms[$realm][]=[ $from->resourceId, $user, time(), $from ];
-    $this->sendAlert($from, "Welcome to $realm, $user !");
-    $present=count($this->realms[$realm]);
-    echo "User $user enlisted to realm $realm, now $present are present\n";
-    $s=["users"=>$this->presentGroup($realm),"timestamp"=>time(),"alert"=>"$user logged in"];
-    $this->sendToGroup($realm,$s);
+    if ( ! isset($data["act"])) throw new Exception ("Missing ACT");
+    $act=$data["act"];
+    switch ($act) {
+    case "userHello":
+      while ($this->removeByConn($from));// make sure she's not registered
+      $this->realms[$realm][]=[ $from->resourceId, $user, time(), $from ];
+      $this->sendAlert($from, "Welcome to $realm, $user !");
+      $present=count($this->realms[$realm]);
+      echo "User $user enlisted to realm $realm, now $present are present\n";
+      $s=[
+        "users"=>$this->presentGroup($realm), "timestamp"=>time(), "alert"=>"$user logged in"
+      ];
+      $this->sendToGroup($realm,$s);
+      break;
+
+    case "chatMessage":
+      if ( ! isset($data["text"])) throw new Exception ("Missing TEXT");
+      $text=$data["text"];
+      $s=[ "user"=>$user, "to"=>"", "timestamp"=>time(), "text"=>$text ];
+      $this->sendToGroup($realm,$s);
+      break;
+      
+    default:
+      throw new Exception ("Unknown ACT=$act");
+    }// end case
+    }
+    catch (Exception $e) {
+      $em=$e->getMessage();
+      echo $em."\n";
+      $this->sendAlert($from, $em);
+    }
   }
   
   private function sendAlert(ConnectionInterface $to,$text) {
@@ -198,7 +211,7 @@ class UserManager {
     foreach ($this->realms[$realm] as $c) { $this->getConnection($c)->send($json); }
   }
 
-}
+}// end UserManager
 
 class ChatRelay implements MessageComponentInterface {
   private $userManager;

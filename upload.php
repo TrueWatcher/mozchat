@@ -111,7 +111,8 @@ function sendCatalogToWs(Inventory $inv, PageRegistry $pr,$realm,$alert) {
   $p=[];
   $p["list"]=$inv->getCatalog();
   $p["timestamp"]=time();
-  $p["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes(); 
+  $p["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes();
+  //$p["catCrc"]=hash("crc32", json_encode($p["list"]));
   if ($alert) $p["alert"]=$alert;
   return packAndSend("",$realm,"forward",$p);  
 }
@@ -122,7 +123,7 @@ function packAndSend($user, $realm, $command, Array $payload) {
   $a["realm"]=$realm;
   $a["act"]=$command;
   $a["payload"]=json_encode($payload);
-  return sendWithGet($a);// sendWithPost hangs after onOpen
+  return sendWithGet($a);// sendWithPost hangs after onOpen //sendWithGet
 }
 
 function sendWithGet(Array $data) {
@@ -130,7 +131,7 @@ function sendWithGet(Array $data) {
     'http'=>[
       'method'=>"GET",
       'header'=>"Content-type: text/plain\r\n".
-                "User-Agent: SuperAgent/1.0\r\n",
+                "User-Agent: SuperAgent/1.0",
     ]
   ];
   $context = stream_context_create($opts);
@@ -138,14 +139,15 @@ function sendWithGet(Array $data) {
   return $resp;
 }
 
-function _sendWithPost(Array $data) {
+function sendWithPost(Array $data) {
   $c=http_build_query($data);
   $opts=[
     'http'=>[
       'method'=>"POST",
       'header'=>"Content-type: application/x-www-form-urlencoded\r\n".
                 "Host: localhost:8081\r\n".
-                "User-Agent: SuperAgent/1.0",
+                "User-Agent: SuperAgent/1.0\r\n".
+                "Connection: close",
       'content'=>$c
     ]
   ];
@@ -154,11 +156,15 @@ function _sendWithPost(Array $data) {
   return $resp;
 }
 
-function __sendWithPost(Array $data) {
+function _sendWithPost(Array $data) {
   $c=http_build_query($data);
   $sUrl='http://localhost:8081';
   $params = array('http' => array(
       'method' => 'POST',
+      'header'=>"Content-type: application/x-www-form-urlencoded\r\n".
+                "Host: localhost:8081\r\n".
+                "User-Agent: SuperAgent/1.0\r\n".
+                "Connection: close",
       'content' => $c
   ));
   $ctx = stream_context_create($params);
