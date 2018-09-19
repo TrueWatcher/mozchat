@@ -59,6 +59,7 @@ try {
     //$inv->init($targetPath,$pr->g("mediaFolder"));
     $inv->clear($targetPath,$pr->g("mediaFolder"));
     $r["alert"]="files cleared";
+    $wsOn && sendCatalogToWs($inv,$pr,"",$realm,$r["alert"]);
     break;
     
   case "delete":
@@ -68,15 +69,17 @@ try {
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
     unlinkById($id,$inv,$input);    
     $inv->deleteLine($id);
-    $wsOn && sendCatalogToWs($inv,$pr,"",$realm,"");
     $r["alert"]="Clip deleted";
+    $wsOn && sendCatalogToWs($inv,$pr,"",$realm,$r["alert"]);    
     break;
     
   case "removeExpired":
     $inv=new Inventory();
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
     $c=$inv->removeExpired();
-    $r["alert"]="$c expired clips deleted";
+    if ($c) $r["alert"]="$c expired clips deleted";
+    else $r["alert"]="No outdated clips found";
+    $wsOn && sendCatalogToWs($inv,$pr,"",$realm,$r["alert"]);
     break;
     
   case "getCatalog":

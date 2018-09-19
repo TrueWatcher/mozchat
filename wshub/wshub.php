@@ -18,7 +18,7 @@ require $composerVendorPath.'vendor/autoload.php';
 
 class UserManager {
   protected $clients;
-  protected $realms=["videoStream"=>[]];
+  protected $realms=["videoStream"=>[], "test0"=>[]];
   
   function onClientconnects(ConnectionInterface $conn) {
     echo "New connection! ({$conn->resourceId})\n";
@@ -140,6 +140,10 @@ class UserManager {
       $text=$data["text"];
       $s=[ "user"=>$user, "to"=>"", "timestamp"=>time(), "text"=>$text ];
       $this->sendToGroup($realm,$s);
+      break;
+      
+    case "echo":
+      $from->send('{"alert":"echo reply"}');
       break;
       
     default:

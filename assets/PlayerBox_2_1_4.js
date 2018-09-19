@@ -75,6 +75,13 @@ mc.pb.PlayerBox=function(upConnection) {
   this.sendDelete=function(file) { return upConnection.sendDelete(file); };
   //dataSource.sendDelete(file);
   this.sendRemoveExpired=function(file) { return upConnection.sendRemoveExpired(); };
+  this.sendEchoRequest=function() { 
+    var toSend={ user:userParams.user, realm:userParams.realm, act:"echo" };
+    toSend=JSON.stringify(toSend);
+    return dataSource.sendData(toSend);     
+  };
+  this.connect=function() { return dataSource.connect(); };
+  this.disconnect=function() { return dataSource.disconnect(); };
   
   this.getChangesMap=function() { return changesMap; };
   
@@ -194,33 +201,47 @@ mc.pb.Poller=function(responderUri, onData, onHang, fUserParams, serverParams) {
   setInterval(_this.onTick, 100);   
 };
 
-mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upConnection) {
-  var conn=new WebSocket(serverParams.wsServerUri);//'ws://localhost:8080'
+mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upConnection, coonectAtOnce=true) {
+  //console.log("serverParams.wsServerUri");
+  var conn={onopen:notReady, onmessage:notReady, send:notReady};
   var myHello=JSON.stringify({user:userParams.user, realm:userParams.realm, act:"userHello"});
   var response=[];
   
-  conn.onopen = function(e) {
-    console.log("Connection established!");
-    setTimeout(function() {
-      console.log(myHello);
-      conn.send(myHello); }
-    ,200);
-    setTimeout(onConnect,500);
-  };
+  function notReady() { throw new Error("The object is not ready"); }
+  
+  this.connect=function() {    
+    conn=new WebSocket(serverParams.wsServerUri);//'ws://localhost:8080'  
+    conn.onopen = function(e) {
+      console.log("Connection established!");
+      setTimeout(function() {
+        //console.log(myHello);
+        conn.send(myHello); }
+      ,200);
+      setTimeout(onConnect,500);
+    };
 
-  conn.onmessage = function(e) {
-    console.log(e.data);
-    response=JSON.parse(e.data);
-    onData(response);
+    conn.onmessage = function(e) {
+      //console.log(e.data);
+      response=JSON.parse(e.data);
+      onData(response);
+    };    
+  };  
+  if (coonectAtOnce) this.connect();
+  
+  this.disconnect=function() {
+    conn.close();
+    conn={onopen:notReady, onmessage:notReady, send:notReady};   
   };
   
   this.sendData=function(data) { conn.send(data); }; 
   this.linkIsBusy=function() { return false; };  
   this.getResponse=function() { return response; };
   
-  if (userParams.pollFactor != "off") setInterval(function() {
-    upConnection.sendGetCatalog(userParams.user, userParams.realm);
-  }, 1500000);
+  if (userParams.pollFactor != "off") {
+    setInterval(function() {
+      upConnection.sendGetCatalog(userParams.user, userParams.realm);
+    }, 15000);
+  }
 };
 
 mc.pb.Inventory=function() {
