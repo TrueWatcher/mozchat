@@ -46,7 +46,7 @@ try {
     //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
     $r["alert"]='Server got a record of '.$uploadedBytes;
     $r["alert"] .= MailHelper::go($input, $targetPath, $n, $uploadedBytes, $pr);
-    $wsOn && sendCatalogToWs($inv,$pr,$realm,"");
+    $wsOn && sendCatalogToWs($inv,$pr,"",$realm,"");
     break;
   
   case "reportMimeFault":
@@ -68,7 +68,7 @@ try {
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
     unlinkById($id,$inv,$input);    
     $inv->deleteLine($id);
-    $wsOn && sendCatalogToWs($inv,$pr,$realm,"");
+    $wsOn && sendCatalogToWs($inv,$pr,"",$realm,"");
     $r["alert"]="Clip deleted";
     break;
     
@@ -83,7 +83,7 @@ try {
     if ( ! $wsOn) throw new DataException("Unappropriate command=$act!");
     $inv=new Inventory();
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
-    $rr=sendCatalogToWs($inv,$pr,$realm,"Catalog refreshed");
+    $rr=sendCatalogToWs($inv,$pr,$user,$realm,"Catalog refreshed");
     $r["alert"]="hub response:".$rr;
     break;
   
@@ -107,14 +107,14 @@ exit();
 
 function checkExt($ext) { return MimeDecoder::ext2mime($ext); }
 
-function sendCatalogToWs(Inventory $inv, PageRegistry $pr,$realm,$alert) {
+function sendCatalogToWs(Inventory $inv, PageRegistry $pr,$user,$realm,$alert) {
   $p=[];
   $p["list"]=$inv->getCatalog();
   $p["timestamp"]=time();
   $p["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes();
   //$p["catCrc"]=hash("crc32", json_encode($p["list"]));
   if ($alert) $p["alert"]=$alert;
-  return packAndSend("",$realm,"forward",$p);  
+  return packAndSend($user,$realm,"forward",$p);  
 }
 
 function packAndSend($user, $realm, $command, Array $payload) {
@@ -123,7 +123,9 @@ function packAndSend($user, $realm, $command, Array $payload) {
   $a["realm"]=$realm;
   $a["act"]=$command;
   $a["payload"]=json_encode($payload);
-  return sendWithGet($a);// sendWithPost hangs after onOpen //sendWithGet
+  return sendWithGet($a);
+  // with sendWithPost connection hangs after hub's onOpen
+  // hub's onMessage is not fired as IoServer does not trigger extra onMessage
 }
 
 function sendWithGet(Array $data) {
@@ -143,12 +145,13 @@ function sendWithPost(Array $data) {
   $c=http_build_query($data);
   $opts=[
     'http'=>[
+      //'protocol_version'=>1.1,
       'method'=>"POST",
-      'header'=>"Content-type: application/x-www-form-urlencoded\r\n".
-                "Host: localhost:8081\r\n".
-                "User-Agent: SuperAgent/1.0\r\n".
-                "Connection: close",
-      'content'=>$c
+      'header'=>implode("\r\n",[
+         "Accept: */*'", "Content-type: application/x-www-form-urlencoded",                 "Host: localhost:8081", "User-Agent: SuperAgent 1.0", 
+         "Content-lenght: ".strlen($c), "Connection: close" 
+       ])."\r\n\r\n",
+      'content'=>$c."\r\n"
     ]
   ];
   $context = stream_context_create($opts);

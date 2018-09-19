@@ -118,8 +118,7 @@ class UserManager {
     $user=$data["user"];
     $realm=$data["realm"];
     if ( ! array_key_exists($realm, $this->realms)) {
-      throw new Exception ("Error! Client $user from unknown realm=$realm!";
-      return;
+      throw new Exception ("Error! Client $user from unknown realm=$realm!");
     }
     if ( ! isset($data["act"])) throw new Exception ("Missing ACT");
     $act=$data["act"];
@@ -249,8 +248,13 @@ class CmdRelay implements HttpServerInterface {
     echo "Command connection established with  ".$conn->remoteAddress."\n";
     //var_dump($request);
     //echo $request["uri"]["query"];
-    if ($request->getMethod() == "POST") { return; }
-    // echo "POST\n"; $conn->send($this->okPage()); 
+    if ($request->getMethod() == "POST") {
+      echo "POST detected\n";
+      //$conn->close();
+      //$conn->send($this->okPage()); 
+      return;
+    }
+    // echo "POST detected\n"; $conn->send($this->okPage()); 
     $query=$request->getUri()->getQuery();
     //echo "query=$query\n";
     $closed=$this->userManager->onOutermessage($conn, $query, "GET");
@@ -264,7 +268,7 @@ class CmdRelay implements HttpServerInterface {
   
   public function onMessage(ConnectionInterface $conn, $http) {
     echo "onMessage\n";
-    //var_dump($http);
+    var_dump($http);
     //$data=$this->getData($http);
     //var_dump($data);
     $closed=$this->userManager->onOutermessage($conn, $http, "POST");
