@@ -82,6 +82,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
     "maxBlobBytes"=>50000,
     "maxMediaFolderBytes"=>400000,
     "clipLifetimeSec"=>300,
+    "maxClipCount"=>20,
     "allowStream"=>0,
     "userStatusFadeS"=>5,
     "longPollPeriodS"=>15,

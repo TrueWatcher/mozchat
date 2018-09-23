@@ -357,6 +357,8 @@ mc.rb.ViewR=function() {
     if (sp.maxBlobBytes) $("maxSizeS").innerHTML=mc.utils.b2kb(sp.maxBlobBytes);
     if (sp.clipLifetimeSec) $("lifetimeS").innerHTML=mc.utils.s2dhms(sp.clipLifetimeSec);
     if (sp.maxMediaFolderBytes) $("folderSizeS").innerHTML=mc.utils.b2kb(sp.maxMediaFolderBytes);
+    if (sp.maxClipCount > 0) $("maxClipCountS").innerHTML=sp.maxClipCount;
+    else $("maxClipCountS").innerHTML="unlimited";
     if (sp.allowVideo && sp.allowVideo === "0") sp.allowVideo=0;
     if (sp.videoOn && sp.videoOn === "0") sp.videoOn=false;
     if (sp.allowVideo) {

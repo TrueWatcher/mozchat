@@ -40,6 +40,7 @@ try {
     $inv=new Inventory();
     $inv->init($targetPath,$pr->g("mediaFolder"));
     $inv->removeExpired();
+    $inv->removeOverNumber($pr->g("maxClipCount"));
     $n=$inv->newName($input["ext"]);
     $uploadedBytes=$inv->pickUploadedBlob($n,$input,$pr);
     $uploadedBytes=b2kb($uploadedBytes);

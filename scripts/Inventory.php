@@ -124,8 +124,7 @@ class Inventory {
       $newName, $input["user"], $dt, $input["mime"], $input["duration"], $clipBytes, $expire, $input["description"]
     );
     //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
-    $overdraft=$this->getTotalBytes()-$pr->g("maxMediaFolderBytes");
-    if ($overdraft > 0) $this->freeSomeRoom($overdraft);
+    $this->removeOverdraft($pr->g("maxMediaFolderBytes"));
     return $clipBytes;
   }
   
@@ -151,6 +150,23 @@ class Inventory {
     return $counter;
   }
   
+  function removeOverNumber($maxClipCount) {
+    if ($maxClipCount <= 0) return false;
+    $actual=count($this->data);
+    $delta=$actual-$maxClipCount+1;// +1 for the new file to be added
+    if ($delta <= 0) return false;
+    $d=$this->data;
+    for ($i=0; $i < $delta; $i+=1) {
+      $e=array_shift($d);
+      $ee=array_combine($this->keys,$e);
+      unlink($this->mediaFolder."/".$ee["fileName"]);
+    }
+    $this->data=$d;
+    $this->sumUpBytes();
+    file_put_contents($this->targetPath.self::$myFileName, json_encode($this->data));
+    return $delta;
+  }
+  
   private function withoutExpired() {
     $t=time();
     $valid=[];
@@ -160,14 +176,16 @@ class Inventory {
       if ($ee["expire"] < $t) { $expired[]=$e; }
       else { $valid[]=$e; }
     }  
-    return [$valid,count($expired),$expired];
+    return [ $valid, count($expired), $expired ];
   }
   
-  function freeSomeRoom($bytes) {
-    if ($bytes > $this->total) throw new Exception("Cannot remove $bytes from the total {$this->total}");
+  private function removeOverdraft($maxMediaFolderBytes) {
+    $overdraft=$this->getTotalBytes()-$maxMediaFolderBytes;
+    if ($overdraft <= 0) return false;
+    //if ($bytes > $this->total) throw new Exception("Cannot remove $bytes from the total {$this->total}");
     $freed=0;
     $d=$this->data;
-    while ($freed < $bytes) {
+    while ($freed < $overdraft) {
       $e=array_shift($d);
       $ee=array_combine($this->keys,$e);
       unlink($this->mediaFolder."/".$ee["fileName"]);

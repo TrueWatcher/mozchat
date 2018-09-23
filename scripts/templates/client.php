@@ -21,7 +21,10 @@
 </form>
 
 <fieldset id="recorderPanel">
-  Server limits: clip <span id="maxSizeS"></span>, lifetime <span id="lifetimeS"></span>, folder <span id="folderSizeS"></span>
+  Server limits: clip <span id="maxSizeS"></span>,
+  lifetime <span id="lifetimeS"></span>, 
+  folder <span id="folderSizeS"></span>,
+  clips <span id="maxClipCountS"></span>
   <br />
   <span id="audioOrVideoS">
     <label for="audioOrVideoRad1">audio</label><input type="radio" id="audioOrVideoRad1" name="audioOrVideoRad" value="audio" checked="checked" />
@@ -80,7 +83,7 @@
   <span id="refreshS">Refresh 
     <select id="refreshSelect" >
       <option value="l" >long</option>
-      <option value="4" >0.4s</option>
+      <!--<option value="4" >0.4s</option>-->
       <option value="10" selected="selected" >1s</option>
       <option value="30" >3s</option>
       <option value="100">10s</option>
