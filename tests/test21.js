@@ -7,7 +7,7 @@
  assertTrue(ok, "wrong message="+recorderAlertP.innerHTML, "ws server echo ok");',
  
 'println("Clearing files and reading the catalog");',
-'recorderBox.getUpConnection().sendClear();',
+'playerBox.sendClear();',
 'ok=recorderAlertP.innerHTML.indexOf("cleared") >= 0; \
  assertTrue(ok, "wrong message="+recorderAlertP.innerHTML, "server agreed");',
 'ok= ! medialistT.hasChildren; \
@@ -138,6 +138,26 @@
 'ok=shChangesMap.toPlay && (shChangesMap.toPlay[1] == sp.user) && (shChangesMap.toPlay[7] == clip3); \
  assertTrue(ok, "Wrong changesMap.toPlay", "ChangesMap.toPlay ok");',
 'assertEqualsVect( shChangesMap.toPlay, shChangesMap.added[0], "ChangesMap.toPlay -- wrong data", "ChangesMap.toPlay data ok" );',
+
+'println("Testing clip deletion");\
+ dels=medialistT.getElementsByClassName("delete");\
+ print(dels.length+" del links found ");\
+ assertTrue( !!dels.length, "Missing DELETE link", "DELETE link found" ); \
+ if (dels.length > 1) delBtn=dels[1];\
+ else delBtn=[0]; \
+ id=delBtn.parentNode.id; \
+ print("deleting "+id+" ");\
+ delBtn.click();',
+'shResp=shadow.getResponce(); \
+ console.log(mc.utils.dumpArray(shResp)); \
+ shChangesMap=shadow.getChangesMap(); \
+ console.log(mc.utils.dumpArray(shChangesMap)); \
+ ok=shChangesMap.removed && (shChangesMap.removed.length == 1); \
+ ok=ok && (shChangesMap.added.length == 0); \
+ assertTrue(ok, "Wrong changesMap", "ChangesMap ok"); \
+',
+'assertEqualsPrim(id, shChangesMap.removed[0][0], "Wrong ID", "Removed the right ID");',
 'shadow.disconnect();',
+'println("First ws tests pack finished successfully");',
 ''
 ]

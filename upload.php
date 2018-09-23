@@ -115,23 +115,22 @@ function sendCatalogToWs(Inventory $inv, PageRegistry $pr,$user,$realm,$alert) {
   $p["list"]=$inv->getCatalog();
   $p["timestamp"]=time();
   $p["free"]=$pr->g("maxMediaFolderBytes") - $inv->getTotalBytes();
-  //$p["catCrc"]=hash("crc32", json_encode($p["list"]));
   if ($alert) $p["alert"]=$alert;
-  return packAndSend($user,$realm,"forward",$p);  
+  return packAndSend($user,$realm,"forward",$p,$pr);  
 }
 
-function packAndSend($user, $realm, $command, Array $payload) {
+function packAndSend($user, $realm, $command, Array $payload, PageRegistry $pr) {
   $a=[];
   $a["user"]=$user;
   $a["realm"]=$realm;
   $a["act"]=$command;
   $a["payload"]=json_encode($payload);
-  return sendWithGet($a);
+  return sendWithGet($a, $pr->g("wsCommandUri"));
   // with sendWithPost connection hangs after hub's onOpen
   // hub's onMessage is not fired as IoServer does not trigger extra onMessage
 }
 
-function sendWithGet(Array $data) {
+function sendWithGet(Array $data, $wsCommandUri) {
   $opts=[
     'http'=>[
       'method'=>"GET",
@@ -140,7 +139,7 @@ function sendWithGet(Array $data) {
     ]
   ];
   $context = stream_context_create($opts);
-  $resp = file_get_contents('http://localhost:8081?'.http_build_query($data), false, $context);
+  $resp = file_get_contents($wsCommandUri.'?'.http_build_query($data), false, $context);
   return $resp;
 }
 

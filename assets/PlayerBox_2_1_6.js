@@ -68,22 +68,27 @@ mc.pb.PlayerBox=function(upConnection) {
     //response=resp;
   }
   
-  this.getResponse=function() { return dataSource.getResponse(); };
-  this.linkIsBusy=function() { return dataSource.linkIsBusy(); };
-  this.sendPoll=function(moreParams) { return dataSource.sendPoll(moreParams); };
-  this.sendLongPoll=function(moreParams) { return dataSource.sendLongPoll(moreParams); };
-  this.sendDelete=function(file) { return upConnection.sendDelete(file); };
-  //dataSource.sendDelete(file);
-  this.sendRemoveExpired=function(file) { return upConnection.sendRemoveExpired(); };
-  this.sendEchoRequest=function() { 
-    var toSend={ user:userParams.user, realm:userParams.realm, act:"echo" };
-    toSend=JSON.stringify(toSend);
-    return dataSource.sendData(toSend);     
+  this.getDebugApi=function() {  
+    return {
+      getResponse : function() { return dataSource.getResponse(); },
+      linkIsBusy : function() { return dataSource.linkIsBusy(); },
+      sendClear : function() { return upConnection.sendClear(); },
+      sendPoll : function(moreParams) { return dataSource.sendPoll(moreParams); },
+      sendLongPoll : function(moreParams) { return dataSource.sendLongPoll(moreParams); },
+      sendDelete : function(file) { return upConnection.sendDelete(file); },
+      sendRemoveExpired : function() { return upConnection.sendRemoveExpired(); },
+      sendEchoRequest : function() { 
+        var toSend={ user:userParams.user, realm:userParams.realm, act:"echo" };
+        toSend=JSON.stringify(toSend);
+        return dataSource.sendData(toSend);     
+      },
+      connect : function() { return dataSource.connect(); },
+      disconnect : function() { return dataSource.disconnect(); },  
+      getChangesMap : function() { return changesMap; }
+    }
   };
-  this.connect=function() { return dataSource.connect(); };
-  this.disconnect=function() { return dataSource.disconnect(); };
   
-  this.getChangesMap=function() { return changesMap; };
+  this.sendDelete=function(file) { return upConnection.sendDelete(file); };
   
   _this.onPollhangs=function() { 
     viewP.showMessage("The request has timed out");

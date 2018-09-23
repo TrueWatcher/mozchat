@@ -1,5 +1,5 @@
 [
-'recorderBox.getUpConnection().sendClear();',
+'playerBox.sendClear();',
 'println("Testing long poll"); \
  println("catch others log in and log out");',
 'playerBox.sendPoll();',

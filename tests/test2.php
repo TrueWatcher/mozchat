@@ -48,13 +48,12 @@ include($pathBias."scripts/templates/client.php");
 <script>
 function Shadow() {
   var serverParams={
-    user:"Shadow", realm:"test0", pathBias:"../", playNew:1, skipMine:1, longPollPeriodS:5, pollFactor: "off", wsOn: 1, wsServerUri: "ws://localhost:8080"
+    user:"Shadow", realm:"test0", pathBias:"../", playNew:1, skipMine:1, longPollPeriodS:5, pollFactor: "off", wsOn: 1, wsServerUri: "<?php print($serverParams['wsServerUri']); ?>"
   };
   var userParams=serverParams;
   var response={},changesMap={};
   var catalogBytes=0, catalogTime=0, usersListTime=0, myUsersList="", catCrc="1234";
   
-  //var ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", takeResponseSh, {});
   var wsSource=new mc.pb.WsClient(empty, takeResponseSh, empty, userParams, serverParams, empty, false);
   //onWsconnected, takeResponseSh, _this.onPollhangs, userParams, serverParams, upConnection
   var inventory=new mc.pb.Inventory();
@@ -80,46 +79,18 @@ function Shadow() {
   
   this.connect=function() { return wsSource.connect(); };
   this.disconnect=function() { return wsSource.disconnect(); };
-  
-  function addUpdatedMarks(qs) {
-    qs+="&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
-    if (catCrc !== false) qs+="&catCrc="+catCrc;
-    return qs;
-  }
-  
-  this.sendPoll=function(moreParams) {
-    var qs="";
-    qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=poll";
-    qs=addUpdatedMarks(qs);
-    qs+="&pollFactor="+userParams.pollFactor;
-    if (moreParams) qs+="&"+moreParams;
-    console.log("Shadow's request : "+qs);
-    ajaxerP.getRequest(qs);   
-  };
-  
-  this.sendLongPoll=function(moreParams) {
-    var qs="";
-    qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=longPoll";
-    qs=addUpdatedMarks(qs);
-    qs+="&myUsersList="+encodeURIComponent(myUsersList);
-    if (moreParams) qs+="&"+moreParams;
-    console.log("Shadow's request : "+qs);
-    ajaxerP.getRequest(qs); 
-  };
-  
-  this.linkIsBusy=function() { return ajaxerP.isBusy(); };
-
 }
 
-var recorderBox=mc.tm.getRB(), playerBox=mc.tm.getPB(), sp=mc.serverParams;
-var shadow=new Shadow();
+var recorderBox=mc.tm.getRB(), 
+    playerBox=mc.tm.getPB().getDebugApi(), 
+    sp=mc.serverParams;
+var shadow=new Shadow(), 
+    shUser=shadow.getUser();
 
 var ok,err,blobKb,clip1,clip2,clip3,free,i,toSend,storedTime1, storedTime2, elapsed;
 var tr,me,descr,descr2;
-var shResp, shUser=shadow.getUser(), shChangesMap;
-var ul,delBtn;
+var shResp, shChangesMap;
+var ul,delBtn,dels,id;
 
 print(">page");
 var testScript21=<?php print file_get_contents("test21.js"); ?>;

@@ -98,13 +98,15 @@ function Shadow() {
 
 }
 
-var recorderBox=mc.tm.getRB(), playerBox=mc.tm.getPB(), sp=mc.serverParams;
-var shadow=new Shadow();
+var playerBox=mc.tm.getPB().getDebugApi(), 
+    sp=mc.serverParams;
+var shadow=new Shadow(), 
+    shUser=shadow.getUser();
 
 var ok,err,blobKb,clip1,clip2,clip3,free,i,toSend,storedTime1, storedTime2, elapsed;
 var tr,me,descr,descr2;
-var shResp, shUser=shadow.getUser(), shChangesMap;
-var ul,delBtn;
+var shResp, shChangesMap;
+var ul,delBtn,dels,id;
 
 print(">page");
 var testScript1=<?php print file_get_contents("test1.js"); ?>;

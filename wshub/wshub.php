@@ -14,11 +14,16 @@ use \Exception;
 //require dirname(__DIR__) . '/vendor/autoload.php';
 $composerVendorPath="/home/alexander/";
 require $composerVendorPath.'vendor/autoload.php';
-//require 'Chat.php';
 
 class UserManager {
-  protected $clients;
-  protected $realms=["videoStream"=>[], "test0"=>[]];
+  protected $realms=[];//["videoStream"=>[], "test0"=>[]];
+  
+  function __construct($params) {
+    if ( ! isset($params["realms"]) || ! is_array($params["realms"])) throw new Exception("Wromg PARAMS");
+    foreach ($params["realms"] as $r=>$s) {
+      $this->realms[$r]=[];
+    }
+  }
   
   function onClientconnects(ConnectionInterface $conn) {
     echo "New connection! ({$conn->resourceId})\n";
@@ -302,12 +307,31 @@ class CmdRelay implements HttpServerInterface {
   }
 }
 
-$um=new UserManager();
+function getPort($uri) {
+  $hostPort=end(explode("://",$uri));
+  $port=end(explode(":",$hostPort));
+  if ( ! ctype_digit($port)) throw new Exception("Wrong port:$port!");
+  return $port;
+}
 
-echo "Starting Websocket server on 8080...\n";
+function getIniParams($pathBias) {
+  $params=parse_ini_file($pathBias."ws.ini", true, INI_SCANNER_RAW);
+  $params["server"]["wsPort"]=getPort($params["common"]["wsServerUri"]);
+  $params["server"]["commandPort"]=getPort($params["common"]["wsCommandUri"]);  
+  return $params;
+}
+
+//print_r($_SERVER);
+if (isset($_SERVER["DOCUMENT_ROOT"]) && $_SERVER["DOCUMENT_ROOT"]) exit("This script cannot be accessed through a server");
+$pathBias="";
+$params=getIniParams($pathBias);
+
+$um=new UserManager($params);
+
+echo "Starting Websocket server on {$params["server"]["wsPort"]}...\n";
 
 $loop=\React\EventLoop\Factory::create();
-$wsSocket = new \React\Socket\Server('0.0.0.0:8080', $loop);
+$wsSocket = new \React\Socket\Server('0.0.0.0:'.$params["server"]["wsPort"], $loop);
 $serverWs = new \Ratchet\Server\IoServer(
   new \Ratchet\Http\HttpServer(
     new \Ratchet\WebSocket\WsServer(new ChatRelay($um))
@@ -315,9 +339,10 @@ $serverWs = new \Ratchet\Server\IoServer(
   $wsSocket
 );
 
-echo "Starting Http server on 8081...\n";
+echo "Starting Http server on {$params["server"]["commandPort"]}...\n";
 
-$httpSocket= new \React\Socket\Server('0.0.0.0:8081', $loop);
+$listenMask=$params["server"]["listenForCommands"].':'.$params["server"]["commandPort"];
+$httpSocket= new \React\Socket\Server($listenMask, $loop);// 127.0.0.1:8081
 $serverCmd = new \Ratchet\Server\IoServer(
   new \Ratchet\Http\HttpServer(new CmdRelay($um)),
   $httpSocket
