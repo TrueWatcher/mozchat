@@ -201,11 +201,12 @@ mc.pb.Poller=function(responderUri, onData, onHang, fUserParams, serverParams) {
   setInterval(_this.onTick, 100);   
 };
 
-mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upConnection, coonectAtOnce=true) {
+mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upConnection, connectAtOnce) {
   //console.log("serverParams.wsServerUri");
   var conn={onopen:notReady, onmessage:notReady, send:notReady};
   var myHello=JSON.stringify({user:userParams.user, realm:userParams.realm, act:"userHello"});
   var response=[];
+  if (typeof connectAtOnce == "undefined") connectAtOnce=true;
   
   function notReady() { throw new Error("The object is not ready"); }
   
@@ -226,7 +227,7 @@ mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upC
       onData(response);
     };    
   };  
-  if (coonectAtOnce) this.connect();
+  if (connectAtOnce) this.connect();
   
   this.disconnect=function() {
     conn.close();
@@ -340,11 +341,11 @@ mc.pb.ViewP=function() {
   this.getParams=function() {
     user=userInput.value;// needed for DELETE links
     return {
-      user : userInput.value,
-      realm : realmInput.value,
+      user : $("userInput").value,
+      realm : $("realmInput").value,
       pollFactor : mc.utils.getSelect("refreshSelect"),
-      playNew : playNewChkb.checked,
-      skipMine : skipMineChkb.checked
+      playNew : $("playNewChkb").checked,
+      skipMine : $("skipMineChkb").checked
     };
   };
   
@@ -361,7 +362,7 @@ mc.pb.ViewP=function() {
     for(i=0; i<adl; i+=1) {
       tr=renderLine(diff.added[i]);
       //medialistT.appendChild(tr); // latest at bottom
-      medialistT.insertBefore(tr, medialistT.firstChild);// latest at top
+      $("medialistT").insertBefore(tr, medialistT.firstChild);// latest at top
       tr=null;
     }
   };
@@ -420,13 +421,13 @@ mc.pb.ViewP=function() {
   _this.replaceClip=function(newc,oldc) { playerRoom.replaceChild(newc,oldc); };
   
   this.setHandlers=function(listClicked, applyParams, stopAfter, clear) {    
-    medialistT.onclick=listClicked;
-    refreshSelect.onchange=applyParams;
-    playNewChkb.onchange=applyParams;
-    skipMineChkb.onchange=applyParams;
+    $("medialistT").onclick=listClicked;
+    $("refreshSelect").onchange=applyParams;
+    $("playNewChkb").onchange=applyParams;
+    $("skipMineChkb").onchange=applyParams;
     // applyParams > setSelect > activeElement.blur, so no explicit blur calls
-    stopAfterBtn.onclick=stopAfter;
-    clearBtn.onclick=clear;
+    $("stopAfterBtn").onclick=stopAfter;
+    $("clearBtn").onclick=clear;
     // onkeydown 27 = clear SEE top controller
   };
   

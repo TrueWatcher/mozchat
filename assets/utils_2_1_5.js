@@ -3,19 +3,23 @@ if ( ! mc) mc={};
 mc.utils={};
 
 mc.utils.checkBrowser=function() {
-  var mediaDevices= !! navigator.mediaDevices;
-  var mediaRecorder= !! MediaRecorder;
-  var plainGetUserMedia= !! navigator.getUserMedia;
+  var mediaDevices = typeof navigator.mediaDevices == "object";
+  var mediaRecorder = typeof MediaRecorder == "function";
+  var plainGetUserMedia = typeof navigator.getUserMedia == "function";
+  var MediaRecorder_isTypeSupported = mediaRecorder && typeof MediaRecorder.isTypeSupported == "function";
+  //var mediaRecorder_isTypeSupported = "?", mr={};
   var outcome="?";
   
   if ( ! mediaDevices) outcome="No navigator.mediaDevices";
   else if ( ! mediaRecorder) outcome="No MediaRecorder";
+  else if ( ! MediaRecorder_isTypeSupported) { outcome="No MediaRecorder.isTypeSupported"; }  
   else outcome=true;
   
   return {
     mediaDevices:mediaDevices,
     mediaRecorder:mediaRecorder,
     plainGetUserMedia:plainGetUserMedia,
+    MediaRecorder_isTypeSupported:MediaRecorder_isTypeSupported,
     outcome:outcome
   };
 };

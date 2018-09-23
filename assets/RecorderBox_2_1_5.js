@@ -234,6 +234,8 @@ mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {
   
   _this.onOff=function() { return false; };
   
+  _this.getState=function() { return isOn };
+  
   this.init=function(userParams) {
     var constraints={ audio: true }, aov=userParams.audioOrVideo, rm;
     if (aov == "video") constraints.video=true;
@@ -281,8 +283,6 @@ mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {
       mediaRecorder.stop();
       mediaRecorder.start();
     };
-    
-    _this.getState=function() { return isOn };
 
     mediaRecorder.onstop=function() { 
       receiveBlob(makeBlob());
@@ -316,11 +316,11 @@ mc.rb.ViewR=function() {
   _this.setIndicator=function(s) {
     switch (s) {
     case "ready":
-      recordBtn.innerHTML="Record";
-      recordBtn.classList.remove("recording");
+      $("recordBtn").innerHTML="Record";
+      $("recordBtn").classList.remove("recording");
       break;
     case "recording":
-      recordBtn.classList.add("recording");
+      $("recordBtn").classList.add("recording");
       break;
     default:
       throw new Error("Unknown state="+s);
@@ -328,55 +328,55 @@ mc.rb.ViewR=function() {
   };
   
   _this.uploadIndicator={
-    on : function() { uploadIndBtn.style.background = "yellow"; },
-    off : function() { uploadIndBtn.style.background = ""; }  
+    on : function() { $("uploadIndBtn").style.background = "yellow"; },
+    off : function() { $("uploadIndBtn").style.background = ""; }  
   };
   
   _this.showLocalPlay=function(url,bytes) {
-    downloadLink.innerHTML = '<a href="'+url+'" target="_blank">The file</a>';
-    blobSizeS.innerHTML=mc.utils.b2kb(bytes);
-    localPlayS.style.display="";
+    $("downloadLink").innerHTML = '<a href="'+url+'" target="_blank">The file</a>';
+    $("blobSizeS").innerHTML=mc.utils.b2kb(bytes);
+    $("localPlayS").style.display="";
   };
   
   _this.hideLocalPlay=function() {
-    downloadLink.innerHTML = '';
-    blobSizeS.innerHTML='';
-    localPlayS.style.display="none";
+    $("downloadLink").innerHTML = '';
+    $("blobSizeS").innerHTML='';
+    $("localPlayS").style.display="none";
   };
   
   _this.hideLocalPlay();
   
-  _this.clearUrl=function() { downloadLink.innerHTML=""; };
+  _this.clearUrl=function() { $("downloadLink").innerHTML=""; };
   
-  _this.showTiming=function(t) { timerInd.value=t; };
+  _this.showTiming=function(t) { $("timerInd").value=t; };
   
-  _this.showMessage=function(m) { recorderAlertP.innerHTML=m; };
-  _this.clearMessage=function(m) { recorderAlertP.innerHTML=""; };
+  _this.showMessage=function(m) { $("recorderAlertP").innerHTML=m; };
+  _this.clearMessage=function(m) { $("recorderAlertP").innerHTML=""; };
   
   _this.applyServerParams=function(sp) {
-    if (sp.maxBlobBytes) maxSizeS.innerHTML=mc.utils.b2kb(sp.maxBlobBytes);
-    if (sp.clipLifetimeSec) lifetimeS.innerHTML=mc.utils.s2dhms(sp.clipLifetimeSec);
-    if (sp.maxMediaFolderBytes) folderSizeS.innerHTML=mc.utils.b2kb(sp.maxMediaFolderBytes);
+    if (sp.maxBlobBytes) $("maxSizeS").innerHTML=mc.utils.b2kb(sp.maxBlobBytes);
+    if (sp.clipLifetimeSec) $("lifetimeS").innerHTML=mc.utils.s2dhms(sp.clipLifetimeSec);
+    if (sp.maxMediaFolderBytes) $("folderSizeS").innerHTML=mc.utils.b2kb(sp.maxMediaFolderBytes);
     if (sp.allowVideo && sp.allowVideo === "0") sp.allowVideo=0;
     if (sp.videoOn && sp.videoOn === "0") sp.videoOn=false;
     if (sp.allowVideo) {
-      audioOrVideoS.style.display="";
+      $("audioOrVideoS").style.display="";
       //alert(sp.videoOn+" "+mc.utils.getRadio("audioOrVideoRad"));
       if (sp.videoOn) mc.utils.setRadio("audioOrVideoRad","video");
     }
     else { audioOrVideoS.style.display="none"; }
     if (sp.maxClipSizeSec) {
-      chunkInp.value=sp.maxClipSizeSec;
+      $("chunkInp").value=sp.maxClipSizeSec;
       //mc.utils.setRadio("chunkRad","custom");
       mc.utils.setSelect("chunkSelect","custom");
     }
     if (sp.allowStream && sp.allowStream === "0") sp.allowStream=0;
     if (sp.allowStream) {
-      onrecordedS.style.display="";
+      $("onrecordedS").style.display="";
       if (sp.onRecorded) { mc.utils.setRadio("onrecordedRad",sp.onRecorded); }
     }
     else { 
-      onrecordedS.style.display="none";
+      $("onrecordedS").style.display="none";
       sp.onRecorded="stop";
       mc.utils.setRadio("onrecordedRad",sp.onRecorded);
     }    
@@ -385,18 +385,18 @@ mc.rb.ViewR=function() {
   _this.getParams=function() {
     var chunkSizeS=mc.utils.getSelect("chunkSelect");//mc.utils.getRadio("chunkRad");
     if (chunkSizeS == "custom") {
-      var c=chunkSizeS=parseInt(chunkInp.value,10);
+      var c=chunkSizeS=parseInt($("chunkInp").value,10);
       //alert(chunkInp.value+"/"+c);
       if ( ( ! c ) || (c != c) ) {// empty or nan
         chunkSizeS=1;
         mc.utils.setSelect("chunkSelect",1);
       }
     }
-    else { chunkInp.value=""; }
+    else { $("chunkInp").value=""; }
     
     return {
-      user : userInput.value,
-      realm : realmInput.value,
+      user : $("userInput").value,
+      realm : $("realmInput").value,
       audioOrVideo : mc.utils.getRadio("audioOrVideoRad"),
       onrecorded : mc.utils.getRadio("onrecordedRad"),
       description : descriptionInput.value,
@@ -405,16 +405,16 @@ mc.rb.ViewR=function() {
   };
   
   _this.setHandlers=function(initRecorder, toggleRecorder, playLocally, uploadStoredBlob) {
-    audioOrVideoRad1.onchange=initRecorder;
-    audioOrVideoRad2.onchange=initRecorder;
-    recordBtn.onclick=toggleRecorder;
-    playHereBtn.onclick=playLocally;
-    uploadStoredBtn.onclick=uploadStoredBlob;
+    $("audioOrVideoRad1").onchange=initRecorder;
+    $("audioOrVideoRad2").onchange=initRecorder;
+    $("recordBtn").onclick=toggleRecorder;
+    $("playHereBtn").onclick=playLocally;
+    $("uploadStoredBtn").onclick=uploadStoredBlob;
     // keyboard events are managed at the higher level by KeyboardMonitor
   };
   
   function blurSelect() {
-    chunkSelect.onchange=function() { 
+    $("chunkSelect").onchange=function() { 
       document.activeElement.blur();// otherwise it will catch onkeypressed 
     };    
   }

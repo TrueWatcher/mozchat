@@ -92,6 +92,11 @@
   <label for="skipMineChkb">only from others</label><input type="checkbox" id="skipMineChkb" checked="checked" />
 </fieldset>
 
+<div id="footer">
+&nbsp;<br />
+<a href="https://github.com/TrueWatcher/mozchat">mozchat</a>, an open source media chat by TrueWatcher 2018
+</div>
+
 <script>
   var mc={};// namespace root
 </script>
@@ -105,6 +110,8 @@ mc.mimeDictionary=JSON.parse(mc.mimeDictionary);
 
 mc.serverParams='<?php print(json_encode($serverParams)); ?>';
 mc.serverParams=JSON.parse(mc.serverParams);
+
+function $(id) { return document.getElementById(id); }
 
 mc.TopManager=function() {
   var recorderBox={}, playerBox={}, kbm={}, sp=mc.serverParams;
@@ -123,16 +130,16 @@ mc.TopManager=function() {
     recorderPanel.style.display="none";
     playerPanel.style.display="none";
     accountTopAlertP.innerHTML="Please introduce yourself and choose your thread";
-    if(sp.realm) realmInput.value=sp.realm;
+    if(sp.realm) $("realmInput").value=sp.realm;
   }
   
   function initFull() {
     mc.screenParams=mc.utils.getScreenParams();
     adjustLayout(mc.screenParams);
     
-    userInput.value=sp.user;
-    realmInput.value=sp.realm;
-    accountBottomAlertP.innerHTML="Press and hold SPACE to start recording, release SPACE to finish it";
+    $("userInput").value=sp.user;
+    $("realmInput").value=sp.realm;
+    $("accountBottomAlertP").innerHTML="Press and hold SPACE to start recording, release SPACE to finish it";
     
     var found=mc.utils.checkBrowser();
     console.log(mc.utils.dumpArray(found));
@@ -156,10 +163,10 @@ mc.TopManager=function() {
     isPortrait=isPortrait || screenParams.isPortrait;
     if (isPortrait) {
       //console.log("portrait screen");
-      playerRoom.style="display: table-cell; padding:5px";
+      $("playerRoom").style="display: table-cell; padding:5px";
     }
     else {
-      playerRoom.style="position: fixed; bottom:5px; right:5px";
+      $("playerRoom").style="position: fixed; bottom:5px; right:5px";
     }
     var videoHeight=Math.floor(screenParams.height-15);
     mc.utils.addCss("video { max-height:"+videoHeight+"px; }");
