@@ -29,8 +29,8 @@
   <span id="audioOrVideoS">
     <label for="audioOrVideoRad1">audio</label><input type="radio" id="audioOrVideoRad1" name="audioOrVideoRad" value="audio" checked="checked" />
     <label for="audioOrVideoRad2">or video</label><input type="radio" id="audioOrVideoRad2" name="audioOrVideoRad" value="video" />
+    &nbsp;
   </span>  
-  &nbsp;
   Chunk:
   <select id="chunkSelect" >
     <option value="1" selected="selected">1s</option>
@@ -45,6 +45,8 @@
     then: <label for="onrecordedRad1">upload</label><input type="radio" id="onrecordedRad1" name="onrecordedRad" value="upload" checked="checked" />&nbsp;
     <label for="onrecordedRad2">stop</label><input type="radio" id="onrecordedRad2" name="onrecordedRad" value="stop" />
   </span>
+  <br />
+  <label for="holdPlayWhileRecChkb">pause player</label><input type="checkbox" id="holdPlayWhileRecChkb">
   <br />
   <input type="text" id="descriptionInput" placeholder="You may type here a description before recording" style="width:100%; max-width : 40em;" />
   <br />
@@ -151,8 +153,16 @@ mc.TopManager=function() {
       accountBottomAlertP.innerHTML=found.outcome;
       throw new Error(found.outcome);
     }
+    
+    var onBeforerecording=function(params) {
+      if (params.holdPlayWhileRec) playerBox.pause();
+    };
+    
+    var onAfterrecording=function() {
+      playerBox.unpause()
+    };
 
-    recorderBox=new mc.rb.RecorderBox();
+    recorderBox=new mc.rb.RecorderBox(onBeforerecording, onAfterrecording);
     recorderBox.init(mc.serverParams);
 
     playerBox=new mc.pb.PlayerBox(recorderBox.getUpConnection());
@@ -164,12 +174,14 @@ mc.TopManager=function() {
   function adjustLayout(screenParams) {
     var isPortrait=0;
     isPortrait=isPortrait || screenParams.isPortrait;
-    if (isPortrait) {
+    if (isPortrait) {// normally mobile, narrow screen
       //console.log("portrait screen");
       $("playerRoom").style="display: table-cell; padding:5px";
     }
-    else {
+    else {// landscape -- normally desktop
       $("playerRoom").style="position: fixed; bottom:5px; right:5px";
+      var videoWidth=Math.floor(screenParams.width*0.80);
+      mc.utils.addCss("video { max-width:"+videoWidth+"px; }");
     }
     var videoHeight=Math.floor(screenParams.height-15);
     mc.utils.addCss("video { max-height:"+videoHeight+"px; }");

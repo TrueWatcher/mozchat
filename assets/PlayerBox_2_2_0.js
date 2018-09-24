@@ -3,10 +3,17 @@ if ( ! mc) mc={};//namespace
 mc.pb={};
 
 mc.pb.PlayerBox=function(upConnection) {
-  var viewP={}, serialPlayer={}, _this=this;
-  var userParams={}, serverParams={}, inventory={}, firstResponse=1, _response={}, changesMap={}, dataSource={};
-  var urlprefix="";
-  //var mediaFolder="media";
+  var _this=this,
+      viewP={},
+      serialPlayer={},
+      userParams={},
+      serverParams={},
+      inventory={},
+      firstResponse=1,// 1,0
+      changesMap={},
+      dataSource={},
+      urlprefix="",// used by serialPlayer and 
+      isPaused=0;// 0,1, or params of a suspended incoming clip
   
   this.init=function(fromServer) {
     serverParams=fromServer;
@@ -37,7 +44,7 @@ mc.pb.PlayerBox=function(upConnection) {
   }
   
   function takeResponseP(resp) { 
-    var ps,toPlay,al;
+    var ps,al;
     if (resp.free) viewP.showFreeSpace(resp.free);
     if (resp.users) { 
       viewP.showUsers(resp.users);
@@ -47,13 +54,7 @@ mc.pb.PlayerBox=function(upConnection) {
       changesMap=inventory.consumeNewCatalog(resp.list, userParams);
       viewP.applyDiff(changesMap,userParams.pollFactor);
       //console.log(mc.utils.dumpArray(changesMap));
-      toPlay=changesMap.toPlay;
-      if (toPlay && ! firstResponse) {
-        ps=serialPlayer.getState();         
-        if (ps == "idle") serialPlayer.play({id : toPlay[0], mime: toPlay[3], el:false});
-        else if (ps == "playing") serialPlayer.tryFeed();
-      }
-      firstResponse=0;// allows playing new items
+      tryToPlay(changesMap.toPlay);
     }     
     if (resp.error) viewP.showMessage("Error! "+resp.error);
     ps=serialPlayer.getState();
@@ -65,9 +66,24 @@ mc.pb.PlayerBox=function(upConnection) {
       }
       //else viewP.showMessage(resp.alert || mc.utils.dumpArray(resp) || "<empty>");
     }
-    //response=resp;
   }
   
+  function tryToPlay(toPlay) {
+    var ps,playData;
+    if (toPlay && ! toPlay instanceof Array) throw new Error("Wrong argument type="+(typeof toPlay));
+    if (toPlay && ! firstResponse) {
+      ps=serialPlayer.getState();         
+      if (ps == "idle") {
+        playData={ id : toPlay[0], mime: toPlay[3], el:false };
+        if ( ! isPaused) { serialPlayer.play(playData); }
+        else { isPaused=playData; }// store until unpause
+      }
+      else if (ps == "playing") serialPlayer.tryFeed();
+      // other states -- do nothing
+    }
+    firstResponse=0;// allows playing new items    
+  }
+    
   this.getDebugApi=function() {  
     return {
       getResponse : function() { return dataSource.getResponse(); },
@@ -129,6 +145,19 @@ mc.pb.PlayerBox=function(upConnection) {
   _this.isVideo=function(id) { return inventory.isVideo(id); };
   
   _this.clear=function() { serialPlayer.stop(); viewP.clearClips(); };
+  
+  _this.pause=function() { 
+    console.log("playerBox paused");
+    isPaused=1;
+    serialPlayer.pause();
+  };
+  
+  _this.unpause=function() { 
+    console.log("playerBox unpaused");
+    serialPlayer.unpause();
+    if (typeof isPaused == "object") serialPlayer.play(isPaused);
+    isPaused=0;
+  };
    
 }// end PlayerBox
 
@@ -332,9 +361,9 @@ mc.pb.Inventory=function() {
 }// end Inxentory
 
 mc.pb.ViewP=function() {
-  var _this=this;
-  var user="";
-  var playerRoom=document.getElementById("playerRoom");
+  var _this=this,
+      user="",
+      playerRoom=document.getElementById("playerRoom");
   
   this.applyServerParams=function(sp) {
     if (sp.pollFactor) { mc.utils.setSelect("refreshSelect",sp.pollFactor); }
@@ -442,7 +471,11 @@ mc.pb.ViewP=function() {
 mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) {
   if (typeof getNextId != "function") throw new Error("Non-function argument");
   if (errorHandler && typeof errorHandler != "function") throw new Error("Invalid ERRORHANDLER");
-  var actual=false, next=false, _this=this, stopping=false, state="idle";
+  var actual=false,
+      next=false,
+      _this=this,
+      stopping=false,
+      state="idle";
   
   _this.play=function(idPlus) {   
     if ( ! idPlus.id) throw new Error("Element without ID");
@@ -545,6 +578,10 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
     next=false;
     viewP.clearClips();
   };
+  
+  this.pause=function() { if (actual) actual.el.pause(); };
+  
+  this.unpause=function() { if (actual && actual.el.paused) actual.el.play(); };
   
   this.getState=function() {
     if (stopping) return "stopping";

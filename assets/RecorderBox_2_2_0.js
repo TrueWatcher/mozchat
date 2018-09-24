@@ -2,10 +2,11 @@
 if ( ! mc) mc={};//namespace
 mc.rb={};
 
-mc.rb.RecorderBox=function() {
-  var viewR={}, timerR={}, ajaxerR={}, recorder={}, _this=this;
+mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
+  var _this=this, viewR={}, recorder={};
   var blobPlus={}, userParams={}, serverParams={};
-  var recordingTime=0, lastRecordedTime=0, timingOn=0;
+  var recordingTime=0, lastRecordedTime=0, timingOn=0, serialTime=0;
+  var floodLimitS=120;
   var upConnection={};
   
   this.init=function(fromServer) {
@@ -48,12 +49,20 @@ mc.rb.RecorderBox=function() {
     if ( ! timingOn) return;
     recordingTime+=1;
     viewR.showTiming(recordingTime);
+    if (overFloodLimit()) { _this.recorderOff(); return; }  
     if (recordingTime < userParams.chunkSizeS) return;
-    if (userParams.onrecorded == "stop") {
-      _this.recorderOff();
-    }
-    else if (userParams.onrecorded == "upload") _this.recorderRestart();
+    if (userParams.onrecorded == "stop") { _this.recorderOff(); }
+    else if (userParams.onrecorded == "upload") { _this.recorderRestart(); }
   };
+  
+  function overFloodLimit() {
+    serialTime+=1;
+    if (serialTime <= floodLimitS) return "";
+    var errmsg="Recording session is limited to "+floodLimitS+"s";
+    console.log(errmsg);
+    viewR.showMessage(errmsg);
+    return errmsg;   
+  }
   
   _this.recorderInit=function() { 
     _this.recorderOff();
@@ -66,16 +75,19 @@ mc.rb.RecorderBox=function() {
     timingOn=0;
     lastRecordedTime=recordingTime;
     viewR.showTiming(lastRecordedTime);
+    onAfterrecording();
     return false;
   };
   
   _this.recorderOn=function() {
     userParams=viewR.getParams();
     viewR.hideLocalPlay();
+    onBeforerecording(userParams);
     blobPlus={};
     recorder.onOff(1);
     timingOn=1;
     recordingTime=0;
+    serialTime=0;
     viewR.showTiming(recordingTime);
     return false;
   };
@@ -401,8 +413,9 @@ mc.rb.ViewR=function() {
       realm : $("realmInput").value,
       audioOrVideo : mc.utils.getRadio("audioOrVideoRad"),
       onrecorded : mc.utils.getRadio("onrecordedRad"),
-      description : descriptionInput.value,
-      chunkSizeS : chunkSizeS
+      description : $("descriptionInput").value,
+      chunkSizeS : chunkSizeS,
+      holdPlayWhileRec : $("holdPlayWhileRecChkb").checked
     };
   };
   
