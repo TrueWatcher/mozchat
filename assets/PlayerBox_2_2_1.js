@@ -52,7 +52,7 @@ mc.pb.PlayerBox=function(upConnection) {
     if (resp.list) {
       //console.log(mc.utils.dumpArray(userParams));
       changesMap=inventory.consumeNewCatalog(resp.list, userParams);
-      viewP.applyDiff(changesMap,userParams.pollFactor);
+      viewP.applyDiff(changesMap);
       //console.log(mc.utils.dumpArray(changesMap));
       tryToPlay(changesMap.toPlay);
     }     
@@ -76,7 +76,12 @@ mc.pb.PlayerBox=function(upConnection) {
       if (ps == "idle") {
         playData={ id : toPlay[0], mime: toPlay[3], el:false };
         if ( ! isPaused) { serialPlayer.play(playData); }
-        else { isPaused=playData; }// store until unpause
+        else {
+          if (typeof isPaused != "object") {// queued already
+            isPaused=playData;
+            console.log("stashed "+playData.id);
+          }  
+        }// store until unpause
       }
       else if (ps == "playing") serialPlayer.tryFeed();
       // other states -- do nothing
@@ -100,7 +105,9 @@ mc.pb.PlayerBox=function(upConnection) {
       },
       connect : function() { return dataSource.connect(); },
       disconnect : function() { return dataSource.disconnect(); },  
-      getChangesMap : function() { return changesMap; }
+      getChangesMap : function() { return changesMap; },
+      getIsPaused : function() { return isPaused; },
+      getPlayerStateExt : function() { return serialPlayer.getStateExt(); }
     }
   };
   
@@ -475,6 +482,7 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
       next=false,
       _this=this,
       stopping=false,
+      paused=false,
       state="idle";
   
   _this.play=function(idPlus) {   
@@ -579,16 +587,28 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
     viewP.clearClips();
   };
   
-  this.pause=function() { if (actual) actual.el.pause(); };
+  this.pause=function() {
+    if ( ! actual) return;
+    paused=true;
+    actual.el.pause();
+  };
   
-  this.unpause=function() { if (actual && actual.el.paused) actual.el.play(); };
+  this.unpause=function() {
+    if (paused) actual.el.play();
+    paused=false;
+  };
   
   this.getState=function() {
     if (stopping) return "stopping";
+    if (paused) return "playingPaused";
     if ( ! actual && ! next) return "idle";
     if ( ! actual && next) throw new Error("NEXT set without ACTUAL");
     if ( actual && ! next) return "playing";
     if ( actual && next) return "playingNLoading";    
+  };
+  
+  this.getStateExt=function() {
+    return { a : actual, n : next, state : this.getState() };
   };
 
 }// end SerialPlayer

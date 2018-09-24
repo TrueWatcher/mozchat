@@ -31,7 +31,9 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
   };
   
   function checkMime() {
-    var rma=mc.utils.checkRecorderMime(mc.mimeDictionary, "audio"), rmv={ outcome : true }, fail="";
+    var rma=mc.utils.checkRecorderMime(mc.mimeDictionary, "audio"),
+        rmv={ outcome : true },
+        fail="";
     if (serverParams.allowVideo) rmv=mc.utils.checkRecorderMime(mc.mimeDictionary, "video");
     console.log(mc.utils.dumpArray(rma.recorderMimes));
     if (rma.outcome !== true) fail=rma.outcome;
@@ -212,7 +214,7 @@ mc.rb.UpConnection=function(respondrUri, onData, onHang, serverParams, userParam
     stuff.append("id",file);
     ajaxerR.postRequest(stuff);    
   };
-  
+  document.activeElement.blur();
   _this.sendRemoveExpired=function() {
     var  stuff=new FormData();
     stuff.append("act","removeExpired");
@@ -378,7 +380,7 @@ mc.rb.ViewR=function() {
       //alert(sp.videoOn+" "+mc.utils.getRadio("audioOrVideoRad"));
       if (sp.videoOn) mc.utils.setRadio("audioOrVideoRad","video");
     }
-    else { audioOrVideoS.style.display="none"; }
+    else { $("audioOrVideoS").style.display="none"; }
     if (sp.maxClipSizeSec) {
       $("chunkInp").value=sp.maxClipSizeSec;
       //mc.utils.setRadio("chunkRad","custom");
@@ -407,7 +409,7 @@ mc.rb.ViewR=function() {
       }
     }
     else { $("chunkInp").value=""; }
-    
+    document.activeElement.blur();
     return {
       user : $("userInput").value,
       realm : $("realmInput").value,
