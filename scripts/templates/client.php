@@ -172,7 +172,7 @@ mc.TopManager=function() {
   }
     
   function adjustLayout(screenParams) {
-    var isPortrait=0;
+    var isPortrait=0;// set this to 1 to debug
     isPortrait=isPortrait || screenParams.isPortrait;
     if (isPortrait) {// normally mobile, narrow screen
       //console.log("portrait screen");
@@ -180,10 +180,12 @@ mc.TopManager=function() {
     }
     else {// landscape -- normally desktop
       $("playerRoom").style="position: fixed; bottom:5px; right:5px";
-      var videoWidth=Math.floor(screenParams.width*0.80);
+      var videoWidth=Math.floor(screenParams.width*0.90);
       mc.utils.addCss("video { max-width:"+videoWidth+"px; }");
     }
     var videoHeight=Math.floor(screenParams.height-15);
+    // adjust for the mobile browser's status bar
+    if (screenParams.isMobile) videoHeight += screenParams.emPx*2;
     mc.utils.addCss("video { max-height:"+videoHeight+"px; }");
   }
   

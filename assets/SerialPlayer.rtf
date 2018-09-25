@@ -1,0 +1,213 @@
+{\rtf1\ansi\deff3\adeflang1025
+{\fonttbl{\f0\froman\fprq2\fcharset0 Times New Roman;}{\f1\froman\fprq2\fcharset2 Symbol;}{\f2\fswiss\fprq2\fcharset0 Arial;}{\f3\froman\fprq2\fcharset0 Liberation Serif{\*\falt Times New Roman};}{\f4\fswiss\fprq2\fcharset0 Liberation Sans{\*\falt Arial};}{\f5\fmodern\fprq1\fcharset0 Liberation Mono{\*\falt Courier New};}{\f6\fnil\fprq2\fcharset0 Droid Sans Fallback;}{\f7\fmodern\fprq1\fcharset0 Courier New;}{\f8\fnil\fprq2\fcharset0 FreeSans;}{\f9\fswiss\fprq0\fcharset128 FreeSans;}}
+{\colortbl;\red0\green0\blue0;\red128\green128\blue128;}
+{\stylesheet{\s0\snext0\nowidctlpar{\*\hyphen2\hyphlead2\hyphtrail2\hyphmax0}\cf0\dbch\af6\langfe2052\dbch\af8\afs24\alang1081\loch\f3\fs24\lang1033 Normal;}
+{\s15\sbasedon0\snext16\sb240\sa120\keepn\dbch\af6\dbch\af8\afs28\loch\f4\fs28 Heading;}
+{\s16\sbasedon0\snext16\sl288\slmult1\sb0\sa140 Text Body;}
+{\s17\sbasedon16\snext17\sl288\slmult1\sb0\sa140\dbch\af9 List;}
+{\s18\sbasedon0\snext18\sb120\sa120\noline\i\dbch\af9\afs24\ai\fs24 Caption;}
+{\s19\sbasedon0\snext19\noline\dbch\af9 Index;}
+{\s20\sbasedon0\snext20\sb0\sa0\dbch\af7\dbch\af5\afs20\loch\f5\fs20 Preformatted Text;}
+{\s21\sbasedon0\snext21\noline Table Contents;}
+{\s22\sbasedon21\snext22\qc\noline\b\ab Table Heading;}
+}{\*\generator LibreOffice/4.4.3.2$Linux_x86 LibreOffice_project/40m0$Build-2}{\info{\creatim\yr0\mo0\dy0\hr0\min0}{\author Alexander }{\revtim\yr2018\mo9\dy25\hr13\min44}{\printim\yr0\mo0\dy0\hr0\min0}}\deftab709
+\viewscale140
+{\*\pgdsctbl
+{\pgdsc0\pgdscuse451\lndscpsxn\pgwsxn16838\pghsxn11906\marglsxn1134\margrsxn1134\margtsxn1134\margbsxn1134\pgdscnxt0 Default Style;}}
+\formshade\landscape\paperh11906\paperw16838\margl1134\margr1134\margt1134\margb1134\sectd\sbknone\sectunlocked1\lndscpsxn\pgndec\pgwsxn16838\pghsxn11906\marglsxn1134\margrsxn1134\margtsxn1134\margbsxn1134\ftnbj\ftnstart1\ftnrstcont\ftnnar\aenddoc\aftnrstcont\aftnstart1\aftnnrlc
+{\*\ftnsep\chftnsep}\pgndec\pard\plain \s16\sl288\slmult1\sb0\sa140{\rtlch \ltrch\loch
+SerialPlayer states and behaviour}
+\par \trowd\trql\ltrrow\trpaddft3\trpaddt0\trpaddfl3\trpaddl0\trpaddfb3\trpaddb0\trpaddfr3\trpaddr0\clbrdrt\brdrhair\brdrw1\brdrcf1\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx786\clbrdrt\brdrhair\brdrw1\brdrcf1\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx1363\clbrdrt\brdrhair\brdrw1\brdrcf1\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx2137\clbrdrt\brdrhair\brdrw1\brdrcf1\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx3107\clbrdrt\brdrhair\brdrw1\brdrcf1\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx5048\clbrdrt\brdrhair\brdrw1\brdrcf1\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx6990\clbrdrt\brdrhair\brdrw1\brdrcf1\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx8642\clbrdrt\brdrhair\brdrw1\brdrcf1\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx10386\clbrdrt\brdrhair\brdrw1\brdrcf1\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx12235\clbrdrt\brdrhair\brdrw1\brdrcf1\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\clbrdrr\brdrhair\brdrw1\brdrcf1\cellx14570\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+actual}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+next}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+paused}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+stopping}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+state}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+takeFile f}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+onEnded}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+pause}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+unpause}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+stopAfterCurrent}\cell\row\pard\trowd\trql\ltrrow\trpaddft3\trpaddt0\trpaddfl3\trpaddl0\trpaddfb3\trpaddb0\trpaddfr3\trpaddr0\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx786\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx1363\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx2137\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx3107\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx5048\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx6990\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx8642\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx10386\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx12235\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\clbrdrr\brdrhair\brdrw1\brdrcf1\cellx14570\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+idle}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+actual=f}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>playing}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+err}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+paused=1}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>suspendedIdle}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\row\pard\trowd\trql\ltrrow\trpaddft3\trpaddt0\trpaddfl3\trpaddl0\trpaddfb3\trpaddb0\trpaddfr3\trpaddr0\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx786\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx1363\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx2137\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx3107\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx5048\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx6990\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx8642\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx10386\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx12235\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\clbrdrr\brdrhair\brdrw1\brdrcf1\cellx14570\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+playing}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+next=f}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>pNL}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+actual.clear}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>idle}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+paused=1}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+actual.pause}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>pausedPlaying}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+stopping}{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+=1}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>stopping}\cell\row\pard\trowd\trql\ltrrow\trpaddft3\trpaddt0\trpaddfl3\trpaddl0\trpaddfb3\trpaddb0\trpaddfr3\trpaddr0\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx786\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx1363\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx2137\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx3107\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx5048\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx6990\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx8642\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx10386\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx12235\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\clbrdrr\brdrhair\brdrw1\brdrcf1\cellx14570\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+playingAndLoading (pNL)}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+actual.clear}
+\par \pard\plain \s21\noline\intbl\tx1093\li0\ri0\lin0\rin0\fi0\noline{{\*\bkmkstart __DdeLink__22_1448022021}\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+tryHandover}{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+()}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+actual=next}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+next=}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\fs16\loch\f5
+ }{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+tryGetNext}{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+()}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++ same }{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+pNL}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{{\*\bkmkstart __DdeLink__22_1448022021}\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5{\*\bkmkend __DdeLink__22_1448022021}
+- >playing}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+paused=1}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+actual.pause}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>pausedPLN}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+stopping}{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+=1}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>stopping}\cell\row\pard\trowd\trql\ltrrow\trpaddft3\trpaddt0\trpaddfl3\trpaddl0\trpaddfb3\trpaddb0\trpaddfr3\trpaddr0\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx786\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx1363\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx2137\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx3107\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx5048\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx6990\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx8642\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx10386\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx12235\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\clbrdrr\brdrhair\brdrw1\brdrcf1\cellx14570\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++ -}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+stopping}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+actual.clear}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>idle}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+paused=1}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+actual.pause}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>pausedStopping}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\row\pard\trowd\trql\ltrrow\trpaddft3\trpaddt0\trpaddfl3\trpaddl0\trpaddfb3\trpaddb0\trpaddfr3\trpaddr0\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx786\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx1363\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx2137\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx3107\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx5048\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx6990\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx8642\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx10386\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx12235\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\clbrdrr\brdrhair\brdrw1\brdrcf1\cellx14570\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+suspendedIdle}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+next=f}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>suspendedLoading}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+err}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+paused=0}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>idle}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>idle}\cell\row\pard\trowd\trql\ltrrow\trpaddft3\trpaddt0\trpaddfl3\trpaddl0\trpaddfb3\trpaddb0\trpaddfr3\trpaddr0\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx786\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx1363\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx2137\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx3107\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx5048\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx6990\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx8642\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx10386\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx12235\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\clbrdrr\brdrhair\brdrw1\brdrcf1\cellx14570\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+suspendedLoading}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+err}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+paused=0}
+\par \pard\plain \s21\noline\intbl\tx1093\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+tryHandover}{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+()}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+actual=next}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+next=}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\fs16\loch\f5
+ }{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+tryGetNext}{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+()}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++ }{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>pNL}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+- >playing}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+next.clear}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>idle}\cell\row\pard\trowd\trql\ltrrow\trpaddft3\trpaddt0\trpaddfl3\trpaddl0\trpaddfb3\trpaddb0\trpaddfr3\trpaddr0\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx786\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx1363\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx2137\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx3107\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx5048\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx6990\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx8642\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx10386\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx12235\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\clbrdrr\brdrhair\brdrw1\brdrcf1\cellx14570\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++ paused}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+pausedPlaying}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+next=f}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>pausedPNL}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+err}{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+paused=0}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+actual.play}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>playing}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+stopping}{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+=1}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>pausedStopping}\cell\row\pard\trowd\trql\ltrrow\trpaddft3\trpaddt0\trpaddfl3\trpaddl0\trpaddfb3\trpaddb0\trpaddfr3\trpaddr0\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx786\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx1363\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx2137\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx3107\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx5048\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx6990\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx8642\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx10386\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx12235\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\clbrdrr\brdrhair\brdrw1\brdrcf1\cellx14570\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+paused}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+pausedPNL}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+err}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+paused=0}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+actual.play}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>pNL}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+stopping}{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+=1}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>pausedStopping}\cell\row\pard\trowd\trql\ltrrow\trpaddft3\trpaddt0\trpaddfl3\trpaddl0\trpaddfb3\trpaddb0\trpaddfr3\trpaddr0\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx786\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx1363\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx2137\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx3107\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx5048\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx6990\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx8642\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx10386\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\cellx12235\clbrdrl\brdrhair\brdrw1\brdrcf1\clbrdrb\brdrhair\brdrw1\brdrcf1\clbrdrr\brdrhair\brdrw1\brdrcf1\cellx14570\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+paused}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
++}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+pausedStopping}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+err}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+paused=0}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+actual.play}
+\par \pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+>stopping}\cell\pard\plain \s21\noline\intbl\li0\ri0\lin0\rin0\fi0\noline{\dbch\af7\dbch\af5\afs16\rtlch \ltrch\loch\fs16\loch\f5
+-}\cell\row\pard\pard\plain \s20\sb0\sa0\dbch\af7\dbch\af5\afs20\loch\f5\fs20\rtlch \ltrch\loch
+
+\par }

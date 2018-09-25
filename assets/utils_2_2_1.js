@@ -286,10 +286,13 @@ mc.utils.blockMobileZoom=function() {
 };
 
 mc.utils.getScreenParams=function() {
+  var emPx = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  var isMobile = null;
+  if (typeof window.matchMedia == "function") isMobile = window.matchMedia("only screen and (max-width: 760px)");
   var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
   var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
   var isPortrait=(width < height);
-  return { isPortrait:isPortrait, width:width, height:height };
+  return { isPortrait:isPortrait, width:width, height:height, isMobile : isMobile, emPx : emPx };
 }
 
 mc.utils.addCss=function(str) {
