@@ -50,7 +50,7 @@
   <br />
   <input type="text" id="descriptionInput" placeholder="You may type here a description before recording" style="width:100%; max-width : 40em;" />
   <br />
-  <button id="recordBtn">Wait...</button>
+  <button id="recordBtn">Oops...</button>
   <input type="text" id="timerInd" style="width : 3em;" class="inline" value="0" />s&nbsp;
   <span id="localPlayS">
     <br />

@@ -285,6 +285,64 @@ mc.utils.blockMobileZoom=function() {
   document.head.appendChild(meta);
 };
 
+mc.utils.Indicator=function(id,states,htmlOrValue,startState) {
+  var el=document.getElementById(id);
+  if ( ! el) throw new Error("Wrong Id");
+  if ( ! htmlOrValue) htmlOrValue="h";
+  if ( ! states instanceof Array || states.length < 2) throw new Error("Wrong STATES");
+  var cl=states.length;
+  var sc=allOrNone()
+  if ( ! startState) startState=0;
+  if (startState >= cl) throw new Error("Too big STARTSTATE");
+  var state;
+  adoptState(startState);
+  
+  this.on=function() { adoptState(1); };
+  this.off=function() { adoptState(0); };
+  this.z=function() { adoptState(2); };
+  this.toggle=function() {
+    if (state == 0) adoptState(1);
+    else if (state == 1) adoptState(0);
+    else console.log("Cannot toggle z-state");
+  }
+    
+  function adoptState(index) {
+    if (sc.strings) {
+      if (htmlOrValue == "h") el.innerHTML=states[index][0];
+      else el.value=states[index][0];
+    }
+    if (sc.classes) {
+      removeOtherClasses(index);
+      el.classList.add(states[index][1]);      
+    }
+    state=index;
+  }
+  
+  function allOrNone() {
+    var withStringCount=0,
+        withoutStringCount=0,
+        withClassCount=0,
+        withoutClassCount=0;
+    for (var i=0; i < cl; i+=1) {
+      if ( !! states[i][0]) withStringCount+=1;
+      else withoutStringCount+=1;
+      if ( !! states[i][1]) withClassCount+=1;
+      else withoutClassCount+=1;
+    }
+    if (withStringCount != cl && withoutStringCount != cl) throw new Error("Element: "+id+" Strings must be given for all states or for no state");
+    if (withClassCount != cl && withoutClassCount != cl) throw new Error("Element: "+id+" Classes must be given for all states or for no state");
+    return { strings : withStringCount == cl, classes : withClassCount == cl};
+  }
+  
+  function removeOtherClasses(stateIndex) {
+    var c;
+    for (var i=0; i < cl; i+=1) {
+      if (i == stateIndex) continue;
+      el.classList.remove(states[i][1]);
+    }   
+  }
+}// end Indicator
+
 mc.utils.getScreenParams=function() {
   var emPx = parseFloat(getComputedStyle(document.documentElement).fontSize);
   var isMobile = null;

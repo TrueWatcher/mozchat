@@ -3,11 +3,19 @@ if ( ! mc) mc={};//namespace
 mc.rb={};
 
 mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
-  var _this=this, viewR={}, recorder={};
-  var blobPlus={}, userParams={}, serverParams={};
-  var recordingTime=0, lastRecordedTime=0, timingOn=0, serialTime=0;
-  var floodLimitS=120;
-  var upConnection={};
+  var _this=this,
+      viewR={},
+      recorder={},
+      ticker={},
+      blobPlus={},
+      userParams={},
+      upConnection={},
+      serverParams={},
+      recordingTime=0,
+      lastRecordedTime=0,
+      timingOn=0,
+      serialTime=0,
+      floodLimitS=120;
   
   this.init=function(fromServer) {
     serverParams=fromServer;
@@ -21,10 +29,11 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
     
     checkMime();
     
-    recorder=new mc.rb.RecorderMR(onBlobReady, viewR.setIndicator, viewR);
+    recorder=new mc.rb.RecorderMR(onBlobReady, viewR.recIndicator, viewR);
     recorder.init(userParams);
     
-    setInterval(_this.onTick, 1000);
+    ticker=new mc.rb.Ticker(_this.onTick);
+    //ticker.start();
     
     viewR.setHandlers(_this.recorderInit, _this.recorderToggle, _this.playLocally, _this.uploadStoredBlob);
     // keyboard events are monitored separately by KeyboardMonitor
@@ -74,6 +83,7 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
   
   _this.recorderOff=function() {
     recorder.onOff(0);
+    ticker.stop();
     timingOn=0;
     lastRecordedTime=recordingTime;
     viewR.showTiming(lastRecordedTime);
@@ -87,6 +97,7 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
     onBeforerecording(userParams);
     blobPlus={};
     recorder.onOff(1);
+    ticker.start();
     timingOn=1;
     recordingTime=0;
     serialTime=0;
@@ -169,6 +180,14 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
 
 }// end RecorderBox
 
+mc.rb.Ticker=function(onTick) {
+  var intervalHandler;
+  var intervalMs=1000;
+  
+  this.start=function() { intervalHandler=setInterval(onTick,intervalMs); };
+  this.stop=function() { clearInterval(intervalHandler); };
+}
+
 mc.rb.UpConnection=function(respondrUri, onData, onHang, serverParams, userParams, indicator) {
   var _this=this;
   var ajaxerR=new mc.utils.Ajaxer(respondrUri, onData, indicator, onHang);
@@ -233,7 +252,7 @@ mc.rb.UpConnection=function(respondrUri, onData, onHang, serverParams, userParam
   
 };
 
-mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {  
+mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {  
   if (typeof receiveBlob != "function") throw new Error("No receiver callback given");
   
   var chunks = [];
@@ -241,9 +260,9 @@ mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {
   var isOn=0;
   var mime,ext,params={};
   
-  if (typeof indicate != "function") {
-    console.log("RecorderMR: wrong INDICATE");
-    indicate=function(){};
+  if (typeof indicator != "object" || ! indicator.on) {
+    console.log("RecorderMR: wrong INDICATOR");
+    indicator={ on : function(){}, off : function(){} };
   }
   
   _this.onOff=function() { return false; };
@@ -272,7 +291,7 @@ mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {
     if (params) mediaRecorder=new MediaRecorder(stream,params);
     else mediaRecorder=new MediaRecorder(stream);
     
-    indicate("ready");
+    indicator.off();
     
     _this.onOff=function(a) {
       if (a === "*") a= ! isOn;
@@ -281,12 +300,12 @@ mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {
       if (a) {
         isOn=1;
         mediaRecorder.start();
-        indicate("recording");
+        indicator.on();
       }
       else {
         isOn=0;
         mediaRecorder.stop();
-        indicate("ready");
+        indicator.off();
       }
       //console.log("recorder "+mediaRecorder.state);
       return isOn;
@@ -327,24 +346,12 @@ mc.rb.RecorderMR=function(receiveBlob,indicate,viewR) {
 mc.rb.ViewR=function() {
   var _this=this;
   
-  _this.setIndicator=function(s) {
-    switch (s) {
-    case "ready":
-      $("recordBtn").innerHTML="Record";
-      $("recordBtn").classList.remove("recording");
-      break;
-    case "recording":
-      $("recordBtn").classList.add("recording");
-      break;
-    default:
-      throw new Error("Unknown state="+s);
-    }    
-  };
+  this.recIndicator=new mc.utils.Indicator("recordBtn", 
+    [["Record","auto"], ["Recording","recording"], ["Inactive","auto"]],
+    "h", 2
+  );
   
-  _this.uploadIndicator={
-    on : function() { $("uploadIndBtn").style.background = "yellow"; },
-    off : function() { $("uploadIndBtn").style.background = ""; }  
-  };
+  this.uploadIndicator=new mc.utils.Indicator("uploadIndBtn", [["","auto"], ["","ye"]] );
   
   _this.showLocalPlay=function(url,bytes) {
     $("downloadLink").innerHTML = '<a href="'+url+'" target="_blank">The file</a>';
