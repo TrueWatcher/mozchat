@@ -20,7 +20,7 @@
 'ci.loop();',
 'if(recordBtn.innerHTML.charAt(0) != "W") ci.inc();',
 'recordBtn.click(); ci.inc();',
-'if(localPlayS.style.display == "") ci.inc();',
+'if (localPlayS.style.display == "") ci.inc();',
 'ci.noLoop();',
 'blobKb=parseInt(blobSizeS.innerHTML); \
  assertTrue( blobKb > sp.maxBlobBytes/1000, "wrong blob size","blob size="+blobKb+" is over limit" );',
@@ -29,11 +29,11 @@
  assertTrue(err, "no error on uploading oversized record","error shown" );',
  
 'println("Testing simple send");',
-'mc.utils.setSelect("chunkSelect",1);',
+'mc.utils.setSelect("chunkSelect",2);',
+'assertEqualsPrim("Record", recordBtn.innerHTML, "Recorder is not ready", "Recorder ready");',
 'ci.loop();',
-'if(recordBtn.innerHTML.charAt(0) != "W") ci.inc();',
 'recordBtn.click(); ci.inc();',
-'if(localPlayS.style.display == "") ci.inc();',
+'if (localPlayS.style.display == "") ci.inc();',
 'ci.noLoop();',
 'blobKb=parseInt(blobSizeS.innerHTML); \
  assertTrue( blobKb < sp.maxBlobBytes/1000, "wrong blob size","blob size="+blobKb+" is ok" );',
@@ -52,7 +52,7 @@
  descr=tr.indexOf(clip1) >= 0; \
  assertTrue(descr,"My description is absent","My description is present"); ',
 
-'println("Testing repeated send");',
+'println("Testing repeated send and folder size limit");',
 'clip2="clips salvo 1"; \
  descriptionInput.value=clip2; \
  free=parseInt(folderFreeInp.value); \
@@ -70,8 +70,8 @@
  assertTrue(elapsed <= sp.clipLifetimeSec, "Increase the lifetime", "No new files have expired yet")',
 'free=parseInt(folderFreeInp.value); \
  assertTrue(free <= blobKb, "Wrong FREE after salvo", "Free space is less than clip size"); \
- var tr=medialistT.firstChild.innerHTML; \
- var descr=tr.indexOf(clip1) >= 0; \
+ tr=medialistT.firstChild.innerHTML; \
+ descr=tr.indexOf(clip1) >= 0; \
  assertTrue( ! descr,"My first clip is still present","My first clip is removed"); \
  descr=tr.indexOf(clip2) >= 0; \
  assertTrue(descr,"My next clips are missing","My next clips are there"); \
@@ -98,6 +98,40 @@
  assertEqualsPrim(sp.maxMediaFolderBytes/1000, freeFinally, "Wrong free space", "All space is eventually free"); \
  ok= ! medialistT.hasChildren; \
  assertTrue(ok,"Some data are present un the catalog","Catalog is empty"); ',
+
+'println("Testing clips count limit");',
+'mc.utils.setSelect("chunkSelect",1); \
+ assertEqualsPrim("Record", recordBtn.innerHTML, "Recorder is not ready", "Recorder ready");',
+'ci.loop();',
+'recordBtn.click(); ci.inc();',
+'if (localPlayS.style.display == "") ci.inc();',
+'ci.noLoop();',
+'clip1="Clip Number One A"; \
+ descriptionInput.value=clip1; \
+ uploadStoredBtn.click();',
+'playerBox.sendPoll();',
+'tr=medialistT.firstChild.innerHTML; \
+ descr=tr.indexOf(clip1) >= 0; \
+ assertTrue(descr, "My first clip is missing","My first clip is present"); \
+ toSend=parseInt(maxClipCountS.innerHTML)+1; \
+ i=0; \
+ clip2="clips salvo 1 A"; \
+ descriptionInput.value=clip2; \
+',
+'ci.loop();',
+'uploadStoredBtn.click(); i+=1; print(" "+i+" "); if (i >= toSend) { ci.inc(); };',
+'ci.noLoop();',
+'playerBox.sendPoll();',
+'free=parseInt(folderFreeInp.value); \
+ assertTrue(free > blobKb, "Wrong FREE after salvo", "Free space is not limiting"); \
+ tr=medialistT.firstChild.innerHTML; \
+ descr=tr.indexOf(clip1) >= 0; \
+ assertTrue( ! descr,"My first clip is still present","My first clip is removed"); \
+ descr=tr.indexOf(clip2) >= 0; \
+ assertTrue(descr,"My next clips are missing","My next clips are there"); \
+ tr=medialistT.children.length; \
+ assertEqualsPrim(parseInt(maxClipCountS.innerHTML), tr, "Wrong clips count", "Clips count limit is enforced"); \
+', 
  
 'println("Testing users list basic operations");',
 'storedTime1=Date.now()/1000; \
@@ -131,6 +165,7 @@
  assertTrue(ok, "Shadow username not expired", "Shadow username is expired"); ',
  
 'println("Testing passing a clip to another user");',
+'','','playerBox.sendRemoveExpired();','shadow.sendPoll();',// let old clips expire
 'clip3="Clips salvo Two"; \
  descriptionInput.value=clip3; \
  mc.utils.setRadio("onrecordedRad","upload"); \
@@ -148,7 +183,7 @@
 'shResp=shadow.getResponce(); \
  console.log(mc.utils.dumpArray(shResp)); \
  shChangesMap=shadow.getChangesMap(); \
- /*console.log(mc.utils.dumpArray(shChangesMap)); */\
+ console.log(mc.utils.dumpArray(shChangesMap)); \
  assertTrue(shResp.list && (shResp.list.length >= 1), "Missing clips list", "New clips are visible" ); \
  ok=shChangesMap.added && (shChangesMap.added.length == shResp.list.length); \
  ok=ok && (shChangesMap.removed.length == 0); \

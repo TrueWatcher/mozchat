@@ -12,8 +12,8 @@ mc.pb.PlayerBox=function(upConnection) {
       firstResponse=1,// 1,0
       changesMap={},
       dataSource={},
-      urlprefix="",// used by serialPlayer and 
-      isPaused=0;// 0,1, or params of a suspended incoming clip
+      urlprefix=""// used by serialPlayer and
+      ;
   
   this.init=function(fromServer) {
     serverParams=fromServer;
@@ -69,22 +69,11 @@ mc.pb.PlayerBox=function(upConnection) {
   }
   
   function tryToPlay(toPlay) {
-    var ps,playData;
+    var playData;
     if (toPlay && ! toPlay instanceof Array) throw new Error("Wrong argument type="+(typeof toPlay));
     if (toPlay && ! firstResponse) {
-      ps=serialPlayer.getState();         
-      if (ps == "idle") {
-        playData={ id : toPlay[0], mime: toPlay[3], el:false };
-        if ( ! isPaused) { serialPlayer.play(playData); }
-        else {
-          if (typeof isPaused != "object") {// queued already
-            isPaused=playData;
-            console.log("stashed "+playData.id);
-          }  
-        }// store until unpause
-      }
-      else if (ps == "playing") serialPlayer.tryFeed();
-      // other states -- do nothing
+      playData={ id : toPlay[0], mime: toPlay[3], el:false };
+      serialPlayer.supplyClip(playData);
     }
     firstResponse=0;// allows playing new items    
   }
@@ -106,32 +95,31 @@ mc.pb.PlayerBox=function(upConnection) {
       connect : function() { return dataSource.connect(); },
       disconnect : function() { return dataSource.disconnect(); },  
       getChangesMap : function() { return changesMap; },
-      getIsPaused : function() { return isPaused; },
       getPlayerStateExt : function() { return serialPlayer.getStateExt(); }
     }
   };
   
   this.sendDelete=function(file) { return upConnection.sendDelete(file); };
   
-  _this.onPollhangs=function() { 
+  this.onPollhangs=function() { 
     viewP.showMessage("The request has timed out");
     console.log("The request has timed out");
   };
   
-  _this.listClicked=function(event) {
+  this.listClicked=function(event) {
     //alert("click");
     var c=viewP.locateClick(event);
     if ( ! c || ! c.command) return false;
     //alert(c.id+" "+c.command);
-    if (c.command == "play") mc.utils.play(urlprefix+c.id, _this.isVideo(c.id),"playerRoom",onMediaError);
-    else if (c.command == "playDown") serialPlayer.play({
-      id : c.id, mime : _this.isVideo(c.id), el : false}
-    );
+    if (c.command == "play") mc.utils.play(urlprefix+c.id, _this.isVideo(c.id), "playerRoom", onMediaError);
+    else if (c.command == "playDown") { 
+      serialPlayer.supplyClip({ id : c.id, mime : _this.isVideo(c.id), el : false });
+    }
     else if (c.command == "delete") _this.sendDelete(c.id);
     return false;    
   };
   
-  _this.getUserParams=function() { return userParams; };
+  this.getUserParams=function() { return userParams; };
   
   function onMediaError(msg) { 
     console.log("Caught a media error:"+msg); 
@@ -140,31 +128,22 @@ mc.pb.PlayerBox=function(upConnection) {
     return false;
   }
   
-  _this.getNextId=function(id) { return inventory.getNextId(id, userParams); };
+  this.getNextId=function(id) { return inventory.getNextId(id, userParams); };
   
-  _this.applyParams=function() { 
+  this.applyParams=function() { 
     userParams=viewP.getParams();
     viewP.blurActive();
     //console.log(mc.utils.dumpArray(userParams));
     // no return false !!!
   };
 
-  _this.isVideo=function(id) { return inventory.isVideo(id); };
+  this.isVideo=function(id) { return inventory.isVideo(id); };
   
-  _this.clear=function() { serialPlayer.stop(); viewP.clearClips(); };
+  this.clear=function() { serialPlayer.stop(); viewP.clearClips(); };
   
-  _this.pause=function() { 
-    console.log("playerBox paused");
-    isPaused=1;
-    serialPlayer.pause();
-  };
+  this.pause=function() { serialPlayer.pause(); };
   
-  _this.unpause=function() { 
-    console.log("playerBox unpaused");
-    serialPlayer.unpause();
-    if (typeof isPaused == "object") serialPlayer.play(isPaused);
-    isPaused=0;
-  };
+  this.unpause=function() { serialPlayer.unpause(); };
    
 }// end PlayerBox
 
@@ -485,25 +464,104 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
       stopping=false,
       paused=false,
       state="idle";
-  
-  _this.play=function(idPlus) {   
-    if ( ! idPlus.id) throw new Error("Element without ID");
-    if ( ! idPlus.el) {
-      actual=createMediaElement(idPlus,true,errorHandler);
-      if (actual.mime == "video") viewP.showClip(actual.el);
-      next=false;
+      
+  this.getState=function() {    
+    if ( ! paused) {
+      if (stopping && ! actual) throw new Error("STOPPING set without ACTUAL");
+      if (stopping)  return "stopping";
+      if ( ! actual && ! next) return "idle";
+      if ( ! actual && next) throw new Error("NEXT set without ACTUAL");
+      if ( actual && ! next) return "playing";
+      if ( actual && next) return "playingNLoading";
     }
-    console.log("playing from "+actual.id);
-    viewP.highlightLine(actual.id,"p");
-    this.tryFeed();
+    else {
+      if (stopping && ! actual) throw new Error("STOPPING set without ACTUAL");
+      if (stopping)  return "pausedStopping";
+      if ( ! actual && ! next) return "suspendedIdle";
+      if ( ! actual && next) return "suspendedLoading";;
+      if ( actual && ! next) return "pausedPlaying";
+      if ( actual && next) return "pausedPlayingNLoading";      
+    }
+    throw new Error("Not to get here");    
   };
   
-  _this.tryEnqueue=function(idPlus) {
+  this.getStateExt=function() {
+    return { a : actual, n : next, p : paused, state : this.getState() };
+  };
+  
+  //@param idPlus Object  { id : "file_name", mime : "audio"|"video", el : false|"mediaElement" }
+  this.supplyClip=function(idPlus) {
+    var s=_this.getState();
+    if (s == "idle") { playFrom(idPlus); }
+    else if ( ! next) { tryEnqueue(idPlus); }    
+  };
+    
+  this.pause=function() {
+    if (paused) return;
+    paused=true;
+    if (actual) { actual.el.pause(); }
+    console.log("player paused, state="+_this.getState());
+  };
+  
+  this.unpause=function() {
+    if ( ! paused) return;
+    paused=false;
+    console.log("player unpaused");// _this.getState() here causes error
+    if (actual) { 
+      if ( ! actual.el.paused) throw new Error("PAUSED set without mediaElement paused");
+      actual.el.play();
+    }
+    else if (next) {
+      runNext();
+      tryHandover();
+      // setTimeout here causes forbidden state (actual -, next +) just after return
+    }
+    else {} // pausedIdle > isle    
+  };
+  
+  this.stopAfter=function() {
+    var s=_this.getState();
+    if (s == "suspendedLoading") {
+      if (next.id) viewP.highlightLine(next.id,"n");
+      next=false;
+      return;
+    }
+    if ( ! actual) return;
+    stopping=true; 
+  };
+      
+  this.tryFeed=function() {
+    tryEnqueue(getNextId(actual.id));
+  };
+  
+  this.stop=function() {
+    if (actual.id) viewP.highlightLine(actual.id,"n");
+    if (next.id) viewP.highlightLine(next.id,"n");
+    actual=false;
+    next=false;
+    viewP.clearClips();
+    console.log("player stopped by user");   
+  };
+  
+  function playFrom(idPlus) {   
+    if ( ! idPlus.id) throw new Error("Clip without ID");
+    if (idPlus.el) throw new Error("Clip with EL")
+    actual=createMediaElement(idPlus,true,errorHandler);
+    if (actual.mime == "video") viewP.showClip(actual.el);
+    next=false;
+    console.log("playing from "+actual.id);
+    viewP.highlightLine(actual.id,"p");
+    _this.tryFeed();
+  };
+  
+  function tryEnqueue(idPlus) {
     if (next) return false;
     if ( ! idPlus) return false;
+    if (idPlus.el) throw new Error("Clip with EL")
     next=createMediaElement(idPlus,false,errorHandler);
     //console.log("loading "+next.id+" "+next.mime);
     viewP.highlightLine(next.id,"l");
+    console.log("Enqued "+next.id+", state="+_this.getState());
   };
   
   function runNext() {
@@ -518,15 +576,10 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
   }
   
   function tryHandover() {
-    //console.log("<<"+Date.now());    
-    
+    //console.log("<<"+Date.now());        
     viewP.highlightLine(actual.id,"g");
     if (stopping) {
-      actual=false;
-      if (next) viewP.highlightLine(next.id,"n");
-      next=false;
-      stopping=false;
-      console.log("player stopped by user");
+      softStop();
       return;
     }
     if ( ! next) { _this.tryFeed(); }
@@ -537,10 +590,18 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
     }
     actual=next;    
     next=false;
-    //console.log("playing "+actual.id);
+    console.log("playing "+actual.id);
     viewP.highlightLine(actual.id,"p");
     _this.tryFeed();
-  };
+  }
+  
+  function softStop() {
+    actual=false;
+    if (next) viewP.highlightLine(next.id,"n");
+    next=false;
+    stopping=false;
+    console.log("player gracefully stopped by user");    
+  }
   
   function createMediaElement(idPlus,autoplay,errorHandler) {
     var el, id, mime;
@@ -567,49 +628,13 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
       setTimeout(tryHandover, 0);      
       //tryHandover();
     };
-    el.autoplay=autoplay;
+    if (autoplay) {
+      //el.autoplay=autoplay; may fail as autoplay is disabled in some browsers
+      el.oncanplaythrough=function() { el.play(); };
+    }
     //el.controls=true;
     el.src=urlprefix+id;
     return { el:el, id:id, mime:mime };
   }
-  
-  _this.tryFeed=function() {
-    if ( ! next) this.tryEnqueue(getNextId(actual.id));
-  };
-  
-  _this.stopAfter=function() { stopping=true; };
-  
-  _this.stop=function() {
-    if (actual.el && ! actual.el.paused) actual.el.pause();
-    if (actual.id) viewP.highlightLine(actual.id,"n");
-    if (next.id) viewP.highlightLine(next.id,"n");
-    actual=false;
-    next=false;
-    viewP.clearClips();
-  };
-  
-  this.pause=function() {
-    if ( ! actual) return;
-    paused=true;
-    actual.el.pause();
-  };
-  
-  this.unpause=function() {
-    if (paused) actual.el.play();
-    paused=false;
-  };
-  
-  this.getState=function() {
-    if (stopping) return "stopping";
-    if (paused) return "playingPaused";
-    if ( ! actual && ! next) return "idle";
-    if ( ! actual && next) throw new Error("NEXT set without ACTUAL");
-    if ( actual && ! next) return "playing";
-    if ( actual && next) return "playingNLoading";    
-  };
-  
-  this.getStateExt=function() {
-    return { a : actual, n : next, state : this.getState() };
-  };
 
 }// end SerialPlayer

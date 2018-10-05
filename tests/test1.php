@@ -107,12 +107,14 @@ var ok,err,blobKb,clip1,clip2,clip3,free,i,toSend,storedTime1, storedTime2, elap
 var tr,me,descr,descr2;
 var shResp, shChangesMap;
 var ul,delBtn,dels,id;
+var resp,chm,pse,clipId,nextId,playFrom;
 
 print(">page");
 var testScript1=<?php print file_get_contents("test1.js"); ?>;
 var testScript2=<?php print file_get_contents("test2.js"); ?>;
-var testScript=testScript1.concat(testScript2);
-var ci=new CommandIterator(testScript);
+var testScript3=<?php print file_get_contents("test3.js"); ?>;
+var testScript=testScript1.concat(testScript2).concat(testScript3);
+var ci=new CommandIterator(testScript3);
 commandsRun(ci);
 
 </script>
