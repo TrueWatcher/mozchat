@@ -106,6 +106,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "pollFactor"=>30,
       "playNew"=>1,
       "skipMine"=>1,
+      "showMore"=>1
     ];
     return array_merge(self::$commonParams,$a);
   }

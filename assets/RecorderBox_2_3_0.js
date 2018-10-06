@@ -344,7 +344,15 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
 }// end RecorderMR
 
 mc.rb.ViewR=function() {
-  var _this=this;
+  var _this=this,
+      hideable=$("recorderPanel").getElementsByClassName("hideable"),
+      showMore=0;
+      
+  function getShowMore() { return showMore; }
+  function setShowMore(s) { showMore=s; }
+  
+  this.toggleHideable=function() { mc.utils.toggleHideable(hideable,getShowMore,setShowMore); };
+  this.toggleHideable();
   
   this.recIndicator=new mc.utils.Indicator("recordBtn", 
     [["Record","auto"], ["Recording","recording"], ["Inactive","auto"]],
@@ -375,6 +383,10 @@ mc.rb.ViewR=function() {
   _this.clearMessage=function(m) { $("recorderAlertP").innerHTML=""; };
   
   _this.applyServerParams=function(sp) {
+    if (sp.hasOwnProperty("showMore")) {
+      showMore=sp.showMore;
+      this.toggleHideable();     
+    }
     if (sp.maxBlobBytes) $("maxSizeS").innerHTML=mc.utils.b2kb(sp.maxBlobBytes);
     if (sp.clipLifetimeSec) $("lifetimeS").innerHTML=mc.utils.s2dhms(sp.clipLifetimeSec);
     if (sp.maxMediaFolderBytes) $("folderSizeS").innerHTML=mc.utils.b2kb(sp.maxMediaFolderBytes);
@@ -435,6 +447,7 @@ mc.rb.ViewR=function() {
     $("playHereBtn").onclick=playLocally;
     $("uploadStoredBtn").onclick=uploadStoredBlob;
     // keyboard events are managed at the higher level by KeyboardMonitor
+    $("toggleHideableRecB").onclick=_this.toggleHideable;
   };
   
   function blurSelect() {

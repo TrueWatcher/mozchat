@@ -360,6 +360,18 @@ mc.utils.addCss=function(str) {
   document.body.appendChild(css);
 };
 
+mc.utils.setStyle=function(collection, attr, value) {
+  for (var i=collection.length-1; i >= 0; i-=1) { collection[i].style[attr]=value; }    
+}
+
+mc.utils.toggleHideable=function(hideable,getShowMore,setShowMore) {
+  var showMore=getShowMore();
+  if (showMore) { mc.utils.setStyle(hideable,"display",""); }
+  else { mc.utils.setStyle(hideable,"display","none"); }
+  showMore= ! showMore;
+  setShowMore(showMore);  
+}
+
 mc.utils.play=function(url,audioOrVideo,playerRoom,errorHandler) {    
   var a, plr;
   if ( playerRoom instanceof HTMLElement) plr=playerRoom=document.getElementById(playerRoom);

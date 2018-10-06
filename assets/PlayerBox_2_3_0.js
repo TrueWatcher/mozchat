@@ -12,7 +12,10 @@ mc.pb.PlayerBox=function(upConnection) {
       firstResponse=1,// 1,0
       changesMap={},
       dataSource={},
-      urlprefix=""// used by serialPlayer and
+      urlprefix="",// used by serialPlayer and
+      standby=0,
+      storedPollFactor,
+      standbyPollFactor=100
       ;
   
   this.init=function(fromServer) {
@@ -26,7 +29,7 @@ mc.pb.PlayerBox=function(upConnection) {
     if ( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
     urlprefix=serverParams.pathBias+userParams.realm+"/"+serverParams.mediaFolder+"/";
     serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP, onMediaError);    
-    viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear); 
+    viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear, _this.toggleStandby); 
   };
   
   function getDataSource(websocketsOn) {
@@ -111,8 +114,12 @@ mc.pb.PlayerBox=function(upConnection) {
     var c=viewP.locateClick(event);
     if ( ! c || ! c.command) return false;
     //alert(c.id+" "+c.command);
-    if (c.command == "play") mc.utils.play(urlprefix+c.id, _this.isVideo(c.id), "playerRoom", onMediaError);
+    if (c.command == "play") {
+      _this.toggleStandby(0);
+      mc.utils.play(urlprefix+c.id, _this.isVideo(c.id), "playerRoom", onMediaError);
+    }
     else if (c.command == "playDown") { 
+      _this.toggleStandby(0);
       serialPlayer.supplyClip({ id : c.id, mime : _this.isVideo(c.id), el : false });
     }
     else if (c.command == "delete") _this.sendDelete(c.id);
@@ -143,7 +150,39 @@ mc.pb.PlayerBox=function(upConnection) {
   
   this.pause=function() { serialPlayer.pause(); };
   
-  this.unpause=function() { serialPlayer.unpause(); };
+  this.unpause=function() { this.toggleStandby(0); serialPlayer.unpause(); };
+  
+  this.toggleStandby=function(target) {
+    // onclick passes object as an argument
+    if (typeof target == "number" || typeof target == "boolean" ) {
+      if (standby == target) return;
+      standby= ! target;
+      //console.log("target:"+(typeof target)+", a standby="+ standby);
+    } 
+    //console.log("standby="+ standby);
+    if (standby) {
+      serialPlayer.unpause();
+      viewP.standbyInd.off();
+      if (storedPollFactor) {
+        viewP.applyServerParams({pollFactor : storedPollFactor});
+        _this.applyParams();
+        storedPollFactor=false;
+      }  
+    }
+    else {
+      serialPlayer.pause();
+      viewP.standbyInd.on();
+      storedPollFactor=false;
+      if (userParams.pollFactor != "off") {
+        storedPollFactor=userParams.pollFactor;
+        viewP.applyServerParams({pollFactor : standbyPollFactor});
+        _this.applyParams();
+      }  
+    }
+    standby= ! standby;
+    console.log("standby set to "+ standby);
+    return false;
+  }
    
 }// end PlayerBox
 
@@ -350,9 +389,23 @@ mc.pb.Inventory=function() {
 mc.pb.ViewP=function() {
   var _this=this,
       user="",
-      playerRoom=document.getElementById("playerRoom");
+      playerRoom=document.getElementById("playerRoom"),
+      hideable=$("playerPanel").getElementsByClassName("hideable"),
+      showMore=0;
+  
+  function getShowMore() { return showMore; }
+  function setShowMore(s) { showMore=s; }
+      
+  this.toggleHideable=function() { mc.utils.toggleHideable(hideable,getShowMore,setShowMore); };
+  this.toggleHideable();
+  
+  this.standbyInd=new mc.utils.Indicator("standbyBtn", [["","auto"], ["","alert"]]);
   
   this.applyServerParams=function(sp) {
+    if (sp.hasOwnProperty("showMore")) {
+      showMore=sp.showMore;
+      this.toggleHideable();     
+    }
     if (sp.pollFactor) { mc.utils.setSelect("refreshSelect",sp.pollFactor); }
     if (sp.hasOwnProperty("playNew")) { mc.utils.setCheckbox("playNewChkb",sp.playNew); }
     if (sp.hasOwnProperty("skipMine")) { mc.utils.setCheckbox("skipMineChkb",sp.skipMine); }
@@ -440,8 +493,8 @@ mc.pb.ViewP=function() {
   _this.showClip=function(a) { playerRoom.appendChild(a); };
   _this.clearClips=function() { playerRoom.innerHTML=""; };
   _this.replaceClip=function(newc,oldc) { playerRoom.replaceChild(newc,oldc); };
-  
-  this.setHandlers=function(listClicked, applyParams, stopAfter, clear) {    
+    
+  this.setHandlers=function(listClicked, applyParams, stopAfter, clear, standby) {    
     $("medialistT").onclick=listClicked;
     $("refreshSelect").onchange=applyParams;
     $("playNewChkb").onchange=applyParams;
@@ -449,7 +502,9 @@ mc.pb.ViewP=function() {
     // applyParams > setSelect > activeElement.blur, so no explicit blur calls
     $("stopAfterBtn").onclick=stopAfter;
     $("clearBtn").onclick=clear;
+    $("standbyBtn").onclick=standby;
     // onkeydown 27 = clear SEE top controller
+    $("toggleHideablePlB").onclick=_this.toggleHideable;
   };
   
   this.blurActive=function() { document.activeElement.blur(); }

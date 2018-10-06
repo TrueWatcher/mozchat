@@ -21,34 +21,37 @@
 </form>
 
 <fieldset id="recorderPanel">
-  Server limits: clip <span id="maxSizeS"></span>,
-  lifetime <span id="lifetimeS"></span>, 
-  folder <span id="folderSizeS"></span>,
-  clips <span id="maxClipCountS"></span>
-  <br />
-  <span id="audioOrVideoS">
-    <label for="audioOrVideoRad1">audio</label><input type="radio" id="audioOrVideoRad1" name="audioOrVideoRad" value="audio" checked="checked" />
-    <label for="audioOrVideoRad2">or video</label><input type="radio" id="audioOrVideoRad2" name="audioOrVideoRad" value="video" />
-    &nbsp;
-  </span>  
-  Chunk:
-  <select id="chunkSelect" >
-    <option value="1" selected="selected">1s</option>
-    <option value="2">2s</option>
-    <option value="10">10s</option>
-    <option value="30">30s</option>
-    <option value="custom">custom</option>
-  </select>
-  <input type="text" id="chunkInp" style="width : 3em;" />s,
-  &nbsp;&nbsp;&nbsp;
-  <span id="onrecordedS">
-    then: <label for="onrecordedRad1">upload</label><input type="radio" id="onrecordedRad1" name="onrecordedRad" value="upload" checked="checked" />&nbsp;
-    <label for="onrecordedRad2">stop</label><input type="radio" id="onrecordedRad2" name="onrecordedRad" value="stop" />
+  <span id="recorderControlsS"  class="hideable">
+    Server limits: clip <span id="maxSizeS"></span>,
+    lifetime <span id="lifetimeS"></span>, 
+    folder <span id="folderSizeS"></span>,
+    clips <span id="maxClipCountS"></span>
+    <br />
+    <span id="audioOrVideoS">
+      <label for="audioOrVideoRad1">audio</label><input type="radio" id="audioOrVideoRad1" name="audioOrVideoRad" value="audio" checked="checked" />
+      <label for="audioOrVideoRad2">or video</label><input type="radio" id="audioOrVideoRad2" name="audioOrVideoRad" value="video" />
+      &nbsp;
+    </span>  
+    Chunk:
+    <select id="chunkSelect" >
+      <option value="1" selected="selected">1s</option>
+      <option value="2">2s</option>
+      <option value="10">10s</option>
+      <option value="30">30s</option>
+      <option value="custom">custom</option>
+    </select>
+    <input type="text" id="chunkInp" style="width : 3em;" />s,
+    &nbsp;&nbsp;&nbsp;
+    <span id="onrecordedS">
+      then: <label for="onrecordedRad1">upload</label><input type="radio" id="onrecordedRad1" name="onrecordedRad" value="upload" checked="checked" />&nbsp;
+      <label for="onrecordedRad2">stop</label><input type="radio" id="onrecordedRad2" name="onrecordedRad" value="stop" />
+    </span>
+    <br />
+    <label for="holdPlayWhileRecChkb">pause player</label><input type="checkbox" id="holdPlayWhileRecChkb">
+    <br />
   </span>
-  <br />
-  <label for="holdPlayWhileRecChkb">pause player</label><input type="checkbox" id="holdPlayWhileRecChkb">
-  <br />
-  <input type="text" id="descriptionInput" placeholder="You may type here a description before recording" style="width:100%; max-width : 40em;" />
+  <button id="toggleHideableRecB" title="Show more/less">◔</button>
+  <input type="text" id="descriptionInput" placeholder="You may type here a description before recording" />
   <br />
   <button id="recordBtn">Oops...</button>
   <input type="text" id="timerInd" style="width : 3em;" class="inline" value="0" />s&nbsp;
@@ -68,33 +71,37 @@
 <div id="playerRoom"></div>
 
 <fieldset id="playerPanel">
-  <p>
+  <p id="onlineS">
     Online: <span id="usersS" ></span>
   </p>
   <table id="medialistT">
   </table>
-  <p>
+  <p id="freeP" class="hideable">
     Free:<input type="text" id="folderFreeInp" class="inline" style="width : 6em;" />
   </p>
-  <p id="playerAlertP">
+  <p id="playerAlertP" class="hideable">
     Something is wrong if you see this
   </p>
+  <button id="toggleHideablePlB" title="Show more/less">◔</button>
   <input type="button" id="clearBtn" value="Stop" />
-  <input type="button" id="stopAfterBtn" value="Stop after current" />
+  <input type="button" id="standbyBtn" value="Standby" />
+  <input type="button" id="stopAfterBtn" value="Stop after current" class="hideable" />
   &nbsp;
-  <span id="refreshS">Refresh 
-    <select id="refreshSelect" >
-      <option value="l" >long</option>
-      <!--<option value="4" >0.4s</option>-->
-      <option value="10" selected="selected" >1s</option>
-      <option value="30" >3s</option>
-      <option value="100">10s</option>
-      <option value="off">off</option>
-    </select>
-  </span>  
-  &nbsp;
-  <label for="playNewChkb">Play new clips</label><input type="checkbox" id="playNewChkb" checked="checked" />,
-  <label for="skipMineChkb">only from others</label><input type="checkbox" id="skipMineChkb" checked="checked" />
+  <span id="playerControlsS" class="hideable">
+    <span id="refreshS">Refresh 
+      <select id="refreshSelect" >
+        <option value="l" >long</option>
+        <!--<option value="4" >0.4s</option>-->
+        <option value="10" selected="selected" >1s</option>
+        <option value="30" >3s</option>
+        <option value="100">10s</option>
+        <option value="off">off</option>
+      </select>
+    </span>  
+    &nbsp;
+    <label for="playNewChkb">Play new clips</label><input type="checkbox" id="playNewChkb" checked="checked" />,
+    <label for="skipMineChkb">only from others</label><input type="checkbox" id="skipMineChkb" checked="checked" />
+  </span>
 </fieldset>
 
 <div id="footer">

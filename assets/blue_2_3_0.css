@@ -23,6 +23,11 @@ button,input {
   background-color: #eee;
 }
 
+#descriptionInput {
+  width:85%; 
+  max-width : 40em;
+}
+
 #recordBtn {
   padding: 0.5em;
   font-size: 1.2em;
@@ -83,4 +88,8 @@ a:hover {
 
 .ye {
   background-color: yellow; 
+}
+
+#standbyBtn.alert {
+  background-color: #ffd;
 }
