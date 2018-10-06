@@ -109,12 +109,25 @@ var shResp, shChangesMap;
 var ul,delBtn,dels,id;
 var resp,chm,pse,clipId,nextId,playFrom;
 
+function whileState(during, next, onChange, onSame) {
+  pse=playerBox.getPlayerStateExt();
+  print(pse.state+" ");
+  if (during == pse.state) {
+    if (typeof onSame == "function") onSame();
+  }
+  else {
+    assertTrue(next == pse.state, "Wrong player state", "Player state="+next);
+    onChange();
+    ci.inc();
+  }
+}
+
 print(">page");
 var testScript1=<?php print file_get_contents("test1.js"); ?>;
 var testScript2=<?php print file_get_contents("test2.js"); ?>;
 var testScript3=<?php print file_get_contents("test3.js"); ?>;
 var testScript=testScript1.concat(testScript2).concat(testScript3);
-var ci=new CommandIterator(testScript3);
+var ci=new CommandIterator(testScript);
 commandsRun(ci);
 
 </script>

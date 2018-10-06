@@ -1,4 +1,4 @@
-[ 
+[
 'println("Testing SerialPlayer");',
 'println("basic mode");',
 'playerBox.sendClear();',
@@ -40,7 +40,7 @@
    console.log(mc.utils.dumpArray(pse)); \
    print(pse.state+" "); \
    ok=(pse.state == "playingNLoading" || pse.state == "playing"); \
-   assertTrue(ok, "Wrong player state", "Player state Ok" ); \
+   assertTrue(ok, "Wrong player state", "Player state=playing*" ); \
    if (pse.state == "playing") { assertEqualsPrim( clipId , pse.a.id, "Wrong actual clip ID", "actual clip ID is Ok" ) } \
    else { assertEqualsPrim( clipId , pse.n.id, "Wrong actual clip ID", "next clip ID is Ok" ) } \
    playerBox.sendPoll(); \
@@ -56,7 +56,7 @@
   console.log(mc.utils.dumpArray(pse)); \
   print(pse.state+" "); \
   ok=(pse.state == "playingNLoading" || pse.state == "playing"); \
-  assertTrue(ok, "Wrong player state", "Player state Ok" ); \
+  assertTrue(ok, "Wrong player state", "Player state=playing*" ); \
   if (pse.state == "playing") { assertEqualsPrim( clipId , pse.a.id, "Wrong actual clip ID", "actual clip ID is Ok" ) } \
   else { assertEqualsPrim( clipId , pse.n.id, "Wrong actual clip ID", "next clip ID is Ok" ) } \
   playerBox.sendPoll(); \
@@ -81,7 +81,7 @@
 ',
 'pse=playerBox.getPlayerStateExt(); \
  print(pse.state+" "); \
- assertTrue("playingNLoading" == pse.state, "Wrong player state", "Player state playingNLoading Ok"); \
+ assertTrue("playingNLoading" == pse.state, "Wrong player state", "After PLAYFROM state=playingNLoading"); \
  ci.inc(); \
 ',
 'pse=playerBox.getPlayerStateExt(); \
@@ -97,7 +97,7 @@
 'pse=playerBox.getPlayerStateExt(); \
  print(pse.state+" "); \
  ok=("pausedPlayingNLoading" == pse.state || "pausedPlaying" == pse.state); \
- assertTrue(ok , "Wrong player state", "Player state paused* Ok"); \
+ assertTrue(ok , "Wrong player state", "After RECORD state=paused* "); \
  playerBox.sendPoll(); \
  ci.inc(); \
 ',
@@ -110,18 +110,73 @@
 ',
 'pse=playerBox.getPlayerStateExt(); \
  print(pse.state+" "); \
- assertTrue("playingNLoading" == pse.state, "Wrong player state", "Player state playingNLoading Ok"); \
- tr=medialistT.firstChild.innerHTML; \
- descr=tr.indexOf(clip2) >= 0; \
- assertTrue(descr, "My further clips are missing","My further clip is present"); \
+ assertTrue("playingNLoading" == pse.state, "Wrong player state", "After STOPRECORD and getting another clip state=playingNLoading"); \
  ci.inc(); \
 ',
+'whileState("playingNLoading", "playing", function() { \
+    tr=medialistT.firstChild.innerHTML; \
+    descr=tr.indexOf(clip2) >= 0; \
+    assertTrue(descr, "My further clips are missing","My further clip is present"); \
+    ok=medialistT.firstChild.classList.contains("p"); \
+    assertTrue( ok, "Wrong clip class", "Clip class p" ); \
+})',
+'whileState( "playing", "idle", function() { \
+    ok=medialistT.firstChild.classList.contains("g"); \
+    assertTrue( ok, "Wrong clip class", "State=IDLE Upper clip class g" ); \
+})',   
 
+'println("suspendedIdle mode"); \
+ clip3="Clip 3"; \
+ descriptionInput.value=clip3; \
+ recordBtn.click(); \
+ pse=playerBox.getPlayerStateExt(); \
+ print(pse.state+" "); \
+ assertTrue("suspendedIdle" == pse.state, "Wrong player state", "After RECORD state=suspendedIdle"); \
+ ci.inc(); \
+',
+'whileState( "suspendedIdle", "suspendedLoading", function() { \
+   tr=medialistT.firstChild.innerHTML; \
+   descr=tr.indexOf(clip3) >= 0; \
+   assertTrue(descr, "My 3rd clips are missing","My 3rd clip is present"); \
+   ok=medialistT.firstChild.classList.contains("l"); \
+   assertTrue( ok, "Wrong clip class", "Upper clip class l" ); \
+}, function() { \
+   playerBox.sendPoll(); \
+})',
+'ci.inc();','ci.inc();','ci.inc();',// wait for one more clip
+'playerBox.sendPoll(); \
+ ci.inc();',
+'ok= ! medialistT.firstChild.classList.contains("l"); \
+ ok &= ! medialistT.firstChild.classList.contains("p"); \
+ ok &= ! medialistT.firstChild.classList.contains("g"); \
+ assertTrue( ok, "Wrong clip class", "Upper clip class empty" ); \
+ recordBtn.click(); \
+ playerBox.sendPoll(); \
+ ci.inc(); \
+', 
+'pse=playerBox.getPlayerStateExt(); \
+ print(pse.state+" "); \
+ assertTrue("playingNLoading" == pse.state, "Wrong player state", "Player state=playingNLoading"); \
+ ok=medialistT.firstChild.classList.contains("l"); \
+ assertTrue( ok, "Wrong clip class", "Upper clip class l" ); \
+ ok=medialistT.firstChild.nextSibling.classList.contains("p"); \
+ assertTrue( ok, "Wrong clip class", "Second clip class p" ); \
+ ci.inc(); \
+',
+'pse=playerBox.getPlayerStateExt(); \
+ print(pse.state+" "); \
+ if ( pse.state != "idle") {} \
+ else { \
+   ok=medialistT.firstChild.classList.contains("g"); \
+   assertTrue( ok, "Wrong clip class", "State=IDLE Upper clip class g" ); \
+   ci.inc(); \
+ } \
+',
 'ci.noLoop();',
 'holdPlayWhileRecChkb.click(); \
  onrecordedRad2.click(); \
  playNewChkb.click(); \
  skipMineChkb.click(); \
 ',
-''
+'println("SerialPlayer tests finished successfully");' 
 ]
