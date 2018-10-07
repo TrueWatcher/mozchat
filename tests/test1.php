@@ -107,7 +107,7 @@ var ok,err,blobKb,clip1,clip2,clip3,free,i,toSend,storedTime1, storedTime2, elap
 var tr,me,descr,descr2;
 var shResp, shChangesMap;
 var ul,delBtn,dels,id;
-var resp,chm,pse,clipId,nextId,playFrom;
+var resp,chm,pse,clipId,nextId,playFrom,count,removedCount,targetRemovedCount;
 
 function whileState(during, next, onChange, onSame) {
   pse=playerBox.getPlayerStateExt();
@@ -116,7 +116,7 @@ function whileState(during, next, onChange, onSame) {
     if (typeof onSame == "function") onSame();
   }
   else {
-    assertTrue(next == pse.state, "Wrong player state", "Player state="+next);
+    assertEqualsPrim(next, pse.state, "Wrong player state", "New player state="+next);
     onChange();
     ci.inc();
   }
@@ -127,7 +127,7 @@ var testScript1=<?php print file_get_contents("test1.js"); ?>;
 var testScript2=<?php print file_get_contents("test2.js"); ?>;
 var testScript3=<?php print file_get_contents("test3.js"); ?>;
 var testScript=testScript1.concat(testScript2).concat(testScript3);
-var ci=new CommandIterator(testScript);
+var ci=new CommandIterator(testScript, 400);
 commandsRun(ci);
 
 </script>

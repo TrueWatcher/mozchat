@@ -36,7 +36,7 @@
     <select id="chunkSelect" >
       <option value="1" selected="selected">1s</option>
       <option value="2">2s</option>
-      <option value="10">10s</option>
+      <option value="15">15s</option>
       <option value="30">30s</option>
       <option value="custom">custom</option>
     </select>

@@ -35,37 +35,44 @@ function TestHelper() {
   TestHelper.instance=this;
 }
 
-function print (str) {
-    var t=new TestHelper();
-    if (str==">page") {
-      t.toPage();
-      return;
-    }
-    if (str==">console") {
-      t.toConsole();
-      return;
-    }
-    if (t.checkToPage()) {
-      t.addToPage(str);
-    }
-    else console.log(str);
+function print(str) {
+  var t=new TestHelper();
+  if (str==">page") {
+    t.toPage();
+    return;
+  }
+  if (str==">console") {
+    t.toConsole();
+    return;
+  }
+  if (t.checkToPage()) {
+    t.addToPage(str);
+  }
+  else console.log(str);
 }
 
-function println (str) { print(str+"\n"); }
+function println(str) { print(str+"\n"); }
 
-function printErr (err) {
-    var t=new TestHelper();
-    var out="",f="",i;
-    out+="Terminated in/after "+t.getCount()+"th test on: "+err;
-    if(err.lineNumber) {
-      var fn=err.fileName;
-      if ( i=fn.lastIndexOf("/") ) {
-        f=fn.substr(i+1,fn.length-i-1);
-      }
-      out+=" ("+f+":"+err.lineNumber+")";
+function printErr(err) {
+  var t=new TestHelper();
+  var out="",f="",i;
+  out+="Terminated in/after "+t.getCount()+"th test on: "+err;
+  if(err.lineNumber) {
+    var fn=err.fileName;
+    if ( i=fn.lastIndexOf("/") ) {
+      f=fn.substr(i+1,fn.length-i-1);
     }
-    println(out);
+    out+=" ("+f+":"+err.lineNumber+")";
+  }
+  println(out);
 }
+
+function TestError(message) {
+  this.name = 'TestError';
+  this.message = message;
+  this.stack = (new Error()).stack;
+}
+TestError.prototype = new Error();
 
 function assertTrue(statement,message,messageOK) {
   var t=new TestHelper();
@@ -73,7 +80,7 @@ function assertTrue(statement,message,messageOK) {
   var out="";
   if(!statement) {
     println("Failure:"+message);
-    throw new Error (""+t.getCount());
+    throw new TestError (""+t.getCount());
   }
   else {
     out+="Passed "+t.getCount();
@@ -89,7 +96,7 @@ function assertEqualsPrim(expected,found,message,messageOK) {
 
   if( !(expected==found) ) {
     println("Failure: '"+found+"' does not equal to expected '"+expected+"' \n"+message+"\n");
-    throw new Error (""+t.getCount());
+    throw new TestError (""+t.getCount());
   }
   else {
     out+="Passed "+t.getCount();
@@ -99,8 +106,8 @@ function assertEqualsPrim(expected,found,message,messageOK) {
 }
 
 function assertEqualsVect(expected,found,message,messageOK) {
-  if ( !(expected instanceof Array) ) throw new Error ("assertEqualsVect:1st argument is not Array");
-  if ( !(found instanceof Array) ) throw new Error ("assertEqualsVect:2nd argument is not Array");
+  if ( !(expected instanceof Array) ) throw new TestError ("assertEqualsVect:1st argument is not Array");
+  if ( !(found instanceof Array) ) throw new TestError ("assertEqualsVect:2nd argument is not Array");
   assertEqualsPrim(expected.join(),found.join(),message,messageOK);
 }
 
@@ -128,8 +135,18 @@ function translateArray(arr) {
   function commandsRun(commandIterator) {
     var now=commandIterator.go();
     //alert("about to execute:"+now);
-    eval(now);
-    if (!commandIterator.isStopped()) {
+    try {
+      eval(now);
+    }
+    catch (e) {
+      if (e instanceof TestError) {
+        console.log(e.message);
+        throw new Error(e.message);
+      }
+      console.log("Line:"+now);
+      console.log("Error:"+e.message);
+    }
+    if ( ! commandIterator.isStopped()) {
       setTimeout(
         function() { commandsRun(commandIterator); }
       ,500);
@@ -141,7 +158,7 @@ function translateArray(arr) {
    * @constructor
    */
   function CommandIterator(lines,maxRounds) {
-    if (!(lines instanceof Array)) throw new Error ("Non-array argument "+(typeof lines));
+    if (!(lines instanceof Array)) throw new TestError ("Non-array argument "+(typeof lines));
     var index=0, l=lines.length, rounds=0;
     if (typeof maxRounds == "undefined") maxRounds=300;
     var stopped=false;
@@ -162,7 +179,10 @@ function translateArray(arr) {
       }
       r=lines[index];
       rounds+=1;
-      if ( rounds>maxRounds ) throw new Error ("Limit of "+maxRounds+" commands exceeded");
+      if ( rounds>maxRounds ) {
+        //console.log("maxRounds exceeded");
+        throw new TestError ("Limit of "+maxRounds+" commands exceeded");
+      }  
       if (!looping) { index+=1; }
       if ( index>=l ) {
         this.stop();

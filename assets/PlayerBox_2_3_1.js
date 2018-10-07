@@ -28,7 +28,7 @@ mc.pb.PlayerBox=function(upConnection) {
     dataSource=getDataSource(serverParams.wsOn);   
     if ( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
     urlprefix=serverParams.pathBias+userParams.realm+"/"+serverParams.mediaFolder+"/";
-    serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextId, this.isVideo, viewP, onMediaError);    
+    serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextClip, this.isVideo, viewP, onMediaError);    
     viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear, _this.toggleStandby); 
   };
   
@@ -135,7 +135,7 @@ mc.pb.PlayerBox=function(upConnection) {
     return false;
   }
   
-  this.getNextId=function(id) { return inventory.getNextId(id, userParams); };
+  this.getNextClip=function(id) { return inventory.getNextClip(id, userParams); };
   
   this.applyParams=function() { 
     userParams=viewP.getParams();
@@ -308,27 +308,16 @@ mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upC
 mc.pb.Inventory=function() {
   var catalog={}, oldCatalog={}, _this=this, userParams={};
   
-  _this.getNextId=function(id,aUserParams) {
+  this.getNextClip=function(id,aUserParams) {
     userParams=aUserParams;
-    var i=0, l=catalog.length, idd, j=1;
-    for(;i<l;i+=1) {
-      idd=catalog[i][0];
-      if (id == idd) {
-        if ( ! userParams.skipMine) {
-          if (i+1 < l) return {
-            id : catalog[i+j][0], mime : catalog[i+j][3]
-          };;
-          return false
-        }
-        while(i+j < l) {
-          if (catalog[i+j][1] != userParams.user ) return {
-            id : catalog[i+j][0], mime : catalog[i+j][3]
-          };
-          j+=1;
-        }
-      }
+    var i=0, l=catalog.length
+    i=findIById(catalog, l, id);
+    // if i===false assumed 0 -- start from the lowest
+    if (i+1 >= l) return false;// top of list reached
+    if ( ! userParams.skipMine) {
+      return { id : catalog[i+1][0], mime : catalog[i+1][3] };
     }
-    return false;
+    return findFirstNotMine(catalog, i+1);
   };
   
   this.consumeNewCatalog=function(newCat,aUserParams) {
@@ -339,18 +328,11 @@ mc.pb.Inventory=function() {
     else if ( ! userParams.skipMine) diff.toPlay=diff.added[0];
     else diff.toPlay=findFirstNotMine(diff.added);
     return diff;
-  }
+  };
   
-  function removeMyClips(clipList) {
-    var r=[], i=0, l=clipList.length;
-    for(; i<l; i+=1) {
-      if (clipList[i][1] != userParams.user) r.push(clipList[i]);
-    }
-    return r;
-  }
-  
-  function findFirstNotMine(clipList) {
-    var i=0, l=clipList.length;
+  function findFirstNotMine(clipList, start) {
+    if (typeof start == "undefined") start=0;
+    var i=start, l=clipList.length;
     for(; i<l; i+=1) {
       if (clipList[i][1] != userParams.user) return clipList[i];
     }
@@ -361,24 +343,30 @@ mc.pb.Inventory=function() {
     var removed=[],added=[],lOld=catalog.length,lNew=newCat.length,i=0,j=0,r={},id;
     for(i=0; i < lNew; i+=1) {
       id=newCat[i][0];
-      if ( ! _this.findId(catalog,lOld,id) ) added.push(newCat[i]);
+      if ( ! findClipById(catalog,lOld,id) ) added.push(newCat[i]);
     }
     for(i=0; i < lOld; i+=1) {
       id=catalog[i][0];
-      if ( ! _this.findId(newCat,lNew,id) ) removed.push(catalog[i]);
+      if ( ! findClipById(newCat,lNew,id) ) removed.push(catalog[i]);
     }
     r={removed:removed, added:added};
     return r;
   }
   
-  _this.findId=function(clipList,l,id) {
+  function findClipById(clipList,l,id) {
     var j=0;
     for(; j<l; j++) { if (clipList[j][0]  == id ) return clipList[j]; }
     return false;
   };
   
-  _this.isVideo=function(id) { 
-    var mime =_this.findId(catalog, catalog.length, id)[3];
+  function findIById(clipList,l,id) {
+    var j=0;
+    for(; j<l; j++) { if (clipList[j][0]  == id ) return j; }
+    return false;
+  }
+  
+  this.isVideo=function(id) { 
+    var mime=findClipById(catalog, catalog.length, id)[3];
     if (mime.indexOf("video") === 0) return "video";
     else if (mime.indexOf("audio") === 0) return "audio";
     throw new Error("Unknown mime type="+mime);
@@ -510,8 +498,8 @@ mc.pb.ViewP=function() {
   this.blurActive=function() { document.activeElement.blur(); }
 }
 
-mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) {
-  if (typeof getNextId != "function") throw new Error("Non-function argument");
+mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler) {
+  if (typeof getNextClip != "function") throw new Error("Non-function argument");
   if (errorHandler && typeof errorHandler != "function") throw new Error("Invalid ERRORHANDLER");
   var actual=false,
       next=false,
@@ -586,7 +574,7 @@ mc.pb.SerialPlayer=function(urlprefix, getNextId, getType, viewP, errorHandler) 
   };
       
   this.tryFeed=function() {
-    tryEnqueue(getNextId(actual.id));
+    tryEnqueue(getNextClip(actual.id));
   };
   
   this.stop=function() {
