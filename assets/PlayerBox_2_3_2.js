@@ -32,6 +32,12 @@ mc.pb.PlayerBox=function(upConnection) {
     viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear, _this.toggleStandby); 
   };
   
+  this.reinit=function() {
+    // to revive polling after sleep on mobile
+    this.applyParams();
+    dataSource=getDataSource(serverParams.wsOn);   
+  };
+  
   function getDataSource(websocketsOn) {
     if (websocketsOn) {
       return new mc.pb.WsClient(onWsconnected, takeResponseP, _this.onPollhangs, userParams, serverParams, upConnection);
@@ -132,6 +138,7 @@ mc.pb.PlayerBox=function(upConnection) {
     console.log("Caught a media error:"+msg); 
     viewP.showMessage(msg);
     viewP.clearClips();
+    serialPlayer.clear();
     return false;
   }
   
@@ -183,16 +190,24 @@ mc.pb.PlayerBox=function(upConnection) {
     console.log("standby set to "+ standby);
     return false;
   }
+    
+  document.addEventListener("visibilitychange",function() {
+    if ( ! document.hasOwnProperty("hidden")) { return; }
+    if ( ! document.hidden) {
+      //alert("Hi again");
+      _this.reinit();
+    }
+  });
    
 }// end PlayerBox
 
 mc.pb.Poller=function(responderUri, onData, onHang, fUserParams, serverParams) {
-  var _this=this, ticks=0, catalogTime=0, catalogBytes=0, usersListTime=0, catCrc="1234", myUsersList="", response;
+  var _this=this, ticks=0, catalogTime=0, catalogBytes=0, usersListTime=0, catCrc="1234", myUsersList="", response, intervalHandler;
   var userParams=fUserParams();
   
   var ajaxerP=new mc.utils.Ajaxer(responderUri, takeUpdatedMarks, {}, onHang); 
     
-  _this.onTick=function() {
+  this.onTick=function() {
     userParams=fUserParams();// otherwise uses only a copy, not live params
     //console.log(userParams.pollFactor);
     if (userParams.pollFactor === "off") return;
@@ -258,7 +273,7 @@ mc.pb.Poller=function(responderUri, onData, onHang, fUserParams, serverParams) {
   }
   
   if (userParams.pollFactor != "off") this.sendPoll();
-  setInterval(_this.onTick, 100);   
+  intervalHandler=setInterval(_this.onTick, 100);   
 };
 
 mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upConnection, connectAtOnce) {
@@ -310,14 +325,13 @@ mc.pb.Inventory=function() {
   
   this.getNextClip=function(id,aUserParams) {
     userParams=aUserParams;
-    var i=0, l=catalog.length
+    var i=0, l=catalog.length, clip={};
     i=findIById(catalog, l, id);
     // if i===false assumed 0 -- start from the lowest
     if (i+1 >= l) return false;// top of list reached
-    if ( ! userParams.skipMine) {
-      return { id : catalog[i+1][0], mime : catalog[i+1][3] };
-    }
-    return findFirstNotMine(catalog, i+1);
+    if ( ! userParams.skipMine) { clip=catalog[i+1]; }
+    else { clip=findFirstNotMine(catalog, i+1); }
+    return { id : clip[0], mime : clip[3] };
   };
   
   this.consumeNewCatalog=function(newCat,aUserParams) {
@@ -649,7 +663,11 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
   function createMediaElement(idPlus,autoplay,errorHandler) {
     var el, id, mime;
     
-    if ( ! idPlus.mime) { throw new Error("Argument must contain id and mime"); }
+    if ( ! idPlus) throw new Error("Empty 1st argument");
+    if ( ! idPlus.mime) { 
+      console.log(mc.utils.dumpArray(idPlus));
+      throw new Error("Argument must contain id and mime");
+    }
     id=idPlus.id;
     mime=idPlus.mime;
     if (mime.length > 5) mime=mime.substr(0,5);
