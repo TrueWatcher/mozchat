@@ -95,7 +95,6 @@ function Shadow() {
   };
   
   this.linkIsBusy=function() { return ajaxerP.isBusy(); };
-
 }
 
 var playerBox=mc.tm.getPB().getDebugApi(), 
@@ -109,10 +108,13 @@ var shResp, shChangesMap;
 var ul,delBtn,dels,id;
 var resp,chm,pse,clipId,nextId,playFrom,count,removedCount,targetRemovedCount;
 
-function whileState(during, next, onChange, onSame) {
+function watchState(current, next, onChange, onSame) {
   pse=playerBox.getPlayerStateExt();
   print(pse.state+" ");
-  if (during == pse.state) {
+  var isCurrent;
+  if (current instanceof Array) { isCurrent=(current.indexOf(pse.state) >= 0); }
+  else { isCurrent=(current == pse.state); }
+  if (isCurrent) {
     if (typeof onSame == "function") onSame();
   }
   else {
@@ -127,7 +129,7 @@ var testScript1=<?php print file_get_contents("test1.js"); ?>;
 var testScript2=<?php print file_get_contents("test2.js"); ?>;
 var testScript3=<?php print file_get_contents("test3.js"); ?>;
 var testScript=testScript1.concat(testScript2).concat(testScript3);
-var ci=new CommandIterator(testScript, 400);
+var ci=new CommandIterator(testScript, 500);
 commandsRun(ci);
 
 </script>

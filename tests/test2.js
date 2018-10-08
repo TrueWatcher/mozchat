@@ -1,7 +1,11 @@
 [
-'playerBox.sendClear();',
-'println("Testing long poll"); \
- println("catch others log in and log out");',
+'playerBox.sendClear(); \
+ println(); \
+ println("Testing long poll"); \
+ println(); \
+ println("catch others log in and log out"); \
+ if (holdPlayWhileRecChkb.checked) holdPlayWhileRecChkb.click(); \
+',
 'playerBox.sendPoll();',
 'console.log(mc.utils.dumpArray(playerBox.getResponse()))',
 'ul=playerBox.getResponse().users;\
@@ -67,8 +71,7 @@
 'assertTrue(playerBox.linkIsBusy(), "link is not hanged", "link is busy");',
 '','','',
 'assertTrue( ! playerBox.linkIsBusy(), "link is not freed", "link is free"); \
- err=playerAlertP.innerHTML.indexOf("timed out") >= 0; \
- assertTrue(err, "no error on timeout","error shown" ); \
+ assertContains("timed out", playerAlertP.innerHTML, "no error on timeout","error shown" ); \
 ',
   
 'println("Tests finished successfully");'

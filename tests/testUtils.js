@@ -1,4 +1,8 @@
 "use strict";
+// JavaScript utilities for browser-testing of single-page applications
+// TrueWatcher 2017-2018
+// v.1.2.0 oct 2017 added try-catch around eval, assertContains, assertNotContains
+//
 
 function TestHelper() {
   // It's a SINGLETON
@@ -15,22 +19,22 @@ function TestHelper() {
     document.body.appendChild(_outElement);
     _outElement.style="font-size: 1.4em";
     _numOfTests=0;
-  }
+  };
 
   this.addToPage=function(str) {
     var h=_outElement.innerHTML;
     _outElement.innerHTML=h+str;
-  }
+  };
 
   this.toConsole=function() {
     _outTarget="console";
     _numOfTests=0;
-  }
+  };
 
-  this.checkToPage=function() { return (_outTarget=="page"); }
+  this.checkToPage=function() { return (_outTarget=="page"); };
 
-  this.incCount=function() { _numOfTests++ }
-  this.getCount=function() { return(_numOfTests) }
+  this.incCount=function() { _numOfTests++ };
+  this.getCount=function() { return(_numOfTests) };
 
   TestHelper.instance=this;
 }
@@ -51,13 +55,16 @@ function print(str) {
   else console.log(str);
 }
 
-function println(str) { print(str+"\n"); }
+function println(str) {
+  if (typeof str == "undefined") str="";
+  print(str+"\n");
+}
 
 function printErr(err) {
   var t=new TestHelper();
   var out="",f="",i;
   out+="Terminated in/after "+t.getCount()+"th test on: "+err;
-  if(err.lineNumber) {
+  if (err.lineNumber) {
     var fn=err.fileName;
     if ( i=fn.lastIndexOf("/") ) {
       f=fn.substr(i+1,fn.length-i-1);
@@ -75,10 +82,9 @@ function TestError(message) {
 TestError.prototype = new Error();
 
 function assertTrue(statement,message,messageOK) {
-  var t=new TestHelper();
+  var t=new TestHelper(),out="";
   t.incCount();
-  var out="";
-  if(!statement) {
+  if (  !statement) {
     println("Failure:"+message);
     throw new TestError (""+t.getCount());
   }
@@ -90,32 +96,57 @@ function assertTrue(statement,message,messageOK) {
 }
 
 function assertEqualsPrim(expected,found,message,messageOK) {
-  var t=new TestHelper();
+  var t=new TestHelper(),out="";
   t.incCount();
-  var out="";
-
   if( !(expected==found) ) {
     println("Failure: '"+found+"' does not equal to expected '"+expected+"' \n"+message+"\n");
     throw new TestError (""+t.getCount());
   }
   else {
     out+="Passed "+t.getCount();
-    if(messageOK) out+=": "+messageOK;
+    if (messageOK) out+=": "+messageOK;
     println(out);
   }
 }
 
 function assertEqualsVect(expected,found,message,messageOK) {
-  if ( !(expected instanceof Array) ) throw new TestError ("assertEqualsVect:1st argument is not Array");
-  if ( !(found instanceof Array) ) throw new TestError ("assertEqualsVect:2nd argument is not Array");
+  if ( ! (expected instanceof Array) ) throw new TestError ("assertEqualsVect:1st argument is not Array");
+  if ( ! (found instanceof Array) ) throw new TestError ("assertEqualsVect:2nd argument is not Array");
   assertEqualsPrim(expected.join(),found.join(),message,messageOK);
+}
+
+function assertContains(expected,haystack,message,messageOK) {
+  var t=new TestHelper(),out="";
+  t.incCount();
+  if( haystack.indexOf(expected) < 0 ) {
+    println("Failure: '"+haystack+"' does not contain '"+expected+"' \n"+message+"\n");
+    throw new TestError (""+t.getCount());
+  }
+  else {
+    out+="Passed "+t.getCount();
+    if (messageOK) out+=": "+messageOK;
+    println(out);
+  }
+}
+
+function assertNotContains(expected,haystack,message,messageOK) {
+  var t=new TestHelper(),out="";
+  t.incCount();
+  if( haystack.indexOf(expected) >= 0 ) {
+    println("Failure: '"+haystack+"' actually contains '"+expected+"' \n"+message+"\n");
+    throw new TestError (""+t.getCount());
+  }
+  else {
+    out+="Passed "+t.getCount();
+    if (messageOK) out+=": "+messageOK;
+    println(out);
+  }
 }
 
 function translateArray(arr) {
   var rn=new Seq2d();
-  var rc,r,c,s;
-  var res=[];
-  for (var i=0;i<DIM;i++) {  res.push( (new Array(DIM)).fill(0) ) }
+  var rc,r,c,s,i,res=[];
+  for (i=0; i<DIM; i++) {  res.push( (new Array(DIM)).fill(0) ) }
   while ( rc=rn.go() ) {
     r=rc[0];
     c=rc[1];
@@ -195,7 +226,7 @@ function translateArray(arr) {
     this.noLoop=function() { looping=false; };
     
     this.stop=function() {
-      console.log("CommandIterator finished");
+      console.log("CommandIterator finished after "+rounds+" rounds");
       stopped=1;
     };
     

@@ -440,4 +440,24 @@ mc.utils.KeyboardMonitor=function(onSpacePressed, onSpaceReleased, onEsc) {
       return false; 
     }
   }
-}
+};
+
+mc.utils.getBlobByUri=function(uri,callBack) {
+  var oReq = new XMLHttpRequest();
+  oReq.open("GET", uri, true);
+  oReq.responseType = "blob";
+  oReq.onload = function (oEvent) {
+    var blob = oReq.response; // Note: not oReq.responseText
+    if (blob) { callBack(blob); }
+  }
+  oReq.send(null);
+};
+
+mc.utils.path=function() {
+  var wl=window.location;
+  var arr=wl.pathname.split("/");
+  arr.pop();
+  var p=arr.join("/");
+  var uri=wl.protocol+"//"+wl.host+p+"/";
+  return uri;
+};

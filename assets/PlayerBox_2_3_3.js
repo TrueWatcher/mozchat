@@ -88,6 +88,31 @@ mc.pb.PlayerBox=function(upConnection) {
   }
     
   this.getDebugApi=function() {  
+    
+    function doSendAltUserClip(blob) {
+      var mime="audio/ogg";
+      var ext="oga";
+      var blobPlusData={ mime: mime, ext : ext, blob : blob};
+      var up={ user:"ShadowInPlayerBox", realm:"test0" };
+      var lastRecordedTime=2;
+      var description="Shadow's clip";
+      upConnection.sendBlobAndData(blobPlusData,lastRecordedTime,description,up);      
+    }
+    
+    function sendAltUserClip() {
+      //alert(sendAltUserClip.blob);
+      if ( ! sendAltUserClip.blob) {
+        var name="purr1s.oga";     
+        var uri=mc.utils.path()+name;
+        //alert(uri);
+        mc.utils.getBlobByUri(uri, function(blob) {
+          sendAltUserClip.blob=blob;
+          doSendAltUserClip(blob); 
+        });
+      }
+      else { doSendAltUserClip(sendAltUserClip.blob); }
+    }
+    
     return {
       getResponse : function() { return dataSource.getResponse(); },
       linkIsBusy : function() { return dataSource.linkIsBusy(); },
@@ -101,10 +126,12 @@ mc.pb.PlayerBox=function(upConnection) {
         toSend=JSON.stringify(toSend);
         return dataSource.sendData(toSend);     
       },
+      sendAltUserClip : sendAltUserClip,
       connect : function() { return dataSource.connect(); },
       disconnect : function() { return dataSource.disconnect(); },  
       getChangesMap : function() { return changesMap; },
-      getPlayerStateExt : function() { return serialPlayer.getStateExt(); }
+      getPlayerStateExt : function() { return serialPlayer.getStateExt(); },
+      getStandby: function() { return _this.getStandby(); }
     }
   };
   
@@ -137,8 +164,7 @@ mc.pb.PlayerBox=function(upConnection) {
   function onMediaError(msg) { 
     console.log("Caught a media error:"+msg); 
     viewP.showMessage(msg);
-    viewP.clearClips();
-    serialPlayer.clear();
+    serialPlayer.stop();
     return false;
   }
   
@@ -190,6 +216,8 @@ mc.pb.PlayerBox=function(upConnection) {
     console.log("standby set to "+ standby);
     return false;
   }
+  
+  this.getStandby=function() { return standby; };
     
   document.addEventListener("visibilitychange",function() {
     if ( ! document.hasOwnProperty("hidden")) { return; }

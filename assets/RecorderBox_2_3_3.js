@@ -194,12 +194,14 @@ mc.rb.UpConnection=function(respondrUri, onData, onHang, serverParams, userParam
   
   this.linkIsBusy=function() { return ajaxerR.isBusy(); };
   
-  this.sendBlobAndData=function(blobPlusData,lastRecordedTime,description) {
-    var stuff;
+  this.sendBlobAndData=function(blobPlusData,lastRecordedTime,description,aUserParams) {
+    var stuff,up;
+    if (!! aUserParams) up=aUserParams;
+    else up=userParams;    
     stuff=new FormData();
     stuff.append("act","uploadBlob");
-    stuff.append("user",userParams.user);
-    stuff.append("realm",userParams.realm);
+    stuff.append("user",up.user);
+    stuff.append("realm",up.realm);
     stuff.append("description",description);
     stuff.append("mime",blobPlusData.mime);
     stuff.append("ext",blobPlusData.ext);

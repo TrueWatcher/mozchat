@@ -47,7 +47,7 @@
       <label for="onrecordedRad2">stop</label><input type="radio" id="onrecordedRad2" name="onrecordedRad" value="stop" />
     </span>
     <br />
-    <label for="holdPlayWhileRecChkb">pause player</label><input type="checkbox" id="holdPlayWhileRecChkb">
+    <label for="holdPlayWhileRecChkb">pause player</label><input type="checkbox" id="holdPlayWhileRecChkb" checked="checked">
     <br />
   </span>
   <button id="toggleHideableRecB" title="Show more/less">◔</button>

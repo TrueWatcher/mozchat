@@ -1,15 +1,17 @@
 [
-'println(""); \
- println("Testing SerialPlayer");',
-'println(""); \
- println("basic mode");',
+'println(); \
+ println("Testing SerialPlayer"); \
+ println(); \
+ println("basic mode"); \
+',
 'playerBox.sendClear();',
 'playerBox.sendPoll();',
 'playerBox.sendPoll();',
 'mc.utils.setSelect("chunkSelect",2); \
  onrecordedRad1.click(); \
- playNewChkb.click(); \
- skipMineChkb.click(); \
+ if ( ! playNewChkb.checked) playNewChkb.click(); \
+ if (skipMineChkb.checked) skipMineChkb.click(); \
+ if (holdPlayWhileRecChkb.checked) holdPlayWhileRecChkb.click(); \
  assertEqualsPrim("Record", recordBtn.innerHTML, "Recorder is not ready", "Recorder ready"); \
 ',
 'clip1="Clip 1"; \
@@ -22,8 +24,7 @@
  else { \
   console.log(mc.utils.dumpArray(chm)); \
   tr=medialistT.firstChild.innerHTML; \
-  descr=tr.indexOf(clip1) >= 0; \
-  assertTrue(descr, "My first clip is missing","My first clip is present"); \
+  assertContains(clip1, tr, "My first clip is missing","My first clip is present"); \
   clipId=chm.added[0][0]; \
   pse=playerBox.getPlayerStateExt(); \
   console.log(mc.utils.dumpArray(pse)); \
@@ -119,14 +120,13 @@
  playerBox.sendPoll();\
  ci.inc(); \
 ',
-'whileState("playingNLoading", "playing", function() { \
+'watchState("playingNLoading", "playing", function() { \
     tr=medialistT.firstChild.innerHTML; \
-    descr=tr.indexOf(clip2) >= 0; \
-    assertTrue(descr, "My further clips are missing","My further clip is present"); \
+    assertContains(clip2, tr, "My further clips are missing","My further clip is present"); \
     ok=medialistT.firstChild.classList.contains("p"); \
     assertTrue( ok, "Wrong clip class", "Clip class p" ); \
 })',
-'whileState( "playing", "idle", function() { \
+'watchState( "playing", "idle", function() { \
     ok=medialistT.firstChild.classList.contains("g"); \
     assertTrue( ok, "Wrong clip class", "State=IDLE Upper clip class g" ); \
 })',   
@@ -144,10 +144,9 @@
  assertEqualsPrim("suspendedIdle", pse.state, "Wrong player state", "After RECORD state=suspendedIdle"); \
  ci.inc(); \
 ',
-'whileState( "suspendedIdle", "suspendedLoading", function() { \
+'watchState( "suspendedIdle", "suspendedLoading", function() { \
    tr=medialistT.firstChild.innerHTML; \
-   descr=tr.indexOf(clip3) >= 0; \
-   assertTrue(descr, "My 3rd clips are missing","Got a clip - My 3rd clip is present"); \
+   assertContains(clip3, tr, "My 3rd clips are missing","Got a clip - My 3rd clip is present"); \
    ok=medialistT.firstChild.classList.contains("l"); \
    assertTrue( ok, "Wrong clip class", "Got a clip - Upper clip class=l" ); \
 }, function() { \
@@ -209,8 +208,7 @@
  } \
 ',
 'tr=medialistT.firstChild.innerHTML; \
- descr=tr.indexOf(clip1) >= 0; \
- assertTrue(descr, "My 1st clips are missing","My 1st clip is present"); \
+ assertContains(clip1, tr, "My 1st clips are missing","My 1st clip is present"); \
  clipId=medialistT.firstChild.id; \
  print(clipId+" "); \
  ci.inc(); \
@@ -256,44 +254,93 @@
  recordBtn.click(); \
  playerBox.sendPoll(); \
  pse=playerBox.getPlayerStateExt(); \
- assertEqualsPrim("playingNLoading", pse.state, "Wrong player state", "After STOPRECORD player state=playingNLoading"); \
+ assertEqualsPrim( "playingNLoading", pse.state, "Wrong player state", "After STOPRECORD player state=playingNLoading" ); \
  id=pse.a.id; \
- assertEqualsPrim(clipId, id, "Started from wrong place", "Playing first-loaded and flushed clip"); \
+ assertEqualsPrim( clipId, id, "Started from wrong place", "Playing first-loaded and flushed clip" ); \
  count+=1; \
  ci.inc(); \
 ',
-
-'whileState( "playingNLoading", "playing", function() { \
+'watchState( ["playingNLoading", "playing"] , "idle", function() { \
 }, function() { \
   pse=playerBox.getPlayerStateExt(); \
   if (id != pse.a.id) { \
     count+=1; \
-    print(pse.a.id+" "); \
+    print("\\n"+pse.a.id+" "); \
     id=pse.a.id; \
   } \
 })',
-'whileState( "playing", "idle", function() { \
-}, function() { \
-pse=playerBox.getPlayerStateExt(); \
-if (id != pse.a.id) { \
-  count+=1; \
-  print(pse.a.id+" "); \
-  id=pse.a.id; \
-  } \
-})',
-
-'ci.inc();','ci.inc();','ci.inc();','ci.inc();',
+'ci.noLoop();',
+'','','',
 'pse=playerBox.getPlayerStateExt(); \
  ok=medialistT.firstChild.classList.contains("g"); \
  assertTrue( ok, "Wrong clip class", "Upper clip class g" ); \
- assertEqualsPrim(toSend, count, "Wrong played clips count", "Played clips count = limit + 1"); \
+ assertEqualsPrim( toSend, count, "Wrong played clips count", "Played clips count = limit + 1"); \
+',
+
+
+'println(); \
+ println("testing SkipMine and Standby"); \
+ if ( ! skipMineChkb.checked ) skipMineChkb.click(); \
+',
+'mc.utils.setSelect("chunkSelect",1); \
+ onrecordedRad2.click(); \
+ if ( holdPlayWhileRecChkb.checked ) holdPlayWhileRecChkb.click();',
+'clip1="My Clip 1"; \
+ descriptionInput.value=clip1; \
+ recordBtn.click(); \
+ ci.loop(); \
+',
+'if ( ! recordBtn.classList.contains("recording") ) { \
+ print(" my clip recorded "); \
+ ci.inc(); };',
+'ci.noLoop();', 
+'standbyBtn.click();',
+'assertTrue( playerBox.getStandby(), "failed to enter STANDBY", "Entered STANDBY");\
+ pse=playerBox.getPlayerStateExt(); \
+ assertEqualsPrim("suspendedIdle", pse.state, "Wrong state", "After entering STANDBY state=suspendedIdle"); \
+',
+'uploadStoredBtn.click();',
+'playerBox.sendAltUserClip();',
+'playerBox.sendAltUserClip();',
+'uploadStoredBtn.click();',
+'uploadStoredBtn.click();',
+'playerBox.sendAltUserClip();',
+'',
+'playerBox.sendPoll();',
+'pse=playerBox.getPlayerStateExt(); \
+ assertEqualsPrim("suspendedLoading", pse.state, "Wrong state", "After getting clips state=suspendedLoading"); \
+ id=pse.n.id; \
+ tr=document.getElementById(id).innerHTML; \
+ assertNotContains( sp.user, tr, "Clip with my name is selected", "Selected clip is not mine"); \
+ assertContains( "Shadow", tr, "Wrong name in selected clip", "Selected clip name is Shadow"); \
+ ci.loop(); \
+',
+'standbyBtn.click(); \
+ assertTrue( ! playerBox.getStandby(), "failed to exit STANDBY", "Exited STANDBY");\
+ pse=playerBox.getPlayerStateExt(); \
+ assertEqualsPrim("playingNLoading", pse.state, "Wrong state", "After exiting STANDBY state=playingNLoading"); \
+ clipId=pse.a.id; \
+ print(id+" "); \
+ count=1; \
  ci.inc(); \
 ',
+'watchState( ["playingNLoading","playing"], "idle", function(){}, function(){ \
+   id=pse.a.id; \
+   if (id != clipId) { \
+     clipId=id; \
+     print("\\n"+id+" "); \
+     count+=1; \
+     tr=document.getElementById(id).innerHTML; \
+     assertNotContains( sp.user, tr, "Clip with my name is selected", "Selected clip is not mine"); \
+     assertContains( "Shadow", tr, "Wrong name in selected clip", "Selected clip name is Shadow"); \
+   } \
+});',
 'ci.noLoop();',
-'holdPlayWhileRecChkb.click(); \
- onrecordedRad2.click(); \
- playNewChkb.click(); \
- skipMineChkb.click(); \
+'assertEqualsPrim( 3, count, "Wrong count", "Played all Shadow clips");',
+
+'if (playNewChkb.checked ) playNewChkb.click(); \
+ if (skipMineChkb.checked ) skipMineChkb.click(); \
 ',
-'println("SerialPlayer tests finished successfully");' 
+'println(); \
+ println("SerialPlayer tests finished successfully");' 
 ]

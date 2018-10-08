@@ -87,7 +87,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
     "userStatusFadeS"=>5,
     "longPollPeriodS"=>15,
     "removeExpiredFromDir"=>0,
-    "hideExpired"=>0
+    "hideExpired"=>1
   ];
   
   /**
@@ -106,7 +106,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "pollFactor"=>30,
       "playNew"=>1,
       "skipMine"=>1,
-      "showMore"=>1
+      "showMore"=>0
     ];
     return array_merge(self::$commonParams,$a);
   }

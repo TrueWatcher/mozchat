@@ -1,17 +1,16 @@
 [ 
-'println("Clearing files and reading the catalog");',
-'playerBox.sendClear();',
-'',
-'ok=recorderAlertP.innerHTML.indexOf("cleared") >= 0; \
- assertTrue(ok, "wrong message="+recorderAlertP.innerHTML, "server agreed");',
+'println("Clearing files and reading the catalog"); \
+ playerBox.sendClear();',
+'assertContains("cleared", recorderAlertP.innerHTML, "wrong message", "server agreed");',
 'playerBox.sendPoll();',
 '',
 'ok= ! medialistT.hasChildren; \
  assertTrue(ok,"Some data are present in the catalog","catalog cleared"); \
  free=parseInt(folderFreeInp.value); \
  assertEqualsPrim(sp.maxMediaFolderBytes/1000, free, "Wrong free space", "All space is free");',
-'var ok=usersS.innerHTML.indexOf(sp.user) >= 0; \
- assertTrue(ok, "Missing my username", "My username is listed")',
+'assertContains(sp.user, usersS.innerHTML, "Missing my username", "My username is listed"); \
+ if (holdPlayWhileRecChkb.checked) holdPlayWhileRecChkb.click(); \
+',
 
 'println("Testing max size limit");',
 'chunkInp.value=4; \
@@ -25,8 +24,7 @@
 'blobKb=parseInt(blobSizeS.innerHTML); \
  assertTrue( blobKb > sp.maxBlobBytes/1000, "wrong blob size","blob size="+blobKb+" is over limit" );',
 'uploadStoredBtn.click()',
-'err=recorderAlertP.innerHTML.indexOf("server allows only") >= 0; \
- assertTrue(err, "no error on uploading oversized record","error shown" );',
+'assertContains("server allows only", recorderAlertP.innerHTML, "no error on uploading oversized record","error shown" );',
  
 'println("Testing simple send");',
 'mc.utils.setSelect("chunkSelect",2);',
@@ -41,16 +39,13 @@
  descriptionInput.value=clip1; \
  uploadStoredBtn.click();',
 '',
-'ok=recorderAlertP.innerHTML.indexOf("Server got ") >= 0; \
- assertTrue(ok, "wrong upload message","message ok" );',
+'assertContains("Server got ", recorderAlertP.innerHTML, "wrong upload message","message ok" );',
 'playerBox.sendPoll();',
 '',
 'assertTrue(medialistT.firstChild, "Empty catalog","catalog got some data");', 
 'tr=medialistT.firstChild.innerHTML; \
- me=tr.indexOf(sp.user) >= 0; \
- assertTrue(me,"My good name is absent","My username is present"); \
- descr=tr.indexOf(clip1) >= 0; \
- assertTrue(descr,"My description is absent","My description is present"); ',
+ assertContains(sp.user, tr, "My good name is absent","My username is present"); \
+ assertContains(clip1, tr, "My description is absent","My description is present"); ',
 
 'println("Testing repeated send and folder size limit");',
 'clip2="clips salvo 1"; \
@@ -71,10 +66,8 @@
 'free=parseInt(folderFreeInp.value); \
  assertTrue(free <= blobKb, "Wrong FREE after salvo", "Free space is less than clip size"); \
  tr=medialistT.firstChild.innerHTML; \
- descr=tr.indexOf(clip1) >= 0; \
- assertTrue( ! descr,"My first clip is still present","My first clip is removed"); \
- descr=tr.indexOf(clip2) >= 0; \
- assertTrue(descr,"My next clips are missing","My next clips are there"); \
+ assertNotContains(clip1, tr, "My first clip is still present", "My first clip is removed"); \
+ assertContains(clip2, tr, "My next clips are missing","My next clips are there"); \
 ',
 
 'println("Testing clip expiration");',
@@ -111,8 +104,7 @@
  uploadStoredBtn.click();',
 'playerBox.sendPoll();',
 'tr=medialistT.firstChild.innerHTML; \
- descr=tr.indexOf(clip1) >= 0; \
- assertTrue(descr, "My first clip is missing","My first clip is present"); \
+ assertContains(clip1, tr, "My first clip is missing","My first clip is present"); \
  toSend=parseInt(maxClipCountS.innerHTML)+1; \
  i=0; \
  clip2="clips salvo 1 A"; \
@@ -125,10 +117,8 @@
 'free=parseInt(folderFreeInp.value); \
  assertTrue(free > blobKb, "Wrong FREE after salvo", "Free space is not limiting"); \
  tr=medialistT.firstChild.innerHTML; \
- descr=tr.indexOf(clip1) >= 0; \
- assertTrue( ! descr,"My first clip is still present","My first clip is removed"); \
- descr=tr.indexOf(clip2) >= 0; \
- assertTrue(descr,"My next clips are missing","My next clips are there"); \
+ assertNotContains(clip1, tr, "My first clip is still present", "My first clip is removed"); \
+ assertContains(clip2, tr, "My next clips are missing","My next clips are there"); \
  tr=medialistT.children.length; \
  assertEqualsPrim(parseInt(maxClipCountS.innerHTML), tr, "Wrong clips count", "Clips count limit is enforced"); \
 ', 
@@ -141,31 +131,26 @@
 '',
 'shResp=shadow.getResponce(); \
  console.log(mc.utils.dumpArray(shResp)); \
- ok=shResp.users.indexOf(sp.user) >= 0; \
- assertTrue(ok, "Failed to get my username", "My username is visible to Shadow"); \
- ok=shResp.users.indexOf(shUser) >= 0; \
- assertTrue(ok, "Failed to get Shadow username", "Shadow username is visible to Shadow");',
+ assertContains(sp.user, shResp.users, "Failed to get my username", "My username is visible to Shadow"); \
+ assertContains(shUser, shResp.users,  "Failed to get Shadow username", "Shadow username is visible to Shadow");',
 '',// fine tune of delay: the responder shoul be open to me without expiring Shadow's record
 'elapsed=Date.now()/1000-storedTime1; \
  assertTrue(elapsed > sp.userStatusFadeS, "Increase delay, elapsed="+elapsed+" of "+sp.userStatusFadeS, "Delay has passed"); \
  playerBox.sendPoll();',
 '',
 //'console.log(mc.utils.dumpArray(playerBox.getResponse()));',
-'ok=usersS.innerHTML.indexOf(sp.user) >= 0; \
- assertTrue(ok, "Missing my username", "My username is listed"); \
- ok=usersS.innerHTML.indexOf(shUser) >= 0; \
- assertTrue(ok, "Missing Shadow username", "Shadow username is listed"); ',
+'assertContains(sp.user, usersS.innerHTML, "Missing my username", "My username is listed"); \
+ assertContains(shUser, usersS.innerHTML,  "Missing Shadow username", "Shadow username is listed"); ',
 '','','','',// another tune: waiting for Shadow's record to expire
 'playerBox.sendPoll();',
 '',
 //'console.log(mc.utils.dumpArray(playerBox.getResponse()));',
-'ok=usersS.innerHTML.indexOf(sp.user) >= 0; \
- assertTrue(ok, "Missing my username", "My username is listed"); \
- ok=usersS.innerHTML.indexOf(shUser) < 0; \
- assertTrue(ok, "Shadow username not expired", "Shadow username is expired"); ',
+'assertContains(sp.user, usersS.innerHTML,"Missing my username", "My username is listed"); \
+ assertNotContains(shUser, usersS.innerHTML,"Shadow username not expired", "Shadow username is expired"); ',
  
 'println("Testing passing a clip to another user");',
-'','','playerBox.sendRemoveExpired();','shadow.sendPoll();',// let old clips expire
+'','','playerBox.sendRemoveExpired();',// let old clips expire
+'shadow.sendPoll();',
 'clip3="Clips salvo Two"; \
  descriptionInput.value=clip3; \
  mc.utils.setRadio("onrecordedRad","upload"); \
