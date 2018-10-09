@@ -183,7 +183,7 @@ mc.pb.PlayerBox=function(upConnection) {
   
   this.pause=function() { serialPlayer.pause(); };
   
-  this.unpause=function() { this.toggleStandby(0); serialPlayer.unpause(); };
+  this.unpause=function() { if ( ! standby) serialPlayer.unpause(); };
   
   this.toggleStandby=function(target) {
     // onclick passes object as an argument
@@ -218,14 +218,15 @@ mc.pb.PlayerBox=function(upConnection) {
   }
   
   this.getStandby=function() { return standby; };
-    
-  document.addEventListener("visibilitychange",function() {
-    if ( ! document.hasOwnProperty("hidden")) { return; }
-    if ( ! document.hidden) {
-      //alert("Hi again");
-      _this.reinit();
-    }
-  });
+  
+  if (typeof document.hidden != "undefined") {
+    document.addEventListener("visibilitychange",function() {
+      if ( ! document.hidden) {
+        //alert("Hi again");
+        _this.reinit();
+      }
+    });
+  }
    
 }// end PlayerBox
 

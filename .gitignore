@@ -8,7 +8,10 @@
 /mediaForum/media*
 /videoChat/media
 /videoChat/media*
+/mediaChat/media
+/mediaChat/media*
 /test0/media
 */catalog.json
 */users.json
 browser.log
+manual.*

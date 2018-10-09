@@ -11,11 +11,12 @@
 <form action="?" method="GET">
 <fieldset id="accountPanel">
   <p id="accountTopAlertP"></p>
-  <input type="text" id="userInput" placeholder="Your name" name="user" value="Me" />
+  <input type="text" id="userInput" placeholder="Your name" name="user" />
   <input type="text" id="realmInput" placeholder="Thread" name="realm" />
   <br />
   <input type="submit" id="exitBtn" value="Register" />
   <a href="?">Exit</a>
+  <a href="manual.html" target="_blank" >Help</a>
   <p id="accountBottomAlertP"></p>
 </fieldset>
 </form>
@@ -151,7 +152,7 @@ mc.TopManager=function() {
     
     $("userInput").value=sp.user;
     $("realmInput").value=sp.realm;
-    $("accountBottomAlertP").innerHTML="Press and hold SPACE to start recording, release SPACE to finish it";
+    $("accountBottomAlertP").innerHTML="Registration Ok";
     
     var found=mc.utils.checkBrowser();
     console.log(mc.utils.dumpArray(found));
