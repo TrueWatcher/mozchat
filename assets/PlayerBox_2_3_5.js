@@ -22,19 +22,21 @@ mc.pb.PlayerBox=function(upConnection) {
     serverParams=fromServer;
     viewP=new mc.pb.ViewP();
     viewP.clearMessage();
-    viewP.applyServerParams(serverParams);
-    this.applyParams();
-    inventory=new mc.pb.Inventory();    
+    viewP.serverParams2dom(serverParams);
+    viewP.blurActive();
+    //this.dom2userParams();
+    userParams=new mc.utils.Registry(viewP.getParams());
+    inventory=new mc.pb.Inventory(userParams);    
     dataSource=getDataSource(serverParams.wsOn);   
     if ( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
     urlprefix=serverParams.pathBias+userParams.realm+"/"+serverParams.mediaFolder+"/";
     serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextClip, this.isVideo, viewP, onMediaError);    
-    viewP.setHandlers(_this.listClicked,_this.applyParams, serialPlayer.stopAfter, _this.clear, _this.toggleStandby); 
+    viewP.setHandlers(_this.listClicked,_this.dom2userParams, serialPlayer.stopAfter, _this.clear, _this.toggleStandby); 
   };
   
   this.reinit=function() {
     // to revive polling after sleep on mobile
-    this.applyParams();
+    this.dom2userParams();
     dataSource=getDataSource(serverParams.wsOn);   
   };
   
@@ -43,7 +45,7 @@ mc.pb.PlayerBox=function(upConnection) {
       return new mc.pb.WsClient(onWsconnected, takeResponseP, _this.onPollhangs, userParams, serverParams, upConnection);
     }
     else {
-      return new mc.pb.Poller(serverParams.pathBias+"download.php", takeResponseP,  _this.onPollhangs, _this.getUserParams, serverParams);
+      return new mc.pb.Poller(serverParams.pathBias+"download.php", takeResponseP,  _this.onPollhangs, userParams, serverParams);
     }    
   }
   
@@ -60,7 +62,7 @@ mc.pb.PlayerBox=function(upConnection) {
     }
     if (resp.list) {
       //console.log(mc.utils.dumpArray(userParams));
-      changesMap=inventory.consumeNewCatalog(resp.list, userParams);
+      changesMap=inventory.consumeNewCatalog(resp.list);
       viewP.applyDiff(changesMap);
       //console.log(mc.utils.dumpArray(changesMap));
       tryToPlay(changesMap.toPlay);
@@ -153,9 +155,10 @@ mc.pb.PlayerBox=function(upConnection) {
     }
     else if (c.command == "playDown") { 
       _this.toggleStandby(0);
+      serialPlayer.stop();// make sure state=idle
       serialPlayer.supplyClip({ id : c.id, mime : _this.isVideo(c.id), el : false });
     }
-    else if (c.command == "delete") _this.sendDelete(c.id);
+    else if (c.command == "delete") { _this.sendDelete(c.id); }
     return false;    
   };
   
@@ -168,10 +171,10 @@ mc.pb.PlayerBox=function(upConnection) {
     return false;
   }
   
-  this.getNextClip=function(id) { return inventory.getNextClip(id, userParams); };
+  this.getNextClip=function(id) { return inventory.getNextClip(id); };
   
-  this.applyParams=function() { 
-    userParams=viewP.getParams();
+  this.dom2userParams=function() { 
+    userParams.overrideValuesBy(viewP.getParams());
     viewP.blurActive();
     //console.log(mc.utils.dumpArray(userParams));
     // no return false !!!
@@ -197,8 +200,8 @@ mc.pb.PlayerBox=function(upConnection) {
       serialPlayer.unpause();
       viewP.standbyInd.off();
       if (storedPollFactor) {
-        viewP.applyServerParams({pollFactor : storedPollFactor});
-        _this.applyParams();
+        viewP.serverParams2dom({pollFactor : storedPollFactor});
+        _this.dom2userParams();
         storedPollFactor=false;
       }  
     }
@@ -208,8 +211,8 @@ mc.pb.PlayerBox=function(upConnection) {
       storedPollFactor=false;
       if (userParams.pollFactor != "off") {
         storedPollFactor=userParams.pollFactor;
-        viewP.applyServerParams({pollFactor : standbyPollFactor});
-        _this.applyParams();
+        viewP.serverParams2dom({pollFactor : standbyPollFactor});
+        _this.dom2userParams();
       }  
     }
     standby= ! standby;
@@ -230,14 +233,12 @@ mc.pb.PlayerBox=function(upConnection) {
    
 }// end PlayerBox
 
-mc.pb.Poller=function(responderUri, onData, onHang, fUserParams, serverParams) {
+mc.pb.Poller=function(responderUri, onData, onHang, userParams, serverParams) {
   var _this=this, ticks=0, catalogTime=0, catalogBytes=0, usersListTime=0, catCrc="1234", myUsersList="", response, intervalHandler;
-  var userParams=fUserParams();
   
   var ajaxerP=new mc.utils.Ajaxer(responderUri, takeUpdatedMarks, {}, onHang); 
     
   this.onTick=function() {
-    userParams=fUserParams();// otherwise uses only a copy, not live params
     //console.log(userParams.pollFactor);
     if (userParams.pollFactor === "off") return;
     if (userParams.pollFactor === "l") {
@@ -349,22 +350,24 @@ mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upC
   }
 };
 
-mc.pb.Inventory=function() {
-  var catalog={}, oldCatalog={}, _this=this, userParams={};
+mc.pb.Inventory=function(userParams) {
+  var catalog={}, oldCatalog={}, _this=this;
   
-  this.getNextClip=function(id,aUserParams) {
-    userParams=aUserParams;
+  this.getNextClip=function(id) {
     var i=0, l=catalog.length, clip={};
     i=findIById(catalog, l, id);
     // if i===false assumed 0 -- start from the lowest
     if (i+1 >= l) return false;// top of list reached
     if ( ! userParams.skipMine) { clip=catalog[i+1]; }
-    else { clip=findFirstNotMine(catalog, i+1); }
+    else {
+      clip=findFirstNotMine(catalog, i+1);
+      if ( ! clip) return false; // all clips are uneligible
+    }
+    //alert("i="+i+", l="+l);
     return { id : clip[0], mime : clip[3] };
   };
   
-  this.consumeNewCatalog=function(newCat,aUserParams) {
-    userParams=aUserParams;
+  this.consumeNewCatalog=function(newCat) {
     var diff=diffCatalogsById(newCat);
     catalog=newCat;
     if ( ! userParams.playNew || ! diff.added.length) diff.toPlay=false;
@@ -432,7 +435,7 @@ mc.pb.ViewP=function() {
   
   this.standbyInd=new mc.utils.Indicator("standbyBtn", [["","auto"], ["","alert"]]);
   
-  this.applyServerParams=function(sp) {
+  this.serverParams2dom=function(sp) {
     if (sp.hasOwnProperty("showMore")) {
       showMore=sp.showMore;
       this.toggleHideable();     
@@ -525,12 +528,12 @@ mc.pb.ViewP=function() {
   _this.clearClips=function() { playerRoom.innerHTML=""; };
   _this.replaceClip=function(newc,oldc) { playerRoom.replaceChild(newc,oldc); };
     
-  this.setHandlers=function(listClicked, applyParams, stopAfter, clear, standby) {    
+  this.setHandlers=function(listClicked, dom2userParams, stopAfter, clear, standby) {    
     $("medialistT").onclick=listClicked;
-    $("refreshSelect").onchange=applyParams;
-    $("playNewChkb").onchange=applyParams;
-    $("skipMineChkb").onchange=applyParams;
-    // applyParams > setSelect > activeElement.blur, so no explicit blur calls
+    $("refreshSelect").onchange=dom2userParams;
+    $("playNewChkb").onchange=dom2userParams;
+    $("skipMineChkb").onchange=dom2userParams;
+    // dom2userParams > setSelect > activeElement.blur, so no explicit blur calls
     $("stopAfterBtn").onclick=stopAfter;
     $("clearBtn").onclick=clear;
     $("standbyBtn").onclick=standby;
@@ -626,7 +629,7 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
     actual=false;
     next=false;
     viewP.clearClips();
-    console.log("player stopped by user");   
+    //console.log("player stopped by user");   
   };
   
   function playFrom(idPlus) {   
@@ -721,6 +724,7 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
     if (autoplay) {
       //el.autoplay=autoplay; may fail as autoplay is disabled in some browsers
       el.oncanplaythrough=function() { el.play(); };
+      // el.onload fails misteriously
     }
     //el.controls=true;
     el.src=urlprefix+id;

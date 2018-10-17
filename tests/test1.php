@@ -42,12 +42,13 @@ function Shadow() {
   var serverParams={
     user:"Shadow", realm:"test0", pathBias:"../", playNew:1, skipMine:1, longPollPeriodS:5
   };
-  var userParams=serverParams;
+  var userParams=new mc.utils.Registry(serverParams);
+  
   var response={},changesMap={};
   var catalogBytes=0, catalogTime=0, usersListTime=0, myUsersList="", catCrc="1234";
   
   var ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", takeResponseSh, {});
-  var inventory=new mc.pb.Inventory();
+  var inventory=new mc.pb.Inventory(userParams);
   
   function takeResponseSh(resp) {
     if (resp.catalogBytes) catalogBytes=resp.catalogBytes;

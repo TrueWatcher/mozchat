@@ -461,3 +461,33 @@ mc.utils.path=function() {
   var uri=wl.protocol+"//"+wl.host+p+"/";
   return uri;
 };
+
+mc.utils.Registry=function(initMap) {
+  var _this=this;
+  
+  this.addFreshPairsFrom=function(map) {
+    if (typeof map != "object") throw new Error("Wrong argument");
+    var key;
+    for (key in map) {
+      if ( ! map.hasOwnProperty(key)) continue;
+      if (_this.hasOwnProperty(key)) throw new Error("Key "+key+" already exists");
+      _this[key]=map[key];
+    }    
+  };
+  
+  this.set=function(key,value) {
+    if ( ! _this.hasOwnProperty(key)) throw new Error("Key "+key+" is missing");
+    _this[key]=value;    
+  };
+  
+  this.overrideValuesBy=function(map) {
+    if (typeof map != "object") throw new Error("Wrong argument");
+    var key;
+    for (key in map) {
+      if ( ! map.hasOwnProperty(key)) continue;
+      _this.set(key, map[key]);
+    }    
+  };
+  
+  if (typeof initMap == "object") this.addFreshPairsFrom(initMap);
+};

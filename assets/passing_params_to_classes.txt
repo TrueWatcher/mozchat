@@ -1,0 +1,9 @@
+======= Passing parameters between the top level controller and specialized unit classes =======
+
+Objects in JS are passed as function arguments as copies of their pointers.
+
+If an object ob is defined in the calling context, its properties are accessible in the called function as ob.property, if they are changed in one context, the other will see the change immediately. The called function may as well be a constructor, and we'll have a two-way link between the upper level (the top controller) and a subunit (a specialized class). 
+
+The only limitation is that the params object must be created only once and all changes must be made only to its properties. Any expression like ob=view.getParams() will overwrite one pointer leaving all copies intact and breaking the link. 
+
+So, the params object must itself have methods for its proper modifications. It's advisable to have separate methods for adding new, non-existent fields, and for changing already defined fields. The first should throw error if it meets an existent field, the second - a non-existent field.

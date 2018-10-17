@@ -21,8 +21,8 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
     serverParams=fromServer;
     
     viewR=new mc.rb.ViewR();
-    viewR.applyServerParams(serverParams);
-    userParams=viewR.getParams();
+    viewR.serverParams2dom(serverParams);
+    userParams=new mc.utils.Registry(viewR.getParams());
     //console.log(mc.utils.dumpArray(userParams));
     
     upConnection=new mc.rb.UpConnection(fromServer.pathBias+"upload.php", takeResponseR, onHang,  serverParams, userParams, viewR.uploadIndicator);
@@ -56,7 +56,7 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
     }
   }
   
-  _this.onTick=function() {
+  this.onTick=function() {
     if ( ! timingOn) return;
     recordingTime+=1;
     viewR.showTiming(recordingTime);
@@ -75,13 +75,13 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
     return errmsg;   
   }
   
-  _this.recorderInit=function() { 
+  this.recorderInit=function() { 
     _this.recorderOff();
-    userParams=viewR.getParams();
+    userParams.overrideValuesBy(viewR.getParams());
     recorder.init(userParams);
   }
   
-  _this.recorderOff=function() {
+  this.recorderOff=function() {
     recorder.onOff(0);
     ticker.stop();
     timingOn=0;
@@ -91,8 +91,8 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
     return false;
   };
   
-  _this.recorderOn=function() {
-    userParams=viewR.getParams();
+  this.recorderOn=function() {
+    userParams.overrideValuesBy(viewR.getParams());
     viewR.hideLocalPlay();
     onBeforerecording(userParams);
     blobPlus={};
@@ -105,26 +105,26 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
     return false;
   };
   
-  _this.recorderRestart=function() {
+  this.recorderRestart=function() {
     recorder.restart();
     lastRecordedTime=recordingTime;
     recordingTime=0;
     return false;
   };
   
-  _this.recorderToggle=function() {
+  this.recorderToggle=function() {
     var s=recorder.getState();
     if (s) _this.recorderOff();
     else _this.recorderOn();
     return false;
   };
   
-  _this.playLocally=function() {    
+  this.playLocally=function() {    
     mc.utils.play(blobPlus.localUrl, userParams.audioOrVideo, "playerRoom");
   };
   
-  _this.uploadStoredBlob=function() { 
-    userParams=viewR.getParams();
+  this.uploadStoredBlob=function() { 
+    userParams.overrideValuesBy(viewR.getParams());
     uploadBlobAndData(blobPlus);
   };
   
@@ -166,8 +166,8 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
     var errmsg="Error! Uplink is busy. Your network or server is too slow for instant uploads. Try bigger chuncks sent after recording";
     viewR.showMessage(errmsg);
     console.log(errmsg);
-    viewR.applyServerParams({ allowStream : serverParams.allowStream, onRecorded : "stop" });
-    userParams=viewR.getParams();
+    viewR.serverParams2dom({ allowStream : serverParams.allowStream, onRecorded : "stop" });
+    userParams.overrideValuesBy(viewR.getParams());
     return errmsg;
   }
 
@@ -196,7 +196,7 @@ mc.rb.UpConnection=function(respondrUri, onData, onHang, serverParams, userParam
   
   this.sendBlobAndData=function(blobPlusData,lastRecordedTime,description,aUserParams) {
     var stuff,up;
-    if (!! aUserParams) up=aUserParams;
+    if (!! aUserParams) up=aUserParams;// required for debug
     else up=userParams;    
     stuff=new FormData();
     stuff.append("act","uploadBlob");
@@ -267,9 +267,9 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
     indicator={ on : function(){}, off : function(){} };
   }
   
-  _this.onOff=function() { return false; };
+  this.onOff=function() { return false; };
   
-  _this.getState=function() { return isOn };
+  this.getState=function() { return isOn };
   
   this.init=function(userParams) {
     var constraints={ audio: true }, aov=userParams.audioOrVideo, rm;
@@ -363,28 +363,28 @@ mc.rb.ViewR=function() {
   
   this.uploadIndicator=new mc.utils.Indicator("uploadIndBtn", [["","auto"], ["","ye"]] );
   
-  _this.showLocalPlay=function(url,bytes) {
+  this.showLocalPlay=function(url,bytes) {
     $("downloadLink").innerHTML = '<a href="'+url+'" target="_blank">The file</a>';
     $("blobSizeS").innerHTML=mc.utils.b2kb(bytes);
     $("localPlayS").style.display="";
   };
   
-  _this.hideLocalPlay=function() {
+  this.hideLocalPlay=function() {
     $("downloadLink").innerHTML = '';
     $("blobSizeS").innerHTML='';
     $("localPlayS").style.display="none";
   };
   
-  _this.hideLocalPlay();
+  this.hideLocalPlay();
   
-  _this.clearUrl=function() { $("downloadLink").innerHTML=""; };
+  this.clearUrl=function() { $("downloadLink").innerHTML=""; };
   
-  _this.showTiming=function(t) { $("timerInd").value=t; };
+  this.showTiming=function(t) { $("timerInd").value=t; };
   
-  _this.showMessage=function(m) { $("recorderAlertP").innerHTML=m; };
-  _this.clearMessage=function(m) { $("recorderAlertP").innerHTML=""; };
+  this.showMessage=function(m) { $("recorderAlertP").innerHTML=m; };
+  this.clearMessage=function(m) { $("recorderAlertP").innerHTML=""; };
   
-  _this.applyServerParams=function(sp) {
+  this.serverParams2dom=function(sp) {
     if (sp.hasOwnProperty("showMore")) {
       showMore=sp.showMore;
       this.toggleHideable();     
@@ -419,7 +419,7 @@ mc.rb.ViewR=function() {
     }    
   };
   
-  _this.getParams=function() {
+  this.getParams=function() {
     var chunkSizeS=mc.utils.getSelect("chunkSelect");//mc.utils.getRadio("chunkRad");
     if (chunkSizeS == "custom") {
       var c=chunkSizeS=parseInt($("chunkInp").value,10);
@@ -442,7 +442,7 @@ mc.rb.ViewR=function() {
     };
   };
   
-  _this.setHandlers=function(initRecorder, toggleRecorder, playLocally, uploadStoredBlob) {
+  this.setHandlers=function(initRecorder, toggleRecorder, playLocally, uploadStoredBlob) {
     $("audioOrVideoRad1").onchange=initRecorder;
     $("audioOrVideoRad2").onchange=initRecorder;
     $("recordBtn").onclick=toggleRecorder;
