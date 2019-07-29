@@ -703,7 +703,7 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
     id=idPlus.id;
     mime=idPlus.mime;
     if (mime.length > 5) mime=mime.substr(0,5);
-    if (mime == "audio") el=new Audio();
+    if (mime == "audio") { el=new Audio(); }
     else if (mime == "video") {
       el=document.createElement('video');
     }
@@ -723,8 +723,14 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
     };
     if (autoplay) {
       //el.autoplay=autoplay; may fail as autoplay is disabled in some browsers
-      el.oncanplaythrough=function() { el.play(); };
-      // el.onload fails misteriously
+      el.oncanplaythrough=function() {  
+        //console.log("Media is ready"); 
+        var promise=el.play(); 
+        promise.catch(error => {
+          if (error.name === "NotAllowedError") { alert("You should enable autoplay in you browser"); }
+          else { alert("Something is wrong with media playing"); }
+        });
+      };
     }
     //el.controls=true;
     el.src=urlprefix+id;
