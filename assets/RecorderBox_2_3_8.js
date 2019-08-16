@@ -25,7 +25,7 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
     userParams=new mc.utils.Registry(viewR.getParams());
     //console.log(mc.utils.dumpArray(userParams));
     
-    upConnection=new mc.rb.UpConnection(fromServer.pathBias+"upload.php", takeResponseR, onHang,  serverParams, userParams, viewR.uploadIndicator);
+    upConnection=new mc.rb.UpConnection(fromServer.serverPath+fromServer.pathBias+"upload.php", takeResponseR, onHang,  serverParams, userParams, viewR.uploadIndicator);
     
     checkMime();
     

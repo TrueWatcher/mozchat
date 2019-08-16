@@ -317,6 +317,14 @@ mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upC
   
   this.connect=function() {    
     conn=new WebSocket(serverParams.wsServerUri);//'ws://localhost:8080'  
+    
+    conn.onerror = function(e) {
+      alert("Something is wrong with Websocket connection");
+      if (wss2https()) {
+        $("accountTopAlertP").innerHTML='<a href="'+wss2https()+'" target="_blank">Please, check WS certificate</a>';
+      }
+    };
+    
     conn.onopen = function(e) {
       console.log("Connection established!");
       setTimeout(function() {
@@ -347,6 +355,13 @@ mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upC
     setInterval(function() {
       upConnection.sendGetCatalog(userParams.user, userParams.realm);
     }, 15000);
+  }
+  
+  function wss2https() {
+    var uri=serverParams.wsServerUri;
+    if (uri.indexOf("ws://") === 0) return false;
+    if (uri.indexOf("wss://") === 0) return uri.replace("wss://", "https://");
+    throw new Error("Wrong ws uri="+uri);
   }
 };
 

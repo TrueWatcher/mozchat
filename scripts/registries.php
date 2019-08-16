@@ -108,6 +108,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "skipMine"=>1,
       "showMore"=>0
     ];
+    $a=self::addServerParams($a);
     return array_merge(self::$commonParams,$a);
   }
 
@@ -122,6 +123,16 @@ class PageRegistry extends SingletAssocArrayWrapper {
       //"allowPlayerNameInInput"=>1,// Credentials
     ];
     return array_merge(self::$commonParams,$a);
+  }
+  
+  private static function addServerParams(Array $data) {
+    $data["serverName"]=$_SERVER['SERVER_NAME'];// SERVER_ADDR is the _local_ IP
+    $pp=explode("/",$_SERVER['REQUEST_URI']);
+    array_pop($pp);
+    $pp=implode("/", $pp);
+    $data["serverPath"]=$_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME']."/".$pp."/";
+    //echo $data["serverPath"];
+    return $data;
   }
   
   public function overrideSubarrayValues($subarrayIndex,Array $data) {
