@@ -237,7 +237,7 @@ function unlinkById($id,Inventory $inv,$input) {
 
 abstract class MailHelper {
 
-  function go($input, $targetPath, $n, $uploadedBytes,  PageRegistry $pr) {
+  public static function go($input, $targetPath, $n, $uploadedBytes,  PageRegistry $pr) {
     if ( ! self::check($targetPath,$pr) ) return "";
     $counter=self::notifyUsers($input, $targetPath, $n, $uploadedBytes,  $pr);
     if ( ! $counter) return ", notifications failed";

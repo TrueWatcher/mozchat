@@ -1,6 +1,7 @@
 [ 
 'println("Clearing files and reading the catalog"); \
  playerBox.sendClear();',
+'', '', '', 
 'assertContains("cleared", recorderAlertP.innerHTML, "wrong message", "server agreed");',
 'playerBox.sendPoll();',
 '',

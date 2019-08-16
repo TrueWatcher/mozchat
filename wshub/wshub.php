@@ -314,10 +314,18 @@ function getPort($uri) {
   return $port;
 }
 
+function isSecure($uri) {
+  $proto=explode("://",$uri)[0];
+  if ($proto === "wss" || $proto == "https") return $proto;
+  if ($proto === "ws" || $proto == "http") return false;
+  throw new Exception("Wrong uri:".$uri);
+}
+
 function getIniParams($pathBias) {
   $params=parse_ini_file($pathBias."ws.ini", true, INI_SCANNER_RAW);
   $params["server"]["wsPort"]=getPort($params["common"]["wsServerUri"]);
-  $params["server"]["commandPort"]=getPort($params["common"]["wsCommandUri"]);  
+  $params["server"]["commandPort"]=getPort($params["common"]["wsCommandUri"]);
+  $params["server"]["isWss"]=isSecure($params["common"]["wsServerUri"]);
   return $params;
 }
 
@@ -328,10 +336,22 @@ $params=getIniParams($pathBias);
 
 $um=new UserManager($params);
 
-echo "Starting Websocket server on {$params["server"]["wsPort"]}...\n";
+$secure="";
+if ($params["server"]["isWss"]) $secure="a secure";
+echo "Starting $secure Websocket server on {$params["server"]["wsPort"]}...\n";
 
 $loop=\React\EventLoop\Factory::create();
 $wsSocket = new \React\Socket\Server('0.0.0.0:'.$params["server"]["wsPort"], $loop);
+if ($params["server"]["isWss"]) {
+  // WSS: https://github.com/ratchetphp/Ratchet/issues/489
+  //
+  // If the cert is self-signed, you must first visit https://wsHost:wsPort and create a security exception
+  $wsSocket = new \React\Socket\SecureServer($wsSocket, $loop, [
+    'local_cert' => '/opt/lampp/etc/ssl.crt/snakeoil_myphp.pem',
+    'local_pk' => '/opt/lampp/etc/ssl.key/snakeoil_myphp_copy.key',// The key must be readable to php
+    'allow_self_signed' => true, 'verify_peer' => false
+  ] );
+}
 $serverWs = new \Ratchet\Server\IoServer(
   new \Ratchet\Http\HttpServer(
     new \Ratchet\WebSocket\WsServer(new ChatRelay($um))
@@ -349,3 +369,16 @@ $serverCmd = new \Ratchet\Server\IoServer(
 );
 
 $loop->run();
+
+/*
+1) install composer.phar
+2) use composer to install Ratchet:
+   php /opt/lampp/bin/composer.phar require cboden/ratchet
+
+3) make sure mozchat/wshub/ws.ini is adequate (wsOn=1, wsServerUri='wss:your_domain.com:8080')
+4) run this script from a terminal:
+     php mozchat/wshub/wshub.php
+   and leave it open
+5) if your cert is self-signed, client must first visit https://your_domain.com:8080 and create a security exception
+6) profit!!!
+*/

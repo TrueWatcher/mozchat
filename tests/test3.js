@@ -8,7 +8,7 @@
 'playerBox.sendPoll();',
 'playerBox.sendPoll();',
 'mc.utils.setSelect("chunkSelect",2); \
- onrecordedRad1.click(); \
+ onrecordedRad1.click(); /* set AFTER_RECORDING to UPLOAD*/ \
  if ( ! playNewChkb.checked) playNewChkb.click(); \
  if (skipMineChkb.checked) skipMineChkb.click(); \
  if (holdPlayWhileRecChkb.checked) holdPlayWhileRecChkb.click(); \
@@ -74,7 +74,12 @@
 'println(""); \
  println("pause mode");',
 'console.log("stop="+onrecordedRad2.checked); \
- holdPlayWhileRecChkb.click(); \
+ if (onrecordedRad2.checked) { \
+   println(" wow, AFTER_RECORDING is STOP (on a slow link?), setting it back to UPLOAD "); \
+   onrecordedRad1.click(); \
+ } \
+',  
+'holdPlayWhileRecChkb.click(); \
  /*mc.utils.setSelect("refreshSelect",10); */ \
  clip2="Clip 2"; \
  descriptionInput.value=clip2; \
@@ -291,8 +296,10 @@
  ci.loop(); \
 ',
 'if ( ! recordBtn.classList.contains("recording") ) { \
- print(" my clip recorded "); \
- ci.inc(); };',
+   print(" my clip recorded "); \
+   ci.inc(); \
+ }; \
+',
 'ci.noLoop();', 
 'standbyBtn.click();',
 'assertTrue( playerBox.getStandby(), "failed to enter STANDBY", "Entered STANDBY");\

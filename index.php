@@ -75,5 +75,3 @@ function version($fn) {
   if ( ! class_exists("AssetsVersionMonitor")) return $fn;
   else return AssetsVersionMonitor::addVersion($fn);
 }
-
-?>
