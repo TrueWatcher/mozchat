@@ -11,9 +11,10 @@ use React\Socket\Server;
 //use React\Socket\ConnectionInterface;
 use \Exception;
 
+$pathBias="";
+$params=getIniParams($pathBias);
+requireVendorAutoload($params);
 //require dirname(__DIR__) . '/vendor/autoload.php';
-$composerVendorPath="/home/alexander/";
-require $composerVendorPath.'vendor/autoload.php';
 
 class UserManager {
   protected $realms=[];//["videoStream"=>[], "test0"=>[]];
@@ -32,7 +33,7 @@ class UserManager {
   function onDisconnect(ConnectionInterface $conn) {
     $found=$this->removeByConn($conn);
     if ( ! $found) { 
-      echo "Error! No record found for connection {$conn->resourceId}\n";
+      echo "No record found for connection {$conn->resourceId}\n";
       return;
     }
     list($user,$realm)=$found;
@@ -131,7 +132,11 @@ class UserManager {
     
     switch ($act) {
     case "userHello":
-      while ($this->removeByConn($from));// make sure she's not registered
+      // make sure she's not registered
+      while ( ($withSameName=$this->findConnectionByName($user,$this->realms[$realm])) ) {
+        $this->removeByConn($withSameName);
+        $withSameName->close();
+      }
       $this->realms[$realm][]=[ $from->resourceId, $user, time(), $from ];
       $this->sendAlert($from, "Welcome to $realm, $user !");
       $present=count($this->realms[$realm]);
@@ -170,7 +175,7 @@ class UserManager {
   
   private function findConnectionByName($user,$group) {
     foreach ($group as $c) {
-      if ($c[1] == $user) return $c[3];
+      if ($this->getName($c) == $user) return $this->getConnection($c);
     }
     return false;
   }
@@ -185,6 +190,7 @@ class UserManager {
   }
   
   private function getConnection($client) { return $client[3]; }
+  private function getName($client) { return $client[1]; }
   
   private function removeByConn(ConnectionInterface $conn) {
     $id=$conn->resourceId;
@@ -192,7 +198,7 @@ class UserManager {
     foreach ($this->realms as $i=>$group) {
       foreach ($group as $j=>$client) {
         if ($id == $client[0]) {
-          $user=$client[1];
+          $user=$this->getName($client);
           $foundJ=$j;
           break;
         }
@@ -309,9 +315,21 @@ class CmdRelay implements HttpServerInterface {
   }
 }
 
+function requireVendorAutoload($params) {
+  if ( ! isset($params["server"]["composerPath"]) ) {
+    throw new Exception("Please, give the composerPath (usually, your home dir) in ws.ini");
+  }
+  $try=$params["server"]["composerPath"].'vendor/autoload.php';
+  if ( ! file_exists($try)) {
+    throw new Exception("Cannot find $try");
+  }
+  require_once $try;
+}
+
 function getPort($uri) {
-  $hostPort=end(explode("://",$uri));
-  $port=end(explode(":",$hostPort));
+  $hostPort=explode("://",$uri)[1];
+  $parts=explode(":",$hostPort);
+  $port=end($parts); // end(explode()) causes warning in php7
   if ( ! ctype_digit($port)) throw new Exception("Wrong port:$port!");
   return $port;
 }
@@ -331,10 +349,35 @@ function getIniParams($pathBias) {
   return $params;
 }
 
+function setUpWss(Array $params, \React\Socket\Server $wsSocket, $loop) {
+  // WSS: https://github.com/ratchetphp/Ratchet/issues/489
+  //
+  // If the cert is self-signed, client must first visit https://wsHost:wsPort and create a security exception
+  if ( ! isset($params["server"]["wssCert"]) || ! isset($params["server"]["wssKey"]) ) {
+    throw new Exception("WSS needs wssCert and wssKey");
+  }
+  if ( ! file_exists($params["server"]["wssCert"]) ) {
+    throw new Exception("Nonexistent wssCert:".$params["server"]["wssCert"]);
+  }
+  if ( ! file_exists($params["server"]["wssKey"]) ) {
+    throw new Exception("Nonexistent wssKey:".$params["server"]["wssKey"]);
+  }
+  if ( ! is_readable($params["server"]["wssCert"]) || ! is_readable($params["server"]["wssKey"]) ) {
+    throw new Exception("Unreadable wssCert or wssKey");
+  }
+  $wsSocket = new \React\Socket\SecureServer($wsSocket, $loop, [
+    'local_cert' => $params["server"]["wssCert"],
+    'local_pk' => $params["server"]["wssKey"],
+    'allow_self_signed' => true, 'verify_peer' => false
+  ] );
+  return $wsSocket;
+}
+
 //print_r($_SERVER);
 if (isset($_SERVER["DOCUMENT_ROOT"]) && $_SERVER["DOCUMENT_ROOT"]) exit("This script cannot be accessed through a server");
 $pathBias="";
 $params=getIniParams($pathBias);
+requireVendorAutoload($params);
 
 $um=new UserManager($params);
 
@@ -344,16 +387,7 @@ echo "Starting $secure Websocket server on {$params["server"]["wsPort"]}...\n";
 
 $loop=\React\EventLoop\Factory::create();
 $wsSocket = new \React\Socket\Server('0.0.0.0:'.$params["server"]["wsPort"], $loop);
-if ($params["server"]["isWss"]) {
-  // WSS: https://github.com/ratchetphp/Ratchet/issues/489
-  //
-  // If the cert is self-signed, you must first visit https://wsHost:wsPort and create a security exception
-  $wsSocket = new \React\Socket\SecureServer($wsSocket, $loop, [
-    'local_cert' => '/opt/lampp/etc/ssl.crt/snakeoil_myphp.pem',
-    'local_pk' => '/opt/lampp/etc/ssl.key/snakeoil_myphp_copy.key',// The key must be readable to php
-    'allow_self_signed' => true, 'verify_peer' => false
-  ] );
-}
+if ( $params["server"]["isWss"] ) { $wsSocket = setUpWss($params, $wsSocket, $loop); }
 $serverWs = new \Ratchet\Server\IoServer(
   new \Ratchet\Http\HttpServer(
     new \Ratchet\WebSocket\WsServer(new ChatRelay($um))
@@ -373,14 +407,17 @@ $serverCmd = new \Ratchet\Server\IoServer(
 $loop->run();
 
 /*
-1) install composer.phar
-2) use composer to install Ratchet:
-   php /opt/lampp/bin/composer.phar require cboden/ratchet
-
-3) make sure mozchat/wshub/ws.ini is adequate (wsOn=1, wsServerUri='wss:your_domain.com:8080')
-4) run this script from a terminal:
-     php mozchat/wshub/wshub.php
-   and leave it open
-5) if your cert is self-signed, client must first visit https://your_domain.com:8080 and create a security exception
-6) profit!!!
+INSTRUCTION
+1)  install composer.phar
+2)  use composer to install Ratchet:
+       php /opt/lampp/bin/composer.phar require cboden/ratchet
+3)  make sure mozchat/wshub/ws.ini is adequate (wsOn=1, wsServerUri='wss:your_domain.com:8080' etc.)
+4)  make sure that port 8080 is not blocked
+5)  run this script from a terminal:
+       php mozchat/wshub/wshub.php
+    and leave it open
+5a) or run it like a daemon:
+       (php mozchat/wshub/wshub.php >null)&
+6)  if your cert is self-signed, client must first visit https://your_domain.com:8080 and create a security exception
+7)  profit!!!
 */

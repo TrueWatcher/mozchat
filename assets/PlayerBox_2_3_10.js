@@ -37,6 +37,7 @@ mc.pb.PlayerBox=function(upConnection) {
   this.reinit=function() {
     // to revive polling after sleep on mobile
     this.dom2userParams();
+    dataSource.stop();
     dataSource=getDataSource(serverParams.wsOn);   
   };
   
@@ -303,14 +304,18 @@ mc.pb.Poller=function(responderUri, onData, onHang, userParams, serverParams) {
   }
   
   if (userParams.pollFactor != "off") this.sendPoll();
-  intervalHandler=setInterval(_this.onTick, 100);   
+  intervalHandler=setInterval(_this.onTick, 100);
+
+  this.stop=function() {
+    if (intervalHandler) clearInterval(intervalHandler);
+  }; 
 };
 
 mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upConnection, connectAtOnce) {
   //console.log("serverParams.wsServerUri");
-  var conn={onopen:notReady, onmessage:notReady, send:notReady};
-  var myHello=JSON.stringify({user:userParams.user, realm:userParams.realm, act:"userHello"});
-  var response=[];
+  var conn={onopen:notReady, onmessage:notReady, send:notReady},
+      myHello=JSON.stringify({user:userParams.user, realm:userParams.realm, act:"userHello"});
+  var response=[], intervalHandler=false;
   if (typeof connectAtOnce == "undefined") connectAtOnce=true;
   
   function notReady() { throw new Error("The object is not ready"); }
@@ -352,7 +357,7 @@ mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upC
   this.getResponse=function() { return response; };
   
   if (userParams.pollFactor != "off") {
-    setInterval(function() {
+    intervalHandler=setInterval(function() {
       upConnection.sendGetCatalog(userParams.user, userParams.realm);
     }, 15000);
   }
@@ -363,6 +368,10 @@ mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upC
     if (uri.indexOf("wss://") === 0) return uri.replace("wss://", "https://");
     throw new Error("Wrong ws uri="+uri);
   }
+  
+  this.stop=function() {
+    if (intervalHandler) clearInterval(intervalHandler);
+  };
 };
 
 mc.pb.Inventory=function(userParams) {
