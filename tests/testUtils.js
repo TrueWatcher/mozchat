@@ -118,6 +118,10 @@ function assertEqualsVect(expected,found,message,messageOK) {
 function assertContains(expected,haystack,message,messageOK) {
   var t=new TestHelper(),out="";
   t.incCount();
+  if ( ! haystack || typeof haystack == "undefined") {
+    println("Failure: haystack is empty ("+typeof haystack+")\n"+message+"\n");
+    throw new TestError (""+t.getCount());
+  }
   if( haystack.indexOf(expected) < 0 ) {
     println("Failure: '"+haystack+"' does not contain '"+expected+"' \n"+message+"\n");
     throw new TestError (""+t.getCount());

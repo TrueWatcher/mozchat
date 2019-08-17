@@ -24,7 +24,7 @@ $serverParams=[
   "state"=>"operational", "user"=>$input["user"], "realm"=>$input["realm"]
 ];
 $serverParams=$pr->exportByList( [
-  "maxBlobBytes", "maxMediaFolderBytes", "clipLifetimeSec", "title", "allowVideo", "videoOn", "maxClipSizeSec", "maxClipCount", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "showMore", "mediaFolder", "pathBias", "longPollPeriodS", "userStatusFadeS", "wsOn", "wsServerUri"
+  "serverPath", "serverName", "maxBlobBytes", "maxMediaFolderBytes", "clipLifetimeSec", "title", "allowVideo", "videoOn", "maxClipSizeSec", "maxClipCount", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "showMore", "mediaFolder", "pathBias", "longPollPeriodS", "userStatusFadeS", "wsOn", "wsServerUri"
 ] , $serverParams);
 $serverParams["mediaFolder"]=Inventory::checkMediaFolderName($serverParams["mediaFolder"]);
 $mimeDictionary=MimeDecoder::getDictionary();
@@ -46,20 +46,21 @@ include($pathBias."scripts/templates/client.php");
 ?>
 <script src="testUtils.js"></script>
 <script>
+"use strict";
 function Shadow() {
   var serverParams={
-    user:"Shadow", realm:"test0", pathBias:"../", playNew:1, skipMine:1, longPollPeriodS:5, pollFactor: "off", wsOn: 1, wsServerUri: "<?php print($serverParams['wsServerUri']); ?>"
+    user:"Shadow", realm:"test0", serverPath:"", pathBias:"../", playNew:1, skipMine:1, longPollPeriodS:5, pollFactor: "off", wsOn: 1, wsServerUri: "<?php print($serverParams['wsServerUri']); ?>"
   };
   var userParams=serverParams;
   var response={},changesMap={};
   var catalogBytes=0, catalogTime=0, usersListTime=0, myUsersList="", catCrc="1234";
   
   var wsSource=new mc.pb.WsClient(empty, takeResponseSh, empty, userParams, serverParams, empty, false);
-  //onWsconnected, takeResponseSh, _this.onPollhangs, userParams, serverParams, upConnection
-  var inventory=new mc.pb.Inventory();
-  
+  //onConnect, onData, onHang, userParams, serverParams, upConnection, connectAtOnce
+  var inventory=new mc.pb.Inventory(userParams);
+
   function empty() {}
-  
+
   function takeResponseSh(resp) {
     if (resp.catalogBytes) catalogBytes=resp.catalogBytes;
     if (resp.timestamp) catalogTime=resp.timestamp;
@@ -68,7 +69,7 @@ function Shadow() {
       usersListTime=resp.timestamp;
       myUsersList=resp.users;
     }
-    if (resp.list) { changesMap=inventory.consumeNewCatalog(resp.list, userParams); }     
+    if (resp.list) { changesMap=inventory.consumeNewCatalog(resp.list); }
     if (resp.alert) { if (resp.lag) resp.alert+=" fulfiled in "+resp.lag+"ms"; }
     response=resp;
   }
@@ -79,12 +80,12 @@ function Shadow() {
   
   this.connect=function() { return wsSource.connect(); };
   this.disconnect=function() { return wsSource.disconnect(); };
-}
+}// end Shadow
 
-var recorderBox=mc.tm.getRB(), 
+var recorderBox=mc.tm.getRB(),
     playerBox=mc.tm.getPB().getDebugApi(), 
-    sp=mc.serverParams;
-var shadow=new Shadow(), 
+    sp=mc.serverParams,
+    shadow=new Shadow(), 
     shUser=shadow.getUser();
 
 var ok,err,blobKb,clip1,clip2,clip3,free,i,toSend,storedTime1, storedTime2, elapsed;
@@ -93,9 +94,8 @@ var shResp, shChangesMap;
 var ul,delBtn,dels,id;
 
 print(">page");
-var testScript21=<?php print file_get_contents("test21.js"); ?>;
-var testScript22=<?php print file_get_contents("test2.js"); ?>;
-var testScript=testScript21.concat(testScript22);
+var testScript21=<?php print file_get_contents("test21.js"); ?>;;
+//var testScript=testScript21.concat(testScript22);
 var ci=new CommandIterator(testScript21);
 commandsRun(ci);
 

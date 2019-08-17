@@ -18,12 +18,13 @@ $wsParams=parse_ini_file($pathBias."wshub/ws.ini", true, INI_SCANNER_RAW);
 //var_dump($wsParams);
 $pr->addFreshPairsFrom($wsParams["common"]);
 $wsOn=$pr->g("wsOn");
+if ($wsOn) exit("Turn WS off for this test (wshub/ws.ini wsOn=0)"); //checkWsCommandLink($pr->g("wsCommandUri"));
 
 $serverParams=[
   "state"=>"operational", "user"=>$input["user"], "realm"=>$input["realm"]
 ];
 $serverParams=$pr->exportByList( [
-  "maxBlobBytes", "maxMediaFolderBytes", "clipLifetimeSec", "title", "allowVideo", "videoOn", "maxClipSizeSec", "maxClipCount", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "showMore", "mediaFolder", "pathBias", "longPollPeriodS", "userStatusFadeS", "wsOn", "wsServerUri"
+  "serverPath", "serverName", "maxBlobBytes", "maxMediaFolderBytes", "clipLifetimeSec", "title", "allowVideo", "videoOn", "maxClipSizeSec", "maxClipCount", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "showMore", "mediaFolder", "pathBias", "longPollPeriodS", "userStatusFadeS", "wsOn", "wsServerUri"
 ] , $serverParams);
 $serverParams["mediaFolder"]=Inventory::checkMediaFolderName($serverParams["mediaFolder"]);
 $mimeDictionary=MimeDecoder::getDictionary();
@@ -33,23 +34,32 @@ function version($fn,$pathBias) {
   else return AssetsVersionMonitor::addVersion($fn,$pathBias);
 }
 
+function checkWsCommandLink($uri) {
+  $q=$uri."/?act=echo";
+  $ctx=stream_context_create(['http'=>['method'=>'get','header'=>'Content-type: text/plain']]);
+  $reply=@file_get_contents($q,false,$ctx);
+  if ( ! is_string($reply)) exit("Error! System is misconfigured, required websockets server does not respond");
+}
+
 $disableTail=1;
 include($pathBias."scripts/templates/client.php");
 ?>
 <script src="testUtils.js"></script>
 <script>
+"use strict";
 function Shadow() {
   var serverParams={
-    user:"Shadow", realm:"test0", pathBias:"../", playNew:1, skipMine:1, longPollPeriodS:5
+    user:"Shadow", realm:"test0", serverPath:"", pathBias:"../", playNew:1, skipMine:1, longPollPeriodS:5
   };
-  var userParams=new mc.utils.Registry(serverParams);
-  
+  var userParams=serverParams;
   var response={},changesMap={};
   var catalogBytes=0, catalogTime=0, usersListTime=0, myUsersList="", catCrc="1234";
   
   var ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", takeResponseSh, {});
   var inventory=new mc.pb.Inventory(userParams);
-  
+
+  function empty() {}
+
   function takeResponseSh(resp) {
     if (resp.catalogBytes) catalogBytes=resp.catalogBytes;
     if (resp.timestamp) catalogTime=resp.timestamp;
@@ -58,8 +68,8 @@ function Shadow() {
       usersListTime=resp.timestamp;
       myUsersList=resp.users;
     }
-    if (resp.list) { changesMap=inventory.consumeNewCatalog(resp.list, userParams); }     
-    if (resp.alert) { resp.alert+=" fulfiled in "+resp.lag+"ms"; }
+    if (resp.list) { changesMap=inventory.consumeNewCatalog(resp.list); }
+    if (resp.alert) { if (resp.lag) resp.alert+=" fulfiled in "+resp.lag+"ms"; }
     response=resp;
   }
   
@@ -96,11 +106,12 @@ function Shadow() {
   };
   
   this.linkIsBusy=function() { return ajaxerP.isBusy(); };
-}
+}// end Shadow
 
-var playerBox=mc.tm.getPB().getDebugApi(), 
-    sp=mc.serverParams;
-var shadow=new Shadow(), 
+var recorderBox=mc.tm.getRB(),
+    playerBox=mc.tm.getPB().getDebugApi(), 
+    sp=mc.serverParams,
+    shadow=new Shadow(), 
     shUser=shadow.getUser();
 
 var ok,err,blobKb,clip1,clip2,clip3,free,i,toSend,storedTime1, storedTime2, elapsed;

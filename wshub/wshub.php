@@ -87,6 +87,7 @@ class UserManager {
     case "echo":
       $this->sendHttpReply($from, 'Echo reply');
       break;
+      
     default:
       throw new Exception ("Unknown ACT=$act");
     }// end switch    
@@ -127,6 +128,7 @@ class UserManager {
     }
     if ( ! isset($data["act"])) throw new Exception ("Missing ACT");
     $act=$data["act"];
+    
     switch ($act) {
     case "userHello":
       while ($this->removeByConn($from));// make sure she's not registered

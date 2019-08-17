@@ -2,6 +2,7 @@
 '','',
 'println("Checking Websockets");\
  assertTrue(sp.wsOn, "ws turned off", "ws turned on");',
+'','','',/* skip init request for catalog */
 'playerBox.sendEchoRequest();',
 'ok=playerAlertP.innerHTML.indexOf("echo reply") >= 0; \
  assertTrue(ok, "wrong message="+recorderAlertP.innerHTML, "ws server echo ok");',
@@ -33,7 +34,7 @@
  assertTrue(err, "no error on uploading oversized record","error shown" );',
  
 'println("Testing simple send");',
-'mc.utils.setSelect("chunkSelect",1);',
+'mc.utils.setSelect("chunkSelect",2);',
 'ci.loop();',
 'if(recordBtn.innerHTML.charAt(0) != "W") ci.inc();',
 'recordBtn.click(); ci.inc();',
