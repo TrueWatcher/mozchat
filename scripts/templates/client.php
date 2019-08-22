@@ -114,6 +114,7 @@
   var mc={};// namespace root
 </script>
 <script src="<?php print($pathBias."assets/".version("utils.js",$pathBias)); ?>"></script>
+<script src="<?php print($pathBias."assets/".version("connections.js",$pathBias)); ?>"></script>
 <script src="<?php print($pathBias."assets/".version("RecorderBox.js",$pathBias)); ?>"></script>
 <script src="<?php print($pathBias."assets/".version("PlayerBox.js",$pathBias)); ?>"></script>
 <script>

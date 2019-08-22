@@ -130,6 +130,7 @@ mc.pb.PlayerBox=function(upConnection) {
         return dataSource.sendData(toSend);     
       },
       sendAltUserClip : sendAltUserClip,
+      setUpConnQueueMax : function(n) { upConnection.setQueueMax(n); },
       connect : function() { return dataSource.connect(); },
       disconnect : function() { return dataSource.disconnect(); },  
       getChangesMap : function() { return changesMap; },
@@ -237,7 +238,8 @@ mc.pb.PlayerBox=function(upConnection) {
 mc.pb.Poller=function(responderUri, onData, onHang, userParams, serverParams) {
   var _this=this, ticks=0, catalogTime=0, catalogBytes=0, usersListTime=0, catCrc="1234", myUsersList="", response, intervalHandler;
   
-  var ajaxerP=new mc.utils.Ajaxer(responderUri, takeUpdatedMarks, {}, onHang); 
+  var ajaxerP=new mc.utils.Ajaxer(responderUri, takeUpdatedMarks, {}, onHang);
+  ajaxerP.setQueueMax(0);// queue and long poll cannot go together
     
   this.onTick=function() {
     //console.log(userParams.pollFactor);
@@ -276,12 +278,6 @@ mc.pb.Poller=function(responderUri, onData, onHang, userParams, serverParams) {
     qs+="&myUsersList="+encodeURIComponent(myUsersList);
     if (moreParams) qs+="&"+moreParams;
     ajaxerP.getRequest(qs, serverParams.longPollPeriodS*1000+2000);    
-  };
-  
-  this._sendDelete=function(file) {
-    var qs="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=delete&id="+encodeURIComponent(file);
-    ajaxerP.getRequest(qs);    
   };
   
   this.linkIsBusy=function() { return ajaxerP.isBusy(); };

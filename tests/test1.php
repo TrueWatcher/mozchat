@@ -56,6 +56,7 @@ function Shadow() {
   var catalogBytes=0, catalogTime=0, usersListTime=0, myUsersList="", catCrc="1234";
   
   var ajaxerP=new mc.utils.Ajaxer(serverParams.pathBias+"download.php", takeResponseSh, {});
+  ajaxerP.setQueueMax(0);// queue and long poll cannot go together
   var inventory=new mc.pb.Inventory(userParams);
 
   function empty() {}
@@ -135,6 +136,8 @@ function watchState(current, next, onChange, onSame) {
     ci.inc();
   }
 }
+
+playerBox.setUpConnQueueMax(0);// disable queue of uplink
 
 print(">page");
 var testScript1=<?php print file_get_contents("test1.js"); ?>;

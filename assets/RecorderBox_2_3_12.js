@@ -193,63 +193,45 @@ mc.rb.UpConnection=function(respondrUri, onData, onHang, serverParams, userParam
   var ajaxerR=new mc.utils.Ajaxer(respondrUri, onData, indicator, onHang);
   
   this.linkIsBusy=function() { return ajaxerR.isBusy(); };
+  this.setQueueMax=function(n) { ajaxerR.setQueueMax(n); };
   
   this.sendBlobAndData=function(blobPlusData,lastRecordedTime,description,aUserParams) {
     var stuff,up;
     if (!! aUserParams) up=aUserParams;// required for debug
     else up=userParams;    
-    stuff=new FormData();
-    stuff.append("act","uploadBlob");
-    stuff.append("user",up.user);
-    stuff.append("realm",up.realm);
-    stuff.append("description",description);
-    stuff.append("mime",blobPlusData.mime);
-    stuff.append("ext",blobPlusData.ext);
-    stuff.append("duration",lastRecordedTime);
-    stuff.append("blob",blobPlusData.blob);
-    ajaxerR.postRequest(stuff);
+    stuff={
+     act:"uploadBlob", user: up.user, realm: up.realm, description: description,
+     mime: blobPlusData.mime, ext: blobPlusData.ext, duration: lastRecordedTime, blob: blobPlusData.blob
+    };
+    ajaxerR.postAsFormData(stuff);
   };
 
   this.reportMimeFault=function(recorderMimes) {
-    var  stuff=new FormData();
-    stuff.append("act","reportMimeFault");
-    stuff.append("user",userParams.user);
-    stuff.append("realm",userParams.realm);
-    stuff.append("mimesList",mc.utils.dumpArray(recorderMimes));
-    ajaxerR.postRequest(stuff);
+    var  stuff={
+      act: "reportMimeFault", user: userParams.user, realm: userParams.realm,
+      mimesList: mc.utils.dumpArray(recorderMimes)
+    };
+    ajaxerR.postAsFormData(stuff);
   };
   
   _this.sendClear=function() {
-    var  stuff=new FormData();
-    stuff.append("act","clearMedia");
-    stuff.append("user",userParams.user);
-    stuff.append("realm",userParams.realm);
-    ajaxerR.postRequest(stuff);
+    var stuff= { act: "clearMedia", user: userParams.user, realm: userParams.realm };
+    ajaxerR.postAsFormData(stuff);
   }
   
   _this.sendDelete=function(file) {
-    var  stuff=new FormData();
-    stuff.append("act","delete");
-    stuff.append("user",userParams.user);
-    stuff.append("realm",userParams.realm);
-    stuff.append("id",file);
-    ajaxerR.postRequest(stuff);    
+    var stuff={ act: "delete", user: userParams.user, realm: userParams.realm, id: file };
+    ajaxerR.postAsFormData(stuff);    
   };
-  document.activeElement.blur();
+
   _this.sendRemoveExpired=function() {
-    var  stuff=new FormData();
-    stuff.append("act","removeExpired");
-    stuff.append("user",userParams.user);
-    stuff.append("realm",userParams.realm);
-    ajaxerR.postRequest(stuff);  
+    var stuff={ act: "removeExpired", user: userParams.user, realm: userParams.realm };
+    ajaxerR.postAsFormData(stuff);  
   };
   
   this.sendGetCatalog=function() {
-    var  stuff=new FormData();
-    stuff.append("act","getCatalog");
-    stuff.append("user",userParams.user);
-    stuff.append("realm",userParams.realm);
-    ajaxerR.postRequest(stuff);  
+    var  stuff={ act: "getCatalog", user: userParams.user, realm: userParams.realm };
+    ajaxerR.postAsFormData(stuff);  
   };
   
 };
