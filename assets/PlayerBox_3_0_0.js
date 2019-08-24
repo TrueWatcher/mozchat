@@ -2,8 +2,9 @@
 if ( ! mc) mc={};//namespace
 mc.pb={};
 
-mc.pb.PlayerBox=function(upConnection) {
+mc.pb.PlayerBox=function(connector) {
   var _this=this,
+      upConnection=connector.push,
       viewP={},
       serialPlayer={},
       userParams={},
@@ -11,7 +12,6 @@ mc.pb.PlayerBox=function(upConnection) {
       inventory={},
       firstResponse=1,// 1,0
       changesMap={},
-      dataSource={},
       urlprefix="",// used by serialPlayer and
       standby=0,
       storedPollFactor,
@@ -25,37 +25,23 @@ mc.pb.PlayerBox=function(upConnection) {
     viewP.serverParams2dom(serverParams);
     viewP.blurActive();
     //this.dom2userParams();
-    userParams=new mc.utils.Registry(viewP.getParams());
+    mc.userParams.pb=new mc.utils.Registry(viewP.getParams());
+    userParams=mc.userParams.pb;
     inventory=new mc.pb.Inventory(userParams);    
-    dataSource=getDataSource(serverParams.wsOn);   
     if ( ! serverParams.mediaFolder) throw new Error("MEDIAFOLDER required from server");
     urlprefix=serverParams.pathBias+userParams.realm+"/"+serverParams.mediaFolder+"/";
     serialPlayer=new mc.pb.SerialPlayer(urlprefix, this.getNextClip, this.isVideo, viewP, onMediaError);    
-    viewP.setHandlers(_this.listClicked,_this.dom2userParams, serialPlayer.stopAfter, _this.clear, _this.toggleStandby); 
+    viewP.setHandlers(_this.listClicked,_this.dom2userParams, serialPlayer.stopAfter, _this.clear, _this.toggleStandby);
+    connector.pull.registerPullCallback(_this.takeResponseP);
   };
   
   this.reinit=function() {
     // to revive polling after sleep on mobile
     this.dom2userParams();
-    dataSource.stop();
-    dataSource=getDataSource(serverParams.wsOn);   
+    connector.pull.reinit();
   };
   
-  function getDataSource(websocketsOn) {
-    if (websocketsOn) {
-      return new mc.pb.WsClient(onWsconnected, takeResponseP, _this.onPollhangs, userParams, serverParams, upConnection);
-    }
-    else {
-      return new mc.pb.Poller(serverParams.pathBias+"download.php", takeResponseP,  _this.onPollhangs, userParams, serverParams);
-    }    
-  }
-  
-  function onWsconnected() {
-    console.log("requesting the catalog from uplink");
-    upConnection.sendGetCatalog(userParams.user, userParams.realm);
-  }
-  
-  function takeResponseP(resp) { 
+  this.takeResponseP=function(resp) { 
     var ps,al;
     if (resp.free) viewP.showFreeSpace(resp.free);
     if (resp.users) { 
@@ -117,22 +103,22 @@ mc.pb.PlayerBox=function(upConnection) {
     }
     
     return {
-      getResponse : function() { return dataSource.getResponse(); },
-      linkIsBusy : function() { return dataSource.linkIsBusy(); },
-      sendClear : function() { return upConnection.sendClear(); },
-      sendPoll : function(moreParams) { return dataSource.sendPoll(moreParams); },
-      sendLongPoll : function(moreParams) { return dataSource.sendLongPoll(moreParams); },
-      sendDelete : function(file) { return upConnection.sendDelete(file); },
-      sendRemoveExpired : function() { return upConnection.sendRemoveExpired(); },
+      getResponse : function() { return connector.pull.getResponse(); },
+      linkIsBusy : function() { return connector.pull.linkIsBusy(); },
+      sendClear : function() { return connector.push.sendClear(); },
+      sendPoll : function(moreParams) { return connector.pull.sendPoll(moreParams); },
+      sendLongPoll : function(moreParams) { return connector.pull.sendLongPoll(moreParams); },
+      sendDelete : function(file) { return connector.push.sendDelete(file); },
+      sendRemoveExpired : function() { return connector.push.sendRemoveExpired(); },
       sendEchoRequest : function() { 
         var toSend={ user:userParams.user, realm:userParams.realm, act:"echo" };
         toSend=JSON.stringify(toSend);
-        return dataSource.sendData(toSend);     
+        return connector.pull.sendData(toSend);     
       },
       sendAltUserClip : sendAltUserClip,
-      setUpConnQueueMax : function(n) { upConnection.setQueueMax(n); },
-      connect : function() { return dataSource.connect(); },
-      disconnect : function() { return dataSource.disconnect(); },  
+      setUpConnQueueMax : function(n) { connector.push.setQueueMax(n); },
+      connect : function() { return connector.pull.connect(); },
+      disconnect : function() { return connector.pull.disconnect(); },  
       getChangesMap : function() { return changesMap; },
       getPlayerStateExt : function() { return serialPlayer.getStateExt(); },
       getStandby: function() { return _this.getStandby(); }
@@ -140,11 +126,6 @@ mc.pb.PlayerBox=function(upConnection) {
   };
   
   this.sendDelete=function(file) { return upConnection.sendDelete(file); };
-  
-  this.onPollhangs=function() { 
-    viewP.showMessage("The request has timed out");
-    console.log("The request has timed out");
-  };
   
   this.listClicked=function(event) {
     //alert("click");
@@ -234,141 +215,6 @@ mc.pb.PlayerBox=function(upConnection) {
   }
    
 }// end PlayerBox
-
-mc.pb.Poller=function(responderUri, onData, onHang, userParams, serverParams) {
-  var _this=this, ticks=0, catalogTime=0, catalogBytes=0, usersListTime=0, catCrc="1234", myUsersList="", response, intervalHandler;
-  
-  var ajaxerP=new mc.utils.Ajaxer(responderUri, takeUpdatedMarks, {}, onHang);
-  ajaxerP.setQueueMax(0);// queue and long poll cannot go together
-    
-  this.onTick=function() {
-    //console.log(userParams.pollFactor);
-    if (userParams.pollFactor === "off") return;
-    if (userParams.pollFactor === "l") {
-      if ( ! ajaxerP.isBusy()) _this.sendLongPoll();
-      return;
-    }
-    ticks+=1;
-    if (ticks < userParams.pollFactor) return;
-    ticks=0;
-    if ( ! ajaxerP.isBusy()) _this.sendPoll();
-  };
-  
-  function addUpdatedMarks(qs) {
-    qs+="&catSince="+catalogTime+"&catBytes="+catalogBytes+"&usersSince="+usersListTime;
-    if (catCrc !== false) qs+="&catCrc="+catCrc;
-    return qs;
-  }
-  
-  this.sendPoll=function(moreParams) {
-    var qs="";
-    qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=poll";
-    qs=addUpdatedMarks(qs);
-    qs+="&pollFactor="+userParams.pollFactor;
-    if (moreParams) qs+="&"+moreParams;
-    ajaxerP.getRequest(qs, 2000);   
-  };
-  
-  this.sendLongPoll=function(moreParams) {
-    var qs="";
-    qs+="user="+userParams.user+"&realm="+userParams.realm;
-    qs+="&act=longPoll";
-    qs=addUpdatedMarks(qs);
-    qs+="&myUsersList="+encodeURIComponent(myUsersList);
-    if (moreParams) qs+="&"+moreParams;
-    ajaxerP.getRequest(qs, serverParams.longPollPeriodS*1000+2000);    
-  };
-  
-  this.linkIsBusy=function() { return ajaxerP.isBusy(); };
-  
-  this.getResponse=function() { return response; };
-  
-  function takeUpdatedMarks(resp) {
-    response=resp;
-    if (resp.catalogBytes) catalogBytes=resp.catalogBytes;
-    if (resp.timestamp) catalogTime=resp.timestamp;
-    if (resp.users) { 
-      usersListTime=resp.timestamp;
-      myUsersList=resp.users;
-    }
-    if (resp.catCrc) { 
-      //console.log("my crc="+catCrc+", server's="+resp.catCrc); 
-      catCrc=resp.catCrc;
-    }
-    onData(resp);
-  }
-  
-  if (userParams.pollFactor != "off") this.sendPoll();
-  intervalHandler=setInterval(_this.onTick, 100);
-
-  this.stop=function() {
-    if (intervalHandler) clearInterval(intervalHandler);
-  }; 
-};
-
-mc.pb.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upConnection, connectAtOnce) {
-  //console.log("serverParams.wsServerUri");
-  var conn={onopen:notReady, onmessage:notReady, send:notReady},
-      myHello=JSON.stringify({user:userParams.user, realm:userParams.realm, act:"userHello"});
-  var response=[], intervalHandler=false;
-  if (typeof connectAtOnce == "undefined") connectAtOnce=true;
-  
-  function notReady() { throw new Error("The object is not ready"); }
-  
-  this.connect=function() {    
-    conn=new WebSocket(serverParams.wsServerUri);//'ws://localhost:8080'  
-    
-    conn.onerror = function(e) {
-      alert("Something is wrong with Websocket connection");
-      if (wss2https()) {
-        $("accountTopAlertP").innerHTML='<a href="'+wss2https()+'" target="_blank">Please, check WS certificate</a>';
-      }
-    };
-    
-    conn.onopen = function(e) {
-      console.log("Connection established!");
-      setTimeout(function() {
-        //console.log(myHello);
-        conn.send(myHello); }
-      ,200);
-      setTimeout(onConnect,500);
-    };
-
-    conn.onmessage = function(e) {
-      //console.log(e.data);
-      response=JSON.parse(e.data);
-      onData(response);
-    };    
-  };  
-  if (connectAtOnce) this.connect();
-  
-  this.disconnect=function() {
-    conn.close();
-    conn={onopen:notReady, onmessage:notReady, send:notReady};   
-  };
-  
-  this.sendData=function(data) { conn.send(data); }; 
-  this.linkIsBusy=function() { return false; };  
-  this.getResponse=function() { return response; };
-  
-  if (userParams.pollFactor != "off") {
-    intervalHandler=setInterval(function() {
-      upConnection.sendGetCatalog(userParams.user, userParams.realm);
-    }, 15000);
-  }
-  
-  function wss2https() {
-    var uri=serverParams.wsServerUri;
-    if (uri.indexOf("ws://") === 0) return false;
-    if (uri.indexOf("wss://") === 0) return uri.replace("wss://", "https://");
-    throw new Error("Wrong ws uri="+uri);
-  }
-  
-  this.stop=function() {
-    if (intervalHandler) clearInterval(intervalHandler);
-  };
-};
 
 mc.pb.Inventory=function(userParams) {
   var catalog={}, oldCatalog={}, _this=this;

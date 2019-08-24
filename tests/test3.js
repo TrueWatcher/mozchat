@@ -68,7 +68,7 @@
 ',
 'ci.noLoop();',
 'recordBtn.click();',
-'playerBox.sendPoll();','','',
+'playerBox.sendPoll();','','','','',
 
 
 'println(""); \

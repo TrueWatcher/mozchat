@@ -42,7 +42,7 @@ function checkWsCommandLink($uri) {
 }
 
 $disableTail=1;
-include($pathBias."scripts/templates/client.php");
+include($pathBias."scripts/templateClient.php");
 ?>
 <script src="testUtils.js"></script>
 <script>
@@ -137,7 +137,7 @@ function watchState(current, next, onChange, onSame) {
   }
 }
 
-playerBox.setUpConnQueueMax(0);// disable queue of uplink
+//playerBox.setUpConnQueueMax(0);// disable queue of uplink
 
 print(">page");
 var testScript1=<?php print file_get_contents("test1.js"); ?>;

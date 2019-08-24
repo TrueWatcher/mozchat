@@ -3,9 +3,9 @@
  playerBox.sendClear();',
 '', '', '', 
 'assertContains("cleared", recorderAlertP.innerHTML, "wrong message", "server agreed");',
-'playerBox.sendPoll();',
+'playerBox.sendPoll();','','playerBox.sendPoll();',
 '',
-'ok= ! medialistT.hasChildren; \
+'ok=($("medialistT").children.length===0); \
  assertTrue(ok,"Some data are present in the catalog","catalog cleared"); \
  free=parseInt(folderFreeInp.value); \
  assertEqualsPrim(sp.maxMediaFolderBytes/1000, free, "Wrong free space", "All space is free");',

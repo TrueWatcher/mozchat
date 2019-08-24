@@ -2,14 +2,14 @@
 if ( ! mc) mc={};//namespace
 mc.rb={};
 
-mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
+mc.rb.RecorderBox=function(connector, onBeforerecording, onAfterrecording) {
   var _this=this,
       viewR={},
       recorder={},
       ticker={},
       blobPlus={},
       userParams={},
-      upConnection={},
+      upConnection=connector.push,
       serverParams={},
       recordingTime=0,
       lastRecordedTime=0,
@@ -22,10 +22,15 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
     
     viewR=new mc.rb.ViewR();
     viewR.serverParams2dom(serverParams);
-    userParams=new mc.utils.Registry(viewR.getParams());
+    //userParams=new mc.utils.Registry(viewR.getParams());
+    mc.userParams.rb=new mc.utils.Registry(viewR.getParams());
+    userParams=mc.userParams.rb;
+    
     //console.log(mc.utils.dumpArray(userParams));
     
-    upConnection=new mc.rb.UpConnection(fromServer.serverPath+fromServer.pathBias+"upload.php", takeResponseR, onHang,  serverParams, userParams, viewR.uploadIndicator);
+    //upConnection=new mc.rb.UpConnection(fromServer.serverPath+fromServer.pathBias+"upload.php", takeResponseR, onHang,  serverParams, userParams, viewR.uploadIndicator);
+    //alert(">"+typeof connector.echo);
+    upConnection.registerPushCallback(_this.takeResponseR);
     
     checkMime();
     
@@ -130,10 +135,6 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
   
   this.getUpConnection=function() { return upConnection; };
   
-  function onHang() {
-    viewR.showMessage("Request timed out");
-  }
-  
   function onBlobReady(blobPlusData) {    
     if (userParams.onrecorded == "upload" && serverParams.allowStream && serverParams.allowStream !== "0") {
       uploadBlobAndData(blobPlusData); 
@@ -171,7 +172,7 @@ mc.rb.RecorderBox=function(onBeforerecording, onAfterrecording) {
     return errmsg;
   }
 
-  function takeResponseR(resp) { 
+  this.takeResponseR=function(resp) { 
     //alert(resp);
     if (resp.error) viewR.showMessage("Error! "+resp.error);
     else if (resp.alert) viewR.showMessage(resp.alert+" fulfiled in "+resp.lag+"ms");
@@ -187,54 +188,6 @@ mc.rb.Ticker=function(onTick) {
   this.start=function() { intervalHandler=setInterval(onTick,intervalMs); };
   this.stop=function() { clearInterval(intervalHandler); };
 }
-
-mc.rb.UpConnection=function(respondrUri, onData, onHang, serverParams, userParams, indicator) {
-  var _this=this;
-  var ajaxerR=new mc.utils.Ajaxer(respondrUri, onData, indicator, onHang);
-  
-  this.linkIsBusy=function() { return ajaxerR.isBusy(); };
-  this.setQueueMax=function(n) { ajaxerR.setQueueMax(n); };
-  
-  this.sendBlobAndData=function(blobPlusData,lastRecordedTime,description,aUserParams) {
-    var stuff,up;
-    if (!! aUserParams) up=aUserParams;// required for debug
-    else up=userParams;    
-    stuff={
-     act:"uploadBlob", user: up.user, realm: up.realm, description: description,
-     mime: blobPlusData.mime, ext: blobPlusData.ext, duration: lastRecordedTime, blob: blobPlusData.blob
-    };
-    ajaxerR.postAsFormData(stuff);
-  };
-
-  this.reportMimeFault=function(recorderMimes) {
-    var  stuff={
-      act: "reportMimeFault", user: userParams.user, realm: userParams.realm,
-      mimesList: mc.utils.dumpArray(recorderMimes)
-    };
-    ajaxerR.postAsFormData(stuff);
-  };
-  
-  _this.sendClear=function() {
-    var stuff= { act: "clearMedia", user: userParams.user, realm: userParams.realm };
-    ajaxerR.postAsFormData(stuff);
-  }
-  
-  _this.sendDelete=function(file) {
-    var stuff={ act: "delete", user: userParams.user, realm: userParams.realm, id: file };
-    ajaxerR.postAsFormData(stuff);    
-  };
-
-  _this.sendRemoveExpired=function() {
-    var stuff={ act: "removeExpired", user: userParams.user, realm: userParams.realm };
-    ajaxerR.postAsFormData(stuff);  
-  };
-  
-  this.sendGetCatalog=function() {
-    var  stuff={ act: "getCatalog", user: userParams.user, realm: userParams.realm };
-    ajaxerR.postAsFormData(stuff);  
-  };
-  
-};
 
 mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {  
   if (typeof receiveBlob != "function") throw new Error("No receiver callback given");
@@ -343,7 +296,7 @@ mc.rb.ViewR=function() {
     "h", 2
   );
   
-  this.uploadIndicator=new mc.utils.Indicator("uploadIndBtn", [["","auto"], ["","ye"]] );
+  //this.uploadIndicator=new mc.utils.Indicator("uploadIndBtn", [["","auto"], ["","ye"]] );
   
   this.showLocalPlay=function(url,bytes) {
     $("downloadLink").innerHTML = '<a href="'+url+'" target="_blank">The file</a>';

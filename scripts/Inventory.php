@@ -46,9 +46,10 @@ class Inventory {
     $this->mediaFolder=$mediaFolder;
     $myFile=$tp.self::$myFileName;
     $filesFound=scandir($mediaFolder);
-    array_shift($filesFound); array_shift($filesFound);// "." and ".." are always there
+    //var_dump($filesFound); echo "<<<<<";
+    if (is_array($filesFound)) { array_shift($filesFound); array_shift($filesFound); }// "." and ".." are always there
     //print_r($filesFound);
-    $folderIsEmpty=(count($filesFound) == 0);
+    $folderIsEmpty=($filesFound === false || count($filesFound) == 0);
     if ($folderIsEmpty) {
       //echo(" empty folder ");
       if (empty($this->data)) return;// to avoid rewriting and changing modtime

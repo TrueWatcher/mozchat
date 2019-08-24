@@ -34,12 +34,12 @@ try {
   $serverParams["mediaFolder"]=Inventory::checkMediaFolderName($serverParams["mediaFolder"]);
   $mimeDictionary=MimeDecoder::getDictionary();
 
-  include("scripts/templates/client.php");
+  include("scripts/templateClient.php");
 } 
 catch (NoCredentialsException $nce) {
   $serverParams=["state"=>"zero","alert"=>$nce->getMessage()];
   if(realmIsOk($pathBias,$input)) { $serverParams["realm"]=$input["realm"]; }
-  include("scripts/templates/client.php");
+  include("scripts/templateClient.php");
 }
 catch (DataException $de) {
   print('{"error":"'.$de->getMessage().'"}');
