@@ -276,7 +276,7 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator,onTimeout) { //N
       else if (fromQueue.method == "get") doGetRequest(fromQueue.msg);
       else if (fromQueue.method == "jsonp") doJsonpRequest(fromQueue.msg);
       else throw new Error("Unknown method: "+fromQueue.method);         
-    }, 0);
+    }, 30);
     return true;
   }
   

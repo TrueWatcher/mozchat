@@ -67,7 +67,10 @@ td.delete:hover, td.play:hover, td.playDown:hover {
 #medialistT tr.g {
   background-color: #ddd;
 }
-#medialistT tr.n,#medialistT tr.e  {
+#medialistT tr.e {
+  background-color: #dad;
+}
+#medialistT tr.n {
   background-color: inherit;
 }
 

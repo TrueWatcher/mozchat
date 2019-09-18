@@ -4,7 +4,6 @@ mc.pb={};
 
 mc.pb.PlayerBox=function(connector) {
   var _this=this,
-      upConnection=connector.push,
       viewP={},
       serialPlayer={},
       userParams={},
@@ -85,7 +84,7 @@ mc.pb.PlayerBox=function(connector) {
       var up={ user:"ShadowInPlayerBox", realm:"test0" };
       var lastRecordedTime=2;
       var description="Shadow's clip";
-      upConnection.sendBlobAndData(blobPlusData,lastRecordedTime,description,up);      
+      connector.push.sendBlobAndData(blobPlusData,lastRecordedTime,description,up);      
     }
     
     function sendAltUserClip() {
@@ -121,11 +120,16 @@ mc.pb.PlayerBox=function(connector) {
       disconnect : function() { return connector.pull.disconnect(); },  
       getChangesMap : function() { return changesMap; },
       getPlayerStateExt : function() { return serialPlayer.getStateExt(); },
-      getStandby: function() { return _this.getStandby(); }
+      getStandby: function() { return _this.getStandby(); },
+      changeId: function(i,newId) {
+        var oldId=inventory.changeId(i,newId);
+        if ($(oldId)) $(oldId).id=newId;
+        return oldId;
+      }
     }
   };
   
-  this.sendDelete=function(file) { return upConnection.sendDelete(file); };
+  this.sendDelete=function(file) { return connector.push.sendDelete(file); };
   
   this.listClicked=function(event) {
     //alert("click");
@@ -150,7 +154,7 @@ mc.pb.PlayerBox=function(connector) {
   function onMediaError(msg) { 
     console.log("Caught a media error:"+msg); 
     viewP.showMessage(msg);
-    serialPlayer.stop();
+    //serialPlayer.stop();
     return false;
   }
   
@@ -284,6 +288,14 @@ mc.pb.Inventory=function(userParams) {
     throw new Error("Unknown mime type="+mime);
   };
   
+  this.changeId=function(index,newId) {
+    if (index >= catalog.length) throw new Error("Out of catalog:"+index+"/"+catalog.length);
+    if ( ! catalog[index] instanceof Array) throw new Error("Something is wrong with index");
+    var oldId=catalog[index][0];
+    catalog[index][0]=newId;
+    return oldId;
+  };
+  
 }// end Inxentory
 
 mc.pb.ViewP=function() {
@@ -348,7 +360,7 @@ mc.pb.ViewP=function() {
     var tr=document.createElement("TR");
     if (l[1] == user) delLink='<td class="delete">'+"delete"+"</td>";
     if (l[7]) descr="<br />"+l[7];
-    r+="<td>"+l[1]+" "+l[2]+descr+"</td>";
+    r+="<td title=\""+l[0]+"\">"+l[1]+" "+l[2]+descr+"</td>";
     aov=l[3].substr(0,5);
     aovPlusTitle='<b title="'+l[3]+'">'+aov+'</b>';
     r+="<td>"+aovPlusTitle+"</td>";//l[3]
@@ -516,23 +528,50 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
     next=createMediaElement(idPlus,false,errorHandler);
     //console.log("loading "+next.id+" "+next.mime);
     viewP.highlightLine(next.id,"l");
-    console.log("Enqued "+next.id+", state="+_this.getState());
+    //var state="?";
+    //try { state=this.getState(); } catch (e) { state="wrong"; } // always gets wrong
+    console.log("enqueued "+next.id/*+", state="+state*/);
   };
   
   function runNext() {
     // first things first
-    if (next && ! stopping && next.mime == "video") {
+    if (next && ! stopping && next.mime == "video" && ! next.error) {
       if (actual.mime == "video") { viewP.replaceClip(next.el, actual.el); }
       else { viewP.showClip(next.el); }
     }
     else if (actual.mime == "video") { viewP.clearClips(); }
     // play() after appendChild() is important for Chromium and unimportant for FF
-    if (next && ! stopping) next.el.play();    
+    if (next && ! stopping && ! next.error) { 
+      next.el.play();
+      console.log("playing "+next.id);
+      viewP.highlightLine(next.id,"p");
+    }
+    else if (next && ! stopping && next.error) {
+      console.log("skipping "+next.id);
+      tryHandover();
+      runNext();
+    } 
+  }
+  
+  function onClipisbad(problemEl,msg) {
+    if (problemEl == next.el) {
+      console.log("failed to load the scheduled next clip:"+msg);
+      viewP.highlightLine(next.id,"e");
+      next.error=msg;
+    }
+    else if (problemEl == actual.el) {
+      console.log("failed to load the actual clip:"+msg);
+      viewP.highlightLine(actual.id,"e");
+      actual.error=msg;
+      runNext();
+      setTimeout(tryHandover, 0);
+    }
+    else console.log("onClipisbad: neither next nor actual");
   }
   
   function tryHandover() {
     //console.log("<<"+Date.now());        
-    viewP.highlightLine(actual.id,"g");
+    if (! actual.error) viewP.highlightLine(actual.id,"g");
     if (stopping) {
       softStop();
       return;
@@ -545,8 +584,6 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
     }
     actual=next;    
     next=false;
-    console.log("playing "+actual.id);
-    viewP.highlightLine(actual.id,"p");
     _this.tryFeed();
   }
   
@@ -575,8 +612,8 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
     }
     else throw new Error("Wrong MIME="+mime);
     if (errorHandler) {
-      el.onerror=function() { 
-        viewP.highlightLine(actual.id,"e");
+      el.onerror=function() {
+        onClipisbad(el, el.error.message);
         errorHandler(el.error.message);
         return false; 
       };
@@ -600,7 +637,7 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
     }
     //el.controls=true;
     el.src=urlprefix+id;
-    return { el:el, id:id, mime:mime };
+    return { el: el, id: id, mime: mime, error: false };
   }
 
 }// end SerialPlayer

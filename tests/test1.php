@@ -115,17 +115,21 @@ var recorderBox=mc.tm.getRB(),
     shadow=new Shadow(), 
     shUser=shadow.getUser();
 
-var ok,err,blobKb,clip1,clip2,clip3,free,i,toSend,storedTime1, storedTime2, elapsed;
+var state,ok,err,blobKb,clip1,clip2,clip3,free,i,toSend,storedTime1, storedTime2, elapsed;
 var tr,me,descr,descr2;
 var shResp, shChangesMap;
 var ul,delBtn,dels,id;
-var resp,chm,pse,clipId,nextId,playFrom,count,removedCount,targetRemovedCount;
+var resp,chm,pse,clipId,nextId,oldId,oldId2,playFrom,count,removedCount,targetRemovedCount;
 
 function watchState(current, next, onChange, onSame) {
+  var isCurrent;
+  
   pse=playerBox.getPlayerStateExt();
   print(pse.state+" ");
-  var isCurrent;
-  if (current instanceof Array) { isCurrent=(current.indexOf(pse.state) >= 0); }
+  
+  if (current instanceof Array) {
+    isCurrent=(current.indexOf(pse.state) >= 0);
+  }
   else { isCurrent=(current == pse.state); }
   if (isCurrent) {
     if (typeof onSame == "function") onSame();
@@ -144,6 +148,8 @@ var testScript1=<?php print file_get_contents("test1.js"); ?>;
 var testScript2=<?php print file_get_contents("test2.js"); ?>;
 var testScript3=<?php print file_get_contents("test3.js"); ?>;
 var testScript=testScript1.concat(testScript2).concat(testScript3);
+//var testScript=testScript1.concat(testScript2);
+//var testScript=testScript3;
 var ci=new CommandIterator(testScript, 500);
 commandsRun(ci);
 

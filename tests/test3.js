@@ -70,6 +70,36 @@
 'recordBtn.click();',
 'playerBox.sendPoll();','','','','',
 
+'println(""); \
+ println("skipping defective clips");',
+'oldId=playerBox.changeId(1,"noSuchFile");',
+'oldId2=playerBox.changeId(2,"noSuchFileAlso");',
+'ci.loop();',
+'state=playerBox.getPlayerStateExt().state, \
+ assertEqualsPrim("idle", state, "Wrong player state:"+state, "Initially  state=idle"); \
+ tr=medialistT.lastElementChild; \
+ playFrom=tr.getElementsByClassName("playDown")[0]; \
+ playFrom.click(); \
+ ci.inc(); \
+',
+'watchState(["playingNLoading", "playing"], "idle", function() { \
+   assertTrue($("noSuchFile").classList.contains("e"), "The mangled clip remains unmarked","After playing, the mangled clip is marked"); \
+})',
+'playFrom=$("noSuchFile").getElementsByClassName("playDown")[0]; \
+ playFrom.click(); \
+ ci.inc(); \
+',
+'pse=playerBox.getPlayerStateExt(); \
+ assertContains(pse.state, ["playingNLoading","playing"], "Wrong player state="+pse.state, "Player started normally from a mangled clip" ); \
+ ci.inc(); \
+',
+'watchState(["playingNLoading", "playing"], "idle", function() { \
+   assertTrue($("noSuchFile").classList.contains("e"), "The mangled clip remains unmarked", "After playing, the mangled clip is marked"); \
+})',
+'ci.noLoop();',
+'playerBox.changeId(1,oldId); \
+ playerBox.changeId(2,oldId2);',
+
 
 'println(""); \
  println("pause mode");',
@@ -78,9 +108,9 @@
    println(" wow, AFTER_RECORDING is STOP (on a slow link?), setting it back to UPLOAD "); \
    onrecordedRad1.click(); \
  } \
-',  
+',
+'mc.utils.setSelect("chunkSelect",1);',
 'holdPlayWhileRecChkb.click(); \
- /*mc.utils.setSelect("refreshSelect",10); */ \
  clip2="Clip 2"; \
  descriptionInput.value=clip2; \
 ',
@@ -112,11 +142,9 @@
  playerBox.sendPoll(); \
  ci.inc(); \
 ',
+'playerBox.sendPoll(); ci.inc();', 'playerBox.sendPoll(); ci.inc();',
 'recordBtn.click(); \
- playerBox.sendPoll(); \
- ci.inc(); \
-',
-'playerBox.sendPoll();\
+ playerBox.sendPoll();\
  ci.inc(); \
 ',
 'pse=playerBox.getPlayerStateExt(); \
@@ -125,29 +153,30 @@
  playerBox.sendPoll();\
  ci.inc(); \
 ',
-'watchState("playingNLoading", "playing", function() { \
+'playerBox.sendPoll();\
+ watchState("playingNLoading", "playing", function() { \
     tr=medialistT.firstChild.innerHTML; \
     assertContains(clip2, tr, "My further clips are missing","My further clip is present"); \
     ok=medialistT.firstChild.classList.contains("p"); \
-    assertTrue( ok, "Wrong clip class", "Clip class p" ); \
+    assertTrue( ok, "Wrong clip class -- not p", "Clip class p" ); \
 })',
 'watchState( "playing", "idle", function() { \
     ok=medialistT.firstChild.classList.contains("g"); \
-    assertTrue( ok, "Wrong clip class", "State=IDLE Upper clip class g" ); \
+    assertTrue( ok, "Wrong clip class -- not g", "State=IDLE Upper clip class g" ); \
 })',   
-
+'ci.noLoop();',
 
 'println(""); \
  println("suspendedIdle mode"); \
  assertEqualsPrim("idle", playerBox.getPlayerStateExt().state, "Wrong player state", "Initially  state=idle"); \
- ci.inc(); \
-', 
+',
+'mc.utils.setSelect("chunkSelect",2);',
 'clip3="Clip 3"; \
  descriptionInput.value=clip3; \
  recordBtn.click(); \
  pse=playerBox.getPlayerStateExt(); \
  assertEqualsPrim("suspendedIdle", pse.state, "Wrong player state", "After RECORD state=suspendedIdle"); \
- ci.inc(); \
+ ci.loop(); \
 ',
 'watchState( "suspendedIdle", "suspendedLoading", function() { \
    tr=medialistT.firstChild.innerHTML; \
@@ -163,17 +192,17 @@
 'ok= ! medialistT.firstChild.classList.contains("l"); \
  ok &= ! medialistT.firstChild.classList.contains("p"); \
  ok &= ! medialistT.firstChild.classList.contains("g"); \
- assertTrue( ok, "Wrong clip class", "Got next clip - Upper clip class=empty" ); \
+ assertTrue( ok, "Wrong upper clip class - not empty", "Got next clip - Upper clip class=empty" ); \
  recordBtn.click(); \
  playerBox.sendPoll(); \
  ci.inc(); \
 ', 
 'pse=playerBox.getPlayerStateExt(); \
  assertEqualsPrim("playingNLoading", pse.state, "Wrong player state", "After STOPRECORD - Player state=playingNLoading"); \
- ok=medialistT.firstChild.classList.contains("l"); \
- assertTrue( ok, "Wrong clip class", "Upper clip class l" ); \
+ ok=( medialistT.firstChild.classList.contains("l") ); \
+ assertTrue( ok, "Wrong upper clip class - not l", "Upper clip class l" ); \
  ok=medialistT.firstChild.nextSibling.classList.contains("p"); \
- assertTrue( ok, "Wrong clip class", "Second clip class p" ); \
+ assertTrue( ok, "Wrong second clip class - not p", "Second clip class p" ); \
  ci.inc(); \
 ',
 'pse=playerBox.getPlayerStateExt(); \
