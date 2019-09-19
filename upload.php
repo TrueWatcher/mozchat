@@ -7,8 +7,9 @@ require_once("scripts/AssocArrayWrapper.php");
 require_once("scripts/MyExceptions.php");
 require_once("scripts/registries.php");
 require_once("scripts/Inventory.php");
+require_once("scripts/ChatRelay.php");
+require_once("scripts/CallLogger.php");
  
-header('Content-type: text/plain; charset=utf-8');//application/json
 // user,realm,blob,mime,ext,duration
 //print("Hi, I'm upload.php\n");
 //print("max=".ini_get("post_max_size")."!");
@@ -18,9 +19,9 @@ header('Content-type: text/plain; charset=utf-8');//application/json
 
 $input=$_REQUEST;
 try {
-  $r=[];
+  $resp=[];
   $p=[];
-  list($user,$realm)=checkUserRealm($pathBias,$input);
+  list($act,$user,$realm)=checkInput($pathBias,$input);
   $targetPath=$pathBias.$input["realm"]."/";
   $iniParams=IniParams::read($targetPath);
   $pr=PageRegistry::getInstance( 0, PageRegistry::getDefaultsAjax() );
@@ -45,22 +46,22 @@ try {
     $uploadedBytes=$inv->pickUploadedBlob($n,$input,$pr);
     $uploadedBytes=b2kb($uploadedBytes);
     //echo(" estimated_bytes=".$inv->getTotalBytes()." , found=".$inv->getDirectorySize()." ");
-    $r["alert"]='Server got a record of '.$uploadedBytes;
-    $r["alert"] .= MailHelper::go($input, $targetPath, $n, $uploadedBytes, $pr);
+    $resp["alert"]='Server got a record of '.$uploadedBytes;
+    $resp["alert"] .= MailHelper::go($input, $targetPath, $n, $uploadedBytes, $pr);
     $wsOn && sendCatalogToWs($inv,$pr,"",$realm,"");
     break;
   
   case "reportMimeFault":
     reportMimeFault($pathBias,$input);
-    $r=204;
+    $resp=204;
     break;
   
   case "clearMedia":
     $inv=new Inventory();
     //$inv->init($targetPath,$pr->g("mediaFolder"));
     $inv->clear($targetPath,$pr->g("mediaFolder"));
-    $r["alert"]="files cleared";
-    $wsOn && sendCatalogToWs($inv,$pr,"",$realm,$r["alert"]);
+    $resp["alert"]="files cleared";
+    $wsOn && sendCatalogToWs($inv,$pr,"",$realm,$resp["alert"]);
     break;
     
   case "delete":
@@ -70,17 +71,17 @@ try {
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
     unlinkById($id,$inv,$input);    
     $inv->deleteLine($id);
-    $r["alert"]="Clip deleted";
-    $wsOn && sendCatalogToWs($inv,$pr,"",$realm,$r["alert"]);    
+    $resp["alert"]="Clip deleted";
+    $wsOn && sendCatalogToWs($inv,$pr,"",$realm,$resp["alert"]);    
     break;
     
   case "removeExpired":
     $inv=new Inventory();
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
     $c=$inv->removeExpired();
-    if ($c) $r["alert"]="$c expired clips deleted";
-    else $r["alert"]="No outdated clips found";
-    $wsOn && sendCatalogToWs($inv,$pr,"",$realm,$r["alert"]);
+    if ($c) $resp["alert"]="$c expired clips deleted";
+    else $resp["alert"]="No outdated clips found";
+    $wsOn && sendCatalogToWs($inv,$pr,"",$realm,$resp["alert"]);
     break;
     
   case "getCatalog":
@@ -88,7 +89,20 @@ try {
     $inv=new Inventory();
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
     $rr=sendCatalogToWs($inv,$pr,$user,$realm,"Catalog refreshed");
-    $r["alert"]="hub response:".$rr;
+    $resp["alert"]="hub response:".$rr;
+    break;
+  
+  case "relay":
+    if (empty($input)) throw new DataException("Missing command or data");
+    $cr=new ChatRelay($pathBias,$realm);
+    $resp=$cr->put($input);
+    break;
+    
+  case "logNrelay":
+    $cr=new ChatRelay($pathBias,$realm);
+    $resp=$cr->put($input);
+    $cl=new CallLogger($pathBias,$realm);
+    $cl->go($input, $user);
     break;
   
   default:
@@ -96,17 +110,18 @@ try {
   }
   
 } catch (DataException $de) {
-  $r["error"]=$de->getMessage();
+  $resp["error"]=$de->getMessage();
 }
-if ($r === 204) {
+if ($resp === 204) {
   header("HTTP/1.0 204 No Content");
   exit();
 }
-if ($r === 304) {
+if ($resp === 304) {
   header("HTTP/1.0 304 Not Modified");
   exit();
 }
-print(json_encode($r));
+header('Content-type: text/plain; charset=utf-8');//application/json
+print(json_encode($resp));
 exit();
 
 function checkExt($ext) { return MimeDecoder::ext2mime($ext); }
@@ -200,22 +215,38 @@ function checkBlob($files,$pr) {
   if ($r !== true) throw new DataException($r);
 }
 
-function checkUserRealm($pathBias,$input) {
+function checkInput($pathBias,& $input) {
   $r=true;
+  consumeJson($input);
   if ( ! isset($input["user"]) || ! isset($input["realm"]) ) { $r="Missing USER or REALM"; }
   else if ( charsInString($input["user"],"<>&\"':;()") ) { $r="Forbidden symbols in username"; }
   else if ( strlen($input["user"]) > 30 ) { $r="Too long username"; }
-  else if ( ! file_exists($pathBias.$input["realm"]) || ! is_dir($pathBias.$input["realm"])) {
+  else if ( ! realmIsOk($pathBias,$input)) {
     $r="Thread folder not found:".$pathBias.$input["realm"];
   }
   if ($r !== true) throw new DataException($r);
-  return [$input["user"], $input["realm"]];
+  $act="relay";
+  if (array_key_exists("act",$input)) { $act=$input["act"]; }
+  return [$act, $input["user"], $input["realm"]];
+}
+
+function consumeJson(& $input) {  
+  if ( ! array_key_exists("json",$input)) return;
+  $fromJson=[];
+  if ( strpos($input["json"],"%3A") === false ) { $fromJson=json_decode($input["json"], true); }
+  else { $fromJson=json_decode(urldecode($input["json"]), true); }
+  $input=array_merge($input,$fromJson);
+  unset($input["json"]);
 }
 
 function charsInString($object,$charsString) {
   if ( empty($object) ) return false;
   if (strtok($object,$charsString) !== $object) return true;
   return false;
+}
+
+function realmIsOk($pathBias,$input) {
+  return isset($input["realm"]) && file_exists($pathBias.$input["realm"]) && is_dir($pathBias.$input["realm"]);
 }
 
 function reportMimeFault($pathBias,$input) {

@@ -87,7 +87,12 @@ class PageRegistry extends SingletAssocArrayWrapper {
     "userStatusFadeS"=>5,
     "longPollPeriodS"=>15,
     "removeExpiredFromDir"=>0,
-    "hideExpired"=>1
+    "hideExpired"=>1,
+    // webRtc specific:
+    "messageLifetimeSec"=>300,
+    "messageTTLS"=>300,
+    "shouldLogPolls"=>1,
+    "callLogLimit"=>20
   ];
   
   /**
@@ -106,7 +111,12 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "pollFactor"=>30,
       "playNew"=>1,
       "skipMine"=>1,
-      "showMore"=>0
+      "showMore"=>0,
+      // webRtc specific:
+      "serverPath"=>"",
+      "serverName"=>"",
+      "iceAddr"=>"google",
+      "iceString"=>""
     ];
     $a=self::addServerParams($a);
     return array_merge(self::$commonParams,$a);

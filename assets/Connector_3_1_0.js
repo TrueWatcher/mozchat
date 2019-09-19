@@ -45,8 +45,8 @@ mc.Connector=function(serverParams, userParams) {
   }
   
   function onWsconnected() {
-    //console.log("requesting the catalog from uplink");
-    //upConnection.sendGetCatalog(serverParams.user, serverParams.realm);
+    console.log("requesting the catalog from uplink");
+    _this.push.sendGetCatalog(serverParams.user, serverParams.realm);
   }
   
   function callAllBack(respObj) {
@@ -486,6 +486,23 @@ mc.Connector.PushLink=function(respondrUri, onData, onHang, serverParams, userPa
   this.sendGetCatalog=function() {
     var  stuff={ act: "getCatalog", user: serverParams.user, realm: serverParams.realm };
     ajaxerR.postAsFormData(stuff);  
+  };
+  
+  this.sendRelay=function(msgObj) {
+    msgObj.act="relay";
+    this.sendAsJson(msgObj);
+  };
+  
+  this.sendLogNRelay=function(msgObj) {
+    msgObj.act="logNrelay";
+    this.sendAsJson(msgObj);
+  };
+  
+  this.sendAsJson=function(msgObj, timeout=10000) {
+    msgObj.user=serverParams.user;
+    msgObj.name=serverParams.user;
+    msgObj.realm=serverParams.realm;
+    ajaxerR.sendAsJson(msgObj, timeout);
   };
   
 };

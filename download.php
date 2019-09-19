@@ -7,26 +7,25 @@ require_once("scripts/AssocArrayWrapper.php");
 require_once("scripts/MyExceptions.php");
 require_once("scripts/registries.php");
 require_once("scripts/Inventory.php");
- 
-header('Content-type: text/plain; charset=utf-8');//application/json
+require_once("scripts/UsersMonitor.php");
+require_once("scripts/ChatRelay.php");
+require_once("scripts/CallLogger.php");
 
 $input=$_REQUEST;
-$r=[];
+$resp=[];
 try {
-  checkFields($input);
-  $targetPath=$pathBias.$input["realm"]."/";
+  list($act,$user,$realm)=checkFields($input);
+  $targetPath=$pathBias.$realm."/";
   $iniParams=IniParams::read($targetPath);
   $pr=PageRegistry::getInstance( 0, PageRegistry::getDefaultsAjax() );
   //$pr->overrideValuesBy($pageEntryParams["PageRegistry"]);
   $pr->overrideValuesBy($iniParams["common"]);
   //$pr->overrideValuesBy($iniParams["inventory"]);
   //$pr->dump();  
-  //if ( ! isset($input["act"])) throw new DataException("Missing ACT");
-  $act=$input["act"];
   
   switch ($act) {
   case "echo":
-    $r["alert"]="Echo response";
+    $resp["alert"]="Echo response";
     break;
   
   case "delete":
@@ -40,7 +39,10 @@ try {
     break;
   
   case "poll":
-    $r=anyNews($pr,$input,$targetPath);
+    $cr=new ChatRelay($pathBias,$realm);
+    $resp=$cr->tryExtract($user);
+    if ( ! empty($resp)) break;
+    $resp=anyNews($pr,$input,$targetPath);
     if (isset($input["hangS"])) sleep($input["hangS"]);
     break;
   
@@ -55,8 +57,8 @@ try {
       if ($rr !== 304) break;
       usleep(1000*$longPollStepMs);
     }
-    if ($rr === 304) { $r=refreshCatalog($pr,$targetPath); } 
-    else $r=$rr;
+    if ($rr === 304) { $resp=refreshCatalog($pr,$targetPath); } 
+    else $resp=$rr;
     if (isset($input["hangS"])) sleep($input["hangS"]);
     break;
   
@@ -64,7 +66,7 @@ try {
     $inv=new Inventory();
     $inv->init($targetPath,$pr->g("mediaFolder"));
     $inv->clear();
-    $r["alert"]="files cleared";
+    $resp["alert"]="files cleared";
     break;
   
   default:
@@ -72,14 +74,15 @@ try {
   }
 
 } catch (DataException $de) {
-  $r["error"]=$de->getMessage();
+  $resp["error"]=$de->getMessage();
 }
 
-if ($r === 304) {
+if ($resp === 304) {
   header("HTTP/1.0 304 Not Modified");
   exit();
 }
-print(json_encode($r));
+header('Content-type: text/plain; charset=utf-8');//application/json
+print(json_encode($resp));
 exit();
 
 function unlinkById($id,Inventory $inv,$input) {
@@ -150,81 +153,5 @@ function checkFields($input) {
   if ( ! isset($input["user"]) || ! isset($input["realm"]) ) $r="Missing USER or REALM";
   else if ( ! isset($input["act"])) $r="Missing ACT";
   if ($r !== true) throw new DataException($r);
+  return [$input["act"], $input["user"], $input["realm"]];
 }
-
-class UsersMonitor {
-  private static $myFileName="users.json";
-  private $myFileFull="";
-  private $data=[];
-  private $targetPath="";
-  private static $statusFadeS=5;
-  private static $fileFadeS=2;
-  
-  static function getMyFileName() { return self::$myFileName; }
-  
-  static function isStillValid($tp, $since, PageRegistry $pr) {
-    if (is_null($since) || ! $since) return false;
-    if ( ! file_exists($tp.self::$myFileName)) return false;
-    self::$fileFadeS=self::fileFadeS($pr);
-    if ( time()-$since <  self::$fileFadeS ) return 304;
-    return false;
-  }
-  
-  static function fileFadeS($pr) { return $pr->g("userStatusFadeS")-1; }
-  
-  function markOnlineAndReport($tp,$input,PageRegistry $pr) {
-    $this->read($tp);
-    $this->removeExpired();
-    self::$statusFadeS=$pr->g("userStatusFadeS");
-    $validFor=1+self::$statusFadeS;
-    if (isset($input["pollFactor"]) && $input["pollFactor"]) {
-      $aPollFactor=$input["pollFactor"];
-      if ($aPollFactor > self::$statusFadeS*10) $validFor=1+ceil($aPollFactor/10);
-    }  
-    $this->mark($input["user"],"online",$validFor);
-    $after=$this->presentOnline();    
-    file_put_contents($this->myFileFull,json_encode($this->data));
-    if ( $this->checkUsersAgainstInput($input,$after) ) return true;
-    return $after;
-  }
-  
-  private function checkUsersAgainstInput($input,$list) {
-    if ( ! is_string($list)) throw new Exception("Wrong LIST type");
-    if ( ! isset($input["myUsersList"]) || empty($input["myUsersList"])) return false;
-    if ($input["myUsersList"] !== $list) return false;
-    return true;
-  }
-  
-  private function read($tp) {
-    $this->myFileFull=$tp.self::$myFileName;
-    if ( ! file_exists($this->myFileFull)) {
-      $this->data=["online"=>[]];
-    }
-    else {      
-      $buf=file_get_contents($this->myFileFull);
-      $this->data=json_decode($buf,true);
-    }
-  }
-  
-  private function removeExpired() {
-    $status="online";
-    $res=[];
-    $t=time();
-    foreach($this->data[$status] as $u=>$expire) {
-      if ($expire > $t) { $res[$u]=$expire; }
-    }
-    $this->data[$status]=$res;  
-  }
-  
-  private function mark($user,$status,$validForS) {
-    $expire=time()+$validForS;
-    $this->data[$status][$user]=$expire;
-  }
-  
-  private function presentOnline() {
-    $dok=array_keys($this->data["online"]);
-    sort($dok);
-    return implode(", ",$dok);
-  }
-  
-}// end UsersMonitor

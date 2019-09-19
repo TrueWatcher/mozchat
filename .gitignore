@@ -13,6 +13,8 @@
 /test0/media
 */catalog.json
 */users.json
+*/calls.csv
+*/messages.json
 browser.log
 manual.*
 /wshub/aws_ws.ini

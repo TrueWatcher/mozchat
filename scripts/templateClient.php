@@ -105,6 +105,35 @@
   </span>
 </fieldset>
 
+<fieldset id="connectorPanel">
+  <p class="flexChild" id="userlistContainer"></p>
+  
+  <input type="text" id="peerInp" size="15" maxlength="30" placeholder="Peer username" />
+  <input type="button" id="callBtn" value="Call" />
+  <input type="button" id="hangupBtn" value="Hang up" disabled />
+  <br />
+  <button id="stateIndBtn" title="device state" >not ready</button>
+  <input type="checkbox" id="answerCx" checked />
+  <label for="answerCx">answer immediately</label>
+  <input type="checkbox" id="ringCx" checked />
+  <label for="ringCx">ring</label>
+  <br />
+  <input type="text" id="textInp" name="text" size="80" maxlength="256" placeholder="Chat blah-blah" autocomplete="off" disabled>
+  <input type="button" id="sendBtn" name="send" value="Send" disabled>
+  <p id="alertP"></p>
+</fieldset>
+
+<div id="chatText" style="width: 90%; max-width: 50em; height: 7em; overflow: scroll;">
+</div>
+
+<div class="flexChild" id="camera-container">
+  <div class="camera-box">
+    <video id="received_video" autoplay></video>
+    <video id="local_video" autoplay muted></video>
+    <audio id="received_audio" autoplay></audio>
+  </div>
+</div>
+
 <div id="footer">
 &nbsp;<br />
 <a href="https://github.com/TrueWatcher/mozchat">mozchat</a>, an open source media chat by TrueWatcher 2018
@@ -114,9 +143,12 @@
   var mc={};// namespace root
 </script>
 <script src="<?php print($pathBias."assets/".version("utils.js",$pathBias)); ?>"></script>
-<script src="<?php print($pathBias."assets/".version("connections.js",$pathBias)); ?>"></script>
+<script src="<?php print($pathBias."assets/".version("Connector.js",$pathBias)); ?>"></script>
 <script src="<?php print($pathBias."assets/".version("RecorderBox.js",$pathBias)); ?>"></script>
 <script src="<?php print($pathBias."assets/".version("PlayerBox.js",$pathBias)); ?>"></script>
+<script src="<?php echo $pathBias."assets/"."rtcAdapter.js"; ?>"></script>
+<script src="<?php echo $pathBias."assets/".version("RtcBox.js",$pathBias); ?>"></script>
+<script src="<?php echo $pathBias."assets/".version("PeerBox.js",$pathBias); ?>"></script>
 <script>
 "use strict";
 mc.mimeDictionary='<?php print(json_encode($mimeDictionary)); ?>';
@@ -124,14 +156,16 @@ mc.mimeDictionary=JSON.parse(mc.mimeDictionary);
 
 mc.serverParams='<?php print(json_encode($serverParams)); ?>';
 mc.serverParams=JSON.parse(mc.serverParams);
+mc.serverParams.iceString='<?php print($pr->g("iceString")); ?>';// breaks if printed with other params
 
-var ur={user: mc.serverParams.user, realm: mc.serverParams.realm};
-mc.userParams={ rb : ur, pb : ur };
+var ur={ user: mc.serverParams.user, realm: mc.serverParams.realm };
+var rtcb={ user: mc.serverParams.user, realm: mc.serverParams.realm, targetUsername: "", clientID: "", sid: "" };
+mc.userParams={ rb: ur, pb: ur, rtcb: rtcb };
 
 function $(id) { return document.getElementById(id); }
 
 mc.TopManager=function() {
-  var connector={}, recorderBox={}, playerBox={}, kbm={}, sp=mc.serverParams;
+  var connector={}, recorderBox={}, playerBox={}, kbm={}, rtcBox={}, sp=mc.serverParams;
   
   this.go=function() {
     if(sp.title) document.title=sp.title;
@@ -183,7 +217,10 @@ mc.TopManager=function() {
     playerBox=new mc.pb.PlayerBox(connector);
     playerBox.init(mc.serverParams);
     
-    kbm=new mc.utils.KeyboardMonitor(recorderBox.recorderOn, recorderBox.recorderOff, playerBox.clear);    
+    kbm=new mc.utils.KeyboardMonitor(recorderBox.recorderOn, recorderBox.recorderOff, playerBox.clear);
+    
+    rtcBox=new mc.rtcb.Controller();
+    rtcBox.init(connector);
   }
     
   function adjustLayout(screenParams) {

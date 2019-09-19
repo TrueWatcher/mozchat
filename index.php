@@ -19,6 +19,7 @@ try {
   //$pr->overrideValuesBy($pageEntryParams["PageRegistry"]);
   $pr->overrideValuesBy($iniParams["common"]);
   $pr->overrideValuesBy($iniParams["client"]);
+  makeIceString($pr);
   $wsParams=parse_ini_file($pathBias."wshub/ws.ini", true, INI_SCANNER_RAW);
   //var_dump($wsParams);
   $pr->addFreshPairsFrom($wsParams["common"]);
@@ -31,6 +32,7 @@ try {
   $serverParams=$pr->exportByList( [
     "serverPath", "serverName", "maxBlobBytes", "maxMediaFolderBytes", "clipLifetimeSec", "title", "allowVideo", "videoOn", "maxClipSizeSec", "maxClipCount", "allowStream", "onRecorded", "pollFactor", "playNew", "skipMine", "showMore", "mediaFolder", "pathBias", "longPollPeriodS", "userStatusFadeS", "wsOn", "wsServerUri"
   ] , $serverParams);
+  // iceString is added in template
   $serverParams["mediaFolder"]=Inventory::checkMediaFolderName($serverParams["mediaFolder"]);
   $mimeDictionary=MimeDecoder::getDictionary();
 
@@ -74,4 +76,32 @@ function charsInString($object,$charsString) {
 function version($fn) {
   if ( ! class_exists("AssetsVersionMonitor")) return $fn;
   else return AssetsVersionMonitor::addVersion($fn);
+}
+
+function makeIceString(PageRegistry $pr) {
+//    rtc/.ini
+// iceAddr="this"
+// iceString="[ { "urls" : "turn:@ip@:3478?transport=udp", "username" : "login", "credential" : "password" }"
+//    or
+// iceAddr="12.34.56.78"
+// iceString="[ { "urls" : "turn:@ip@:3478?transport=udp", "username" : "login", "credential" : "password" }"
+//    or
+// iceAddr="google"
+//    or
+// iceString="[ { "urls" : "stun:stunprotocol.org" } ]"
+//
+  $mode=$pr->g("iceAddr");
+  $s=$pr->g("iceString");
+  //echo $mode;
+  $isAddress=(count(explode(".",$mode)) >= 2);
+  if ($mode == "google") {
+    $s='[{"urls":"stun:stun2.l.google.com:19302"}]';
+  }
+  else if ($mode == "this" || $isAddress) {
+    if ($isAddress) $iceIp=$mode;
+    else $iceIp=$pr->g("serverName");
+    $s=str_replace("@ip@",$iceIp,$s);
+  }
+  else if (empty($s)) $s="[]";
+  $pr->s("iceString",$s);
 }

@@ -94,6 +94,30 @@ mc.utils.TypesExtensions=function(te,audioOrVideo) {
   };
 };
 
+mc.utils.checkAutoplay=function(audioFile, onNotallowed, onError) {
+  var el=new Audio();
+  //el.autoplay=false;
+  el.oncanplaythrough=function() {  
+    //console.log("Media is ready"); 
+    var promise=el.play(); 
+    promise.catch(function(error) {
+      if (error.name === "NotAllowedError") { 
+        alert("You should enable autoplay in you browser");
+        if (onNotallowed instanceof Function) onNotallowed();
+      }
+      else {
+        alert("Something is wrong with media playing:"+error.name); 
+        if (onError instanceof Function) onError();
+      }
+    });
+    promise.then(function() { console.log("autoplay ok"); });
+  };
+  el.onended=function() { document.body.removeChild(el); };
+  el.src=audioFile;
+  document.body.appendChild(el);
+  console.log("testing autoplay...");
+};
+
 mc.utils.dumpArray=function(x) {
   var res="",i,expanded;
   if (typeof x == "object") {
@@ -247,7 +271,16 @@ mc.utils.getScreenParams=function() {
   var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
   var isPortrait=(width < height);
   return { isPortrait:isPortrait, width:width, height:height, isMobile : isMobile, emPx : emPx };
-}
+};
+
+mc.utils.confirmDialog=function(msg) {
+// https://vancelucas.com/blog/using-window-confirm-as-a-promise/
+  return new Promise(function (resolve, reject) {
+    let confirmed = window.confirm(msg);
+
+    return confirmed ? resolve(true) : reject(false);
+  });
+};
 
 mc.utils.addCss=function(str) {
   var css = document.createElement("style");
@@ -258,7 +291,7 @@ mc.utils.addCss=function(str) {
 
 mc.utils.setStyle=function(collection, attr, value) {
   for (var i=collection.length-1; i >= 0; i-=1) { collection[i].style[attr]=value; }    
-}
+};
 
 mc.utils.toggleHideable=function(hideable,getShowMore,setShowMore) {
   var showMore=getShowMore();
@@ -266,7 +299,7 @@ mc.utils.toggleHideable=function(hideable,getShowMore,setShowMore) {
   else { mc.utils.setStyle(hideable,"display","none"); }
   showMore= ! showMore;
   setShowMore(showMore);  
-}
+};
 
 mc.utils.play=function(url,audioOrVideo,playerRoom,errorHandler) {    
   var a, plr;
@@ -386,4 +419,100 @@ mc.utils.Registry=function(initMap) {
   };
   
   if (typeof initMap == "object") this.addFreshPairsFrom(initMap);
+};
+
+
+// link https://webrtchacks.com/limit-webrtc-bandwidth-sdp/
+// media = "audio" | "video"
+// bitrate in kbps
+mc.utils.setMediaBitrate=function(sdp, media, bitrate) {
+  if (bitrate <= 0) return sdp;
+  if (typeof sdp !== "string" && ! (sdp instanceof String)) throw new Error("Wrong argument type "+(typeof sdp));  
+  var lines = sdp.split("\n");
+  var line = -1;
+  for (var i = 0; i < lines.length; i++) {
+    if (lines[i].indexOf("m="+media) === 0) {
+      line = i;
+      break;
+    }
+  }
+  if (line === -1) {
+    console.debug("Could not find the m line for", media);
+    return sdp;
+  }
+  console.debug("Found the m line for", media, "at line", line);
+ 
+  // Pass the m line
+  line++;
+ 
+  // Skip i and c lines
+  while(lines[line].indexOf("i=") === 0 || lines[line].indexOf("c=") === 0) {
+    line++;
+  }
+ 
+  // If we're on a b line, replace it
+  if (lines[line].indexOf("b") === 0) {
+    console.debug("Replaced b line at line", line);
+    lines[line] = "b=AS:"+bitrate;
+    return lines.join("\n");
+  }
+  
+  // Add a new b line
+  console.debug("Adding new b line before line", line);
+  var newLines = lines.slice(0, line)
+  newLines.push("b=AS:"+bitrate)
+  newLines = newLines.concat(lines.slice(line, lines.length))
+  return newLines.join("\n")
+};
+
+mc.utils.setOpusLimits=function(sdp) {
+  var myLimit=6000;
+  var regexOpus = /a=rtpmap:(\d+)\s+opus/gi;
+  //var matchOpus = sdp.match(regexOpus);
+  var matchOpus=regexOpus.exec(sdp);
+  //alert(mc.utils.dumpArray(matchOpus));
+  var num=matchOpus[1];
+  var regexBitrate= "a=fmtp:"+num+"\\s+maxplaybackrate=(\\d+);stereo=(\\d)";
+  //alert(regexBitrate);
+  //a=fmtp:109 maxplaybackrate=48000;stereo=1
+  regexBitrate=new RegExp(regexBitrate);
+  var matchBitrate=regexBitrate.exec(sdp);
+  //alert(mc.utils.dumpArray(matchBitrate));
+  if ( ! matchBitrate || ! matchBitrate[0]) {
+    log("Failed to adjust Opus params in SDP");
+    return sdp;
+  }
+  var replace="a=fmtp:"+num+" maxplaybackrate="+myLimit+";stereo=0";
+  var r=sdp.replace(matchBitrate[0], replace);
+  //alert(r);
+  return r;
+};
+
+mc.utils.randomString=function(length) {
+  var result           = '';
+  var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charactersLength = characters.length;
+  for ( var i = 0; i < length; i++ ) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+};
+
+mc.utils.obj2queryString=function(msgObj) {
+  var queryString = Object
+    .keys(msgObj)
+    .map(function(key) { return key + '=' + msgObj[key] })
+    .join('&');
+  return queryString;
+};
+
+mc.utils.escapeHtml=function(text) {
+  var map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 };
