@@ -45,8 +45,8 @@ mc.Connector=function(serverParams, userParams) {
   }
   
   function onWsconnected() {
-    console.log("requesting the catalog from uplink");
-    upConnection.sendGetCatalog(serverParams.user, serverParams.realm);
+    //console.log("requesting the catalog from uplink");
+    //upConnection.sendGetCatalog(serverParams.user, serverParams.realm);
   }
   
   function callAllBack(respObj) {

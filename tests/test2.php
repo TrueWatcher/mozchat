@@ -42,7 +42,7 @@ function checkWsCommandLink($uri) {
 }
 
 $disableTail=1;
-include($pathBias."scripts/templates/client.php");
+include($pathBias."scripts/templateClient.php");
 ?>
 <script src="testUtils.js"></script>
 <script>
@@ -51,11 +51,11 @@ function Shadow() {
   var serverParams={
     user:"Shadow", realm:"test0", serverPath:"", pathBias:"../", playNew:1, skipMine:1, longPollPeriodS:5, pollFactor: "off", wsOn: 1, wsServerUri: "<?php print($serverParams['wsServerUri']); ?>"
   };
-  var userParams=serverParams;
+  var userParams=serverParams; userParams.pb=serverParams;
   var response={},changesMap={};
   var catalogBytes=0, catalogTime=0, usersListTime=0, myUsersList="", catCrc="1234";
   
-  var wsSource=new mc.pb.WsClient(empty, takeResponseSh, empty, userParams, serverParams, empty, false);
+  var wsSource=new mc.utils.WsClient(empty, takeResponseSh, empty, userParams, serverParams, empty, false);
   //onConnect, onData, onHang, userParams, serverParams, upConnection, connectAtOnce
   var inventory=new mc.pb.Inventory(userParams);
 
@@ -76,7 +76,7 @@ function Shadow() {
   
   this.getResponce=function() { return response; };
   this.getChangesMap=function() { return changesMap; };
-  this.getUser=function() { return userParams.user; };
+  this.getUser=function() { return serverParams.user; };
   
   this.connect=function() { return wsSource.connect(); };
   this.disconnect=function() { return wsSource.disconnect(); };
