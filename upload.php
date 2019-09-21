@@ -99,8 +99,10 @@ try {
     break;
     
   case "logNrelay":
-    $cr=new ChatRelay($pathBias,$realm);
-    $resp=$cr->put($input);
+    if ( ! $wsOn) {
+      $cr=new ChatRelay($pathBias,$realm);
+      $resp=$cr->put($input);
+    }
     $cl=new CallLogger($pathBias,$realm);
     $cl->go($input, $user);
     break;

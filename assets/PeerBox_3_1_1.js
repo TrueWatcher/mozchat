@@ -67,7 +67,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
       cb.log("---> Sending offer to remote peer "+up.targetUsername);
       if ( ! up.targetUsername) throw new Error("Empty up.targetUsername");
       signallingConnection.sendRelay({
-        name: up.user,
+        user: up.user,
         target: up.targetUsername,
         sid : up.sid,
         type: "video-offer",
@@ -124,7 +124,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
       if ( ! up.targetUsername) throw new Error("Empty up.targetUsername");
       signallingConnection.sendRelay({
         type: "new-ice-candidate",
-        name: up.user,
+        user: up.user,
         target: up.targetUsername,
         sid : up.sid,
         candidate: event.candidate
@@ -252,7 +252,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
   function hangUpCall() {
     // closeVideoCall(); // clears targetUsername, so sending message is futile
     signallingConnection.sendLogNRelay({
-      name: up.user,
+      user: up.user,
       target: up.targetUsername,
       sid : up.sid,
       type: "hang-up",
@@ -354,7 +354,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
       // and how to talk to us.
       cb.log("Sending answer packet back to other peer");
       signallingConnection.sendRelay({
-        name: up.user,
+        user: up.user,
         target: up.targetUsername,
         sid : up.sid,
         type: "video-answer",

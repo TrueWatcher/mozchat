@@ -74,7 +74,7 @@ class CallLogger {
   
   public function logAccept($input) {
     $line=[
-      "started"=>time(), "A"=>$input['target'], "B"=>$input['name'], "sid"=>$input['sid'], "ticks"=>0, "secs"=>0, "state"=>"new"
+      "started"=>time(), "A"=>$input['target'], "B"=>$input['user'], "sid"=>$input['sid'], "ticks"=>0, "secs"=>0, "state"=>"new"
     ];
     $this->readBuf();
     $this->buf[]=implode(self::SEP,$line).self::NL;
@@ -87,7 +87,7 @@ class CallLogger {
     
     $doLogPoll=function ($line, $input, $user) {
       if ($line['A'] != $user) return false; // avoid double counting
-      if ( ! isset($input['pollFactor']) ) return false;
+      if ( ! isset($input['pollFactor']) || ! $input['pollFactor'] ) return false;
       if ($line['state'] == "off") return false;
       
       $line['ticks'] += $input['pollFactor'];
@@ -102,6 +102,7 @@ class CallLogger {
     $doLogHangup=function ($line, $input, $user) {
       $line['state'] = "off";
       $line['secs'] = time()- $line['started'];
+      $line['started'] = date(DATE_ATOM, $line['started']);
       return $line;
     };
     

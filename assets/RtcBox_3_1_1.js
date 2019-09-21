@@ -12,7 +12,7 @@ mc.rtcb.ViewW=function() {
     $("sendBtn").onclick=controller.handleClick;
     $("callBtn").onclick=controller.handleClick;
     $("textInp").onkeyup=controller.handleKey;
-    $("userlistContainer").onclick=this.onUserlistclicked;    
+    $("userlistP").onclick=this.onUserlistclicked;    
   };
   
   var spt=mc.serverParams.serverPath;
@@ -81,10 +81,10 @@ mc.rtcb.ViewW=function() {
     var list=usl.split(sep);
     usl=mc.utils.escapeHtml(usl);
     list.forEach(function(name,i,arr) { arr[i]="<span>"+name+"</span>"; });
-    $("userlistContainer").innerHTML=list.join(sep);
+    $("userlistP").innerHTML="Online: "+list.join(sep);
   };
   
-  this.clearUserList=function() { $("userlistContainer").innerHTML=""; };
+  this.clearUserList=function() { $("userlistP").innerHTML=""; };
   
   // Finds clicked name and copies it into PEER input field
   this.onUserlistclicked=function(event) {
@@ -132,7 +132,7 @@ var handleMessage=function handleMessage(msg) {
       mtype="unknownMessage",
       processedByPeerBox=false;
 
-  log("Message received: "+mc.utils.dumpArray(msg));
+  //log("Message received: "+mc.utils.dumpArray(msg));
 
   if (msg.alert) { vw.showAlert(msg.alert); }
   if (msg.date) { timeStr = new Date(msg.date).toLocaleTimeString(); }
@@ -147,7 +147,7 @@ var handleMessage=function handleMessage(msg) {
       setUsername();
       break;
     case "username":
-      text = "User <b>" + mc.utils.escapeHtml(msg.name) + "</b> signed in";
+      text = "User <b>" + mc.utils.escapeHtml(msg.user) + "</b> signed in";
       vw.addToChat(text);
       setState("ready");
       vw.enableButtons();
@@ -160,11 +160,11 @@ var handleMessage=function handleMessage(msg) {
 
   switch(mtype) {
   case "message":
-    text = "<b>" + mc.utils.escapeHtml(msg.name) + "</b>: " + mc.utils.escapeHtml(msg.text);
+    text = "<b>" + mc.utils.escapeHtml(msg.user) + "</b>: " + mc.utils.escapeHtml(msg.text);
     break;
 
   case "rejectusername":
-    up.user = msg.name;
+    up.user = msg.user;
     text = "<b>Your username has been set to <em>" + mc.utils.escapeHtml(up.user) +
         "</em> because the name you chose is in use.</b>";
     break;
@@ -187,7 +187,7 @@ var handleMessage=function handleMessage(msg) {
 
   case "rejectCall": // The other peer is busy
     if ( ! stateIs("outCall")) { logAMismatch(mtype); break; }
-    text = mc.utils.escapeHtml(msg.name) + " is busy";
+    text = mc.utils.escapeHtml(msg.user) + " is busy";
     handleHangUpMsg(msg);
     break;
   
@@ -294,7 +294,7 @@ function onSendClicked() {
     type: "message",
     id: up.clientID,
     date: Date.now(),
-    name: up.user,
+    user: up.user,
   };  
   //alert(target);
   if (target) msg.target=target;
@@ -310,7 +310,7 @@ function onHangupClicked() {
   }
   else {
     signallingConnection.sendLogNRelay({
-      name: up.user,
+      user: up.user,
       target: up.targetUsername,
       sid : up.sid,
       type: "hang-up",
@@ -339,7 +339,7 @@ function setUsername() {
   up.user = vw.getUsername();
 
   signallingConnection.sendToServer({
-    name: up.user,
+    user: up.user,
     date: Date.now(),
     id: up.clientID,
     type: "username",
@@ -350,7 +350,7 @@ function setUsername() {
 function rejectCall(aTargetUsername) {
   log("Rejected a call from "+aTargetUsername);
   signallingConnection.sendRelay({
-    name: up.user,
+    user: up.user,
     target: aTargetUsername,
     type: "rejectCall"
   });
@@ -377,7 +377,7 @@ function onCallClicked() {
   vw.enableHangUp();
   
   signallingConnection.sendRelay({
-    name: up.user,
+    user: up.user,
     id: up.clientID,
     target: up.targetUsername,
     type: "invite"
@@ -385,7 +385,7 @@ function onCallClicked() {
 }
 
 function handleInviteMsg(msg) {
-  var attempting=msg.name;
+  var attempting=msg.user;
   if ( ! stateIs("ready")) {
     rejectCall(attempting);
     vw.addToChat("Rejected a call from "+attempting);
@@ -404,7 +404,7 @@ function handleInviteMsg(msg) {
 }
 
 function handleInvite2(msg) {
-  var attempting=msg.name;
+  var attempting=msg.user;
   if (vw.getAnswerCx()) { acceptInvite(msg); }
   else {
     // must ask user
@@ -420,7 +420,7 @@ function handleInvite2(msg) {
 }
 
 function acceptInvite(msg) {
-  up.targetUsername = msg.name;
+  up.targetUsername = msg.user;
   vw.setPeerName(up.targetUsername);
   log("Starting to accept invitation from " + up.targetUsername);
   vw.addToChat(up.targetUsername + " is calling");
@@ -429,7 +429,7 @@ function acceptInvite(msg) {
   
   up.sid=mc.utils.randomString(10);
   signallingConnection.sendLogNRelay({
-    name: up.user,
+    user: up.user,
     id: up.clientID,
     callerId: msg.id,
     sid: up.sid,
@@ -466,7 +466,7 @@ function getSignallingConnection(connector,WsOrAjax) {
 function init(connector) {
   vw=new mc.rtcb.ViewW();
   vw.loadAudio();
-  signallingConnection = getSignallingConnection(connector,"ajax");
+  signallingConnection = getSignallingConnection(connector,mc.serverParams.wsOn);
   signallingConnection.init(_this.handleMessage);
   var callbacks={ 
     setState : this.setState, log : this.log, disableHangUp : vw.disableHangUp,
@@ -497,6 +497,8 @@ mc.rtcb.SignallingConnection=function(connector,WsOrAjax) {
   //{ init: initAjax, sendToServer : sendToServerAjax, disconnect : disconnectAjax }
   var _this=this;
   var onMessage=function abstract(data) { alert("Redefine me properly!"); };
+  
+  //--------------------------AJAX polling----------------------
   
   function initAjax(aHandleMessage) {
     if ( ! aHandleMessage instanceof Function) throw new Error("Invalid callback");
@@ -530,5 +532,33 @@ mc.rtcb.SignallingConnection=function(connector,WsOrAjax) {
     connector.pull.stop();
   }
   
-  return { init: initAjax, sendRelay: sendRelayAjax, sendLogNRelay: sendLogNRelayAjax, sendToServer: sendToServerAjax, disconnect: disconnectAjax };
+  //------------------------WebSockets-----------------------
+  
+  function initWs(aHandleMessage) {
+    if ( ! aHandleMessage instanceof Function) throw new Error("Invalid callback");
+    connector.push.registerPushCallback(aHandleMessage);
+    connector.pull.registerPullCallback(aHandleMessage);
+  }
+      
+  function sendRelayWs(msgObj) { connector.pull.sendRelay(msgObj); }
+  
+  function sendLogNRelayWs(msgObj) {
+    connector.pull.sendRelay(msgObj);// relay through WS
+    connector.push.sendLogNRelay(msgObj);// log through upload.php
+  }
+  
+  function sendToServerWs() { alert("Not to be used"); }
+  
+  function disconnectWs() {
+    connector.pull.stop();
+  }
+  
+  //-----------abstract factory-------------------------------
+  
+  if (WsOrAjax == 'ajax' || WsOrAjax === '0' || WsOrAjax === false) {
+    return { init: initAjax, sendRelay: sendRelayAjax, sendLogNRelay: sendLogNRelayAjax, sendToServer: sendToServerAjax, disconnect: disconnectAjax };
+  }
+  else {
+    return { init: initWs, sendRelay: sendRelayWs, sendLogNRelay: sendLogNRelayWs, sendToServer: sendToServerWs, disconnect: disconnectWs };
+  }
 }

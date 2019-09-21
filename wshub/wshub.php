@@ -74,11 +74,11 @@ class UserManager {
       }
       $this->sendHttpReply($from, 'Ok');      
       if ($user) {
-        echo "Passing message to $user in $realm\n";
+        echo "Passing message from cmd to $user@$realm\n";
         $singleConn->send($data["payload"]);
         return;
       }
-      echo "Passing message to ".count($group)." clients of $realm\n";
+      echo "Passing message from cmd to ".count($group)." clients of $realm\n";
       foreach ($group as $client) {
         $conn=$this->getConnection($client);
         $conn->send($data["payload"]);
@@ -118,6 +118,7 @@ class UserManager {
   
   function onClientmessage(ConnectionInterface $from, $data) {
     try {
+    $ret="";
     var_dump($data);
     $data=\json_decode($data,true);
     $credentialsPresent=(isset($data["realm"]) && strlen($data["realm"]) && isset($data["user"]) && strlen($data["user"]));
@@ -154,6 +155,28 @@ class UserManager {
       $this->sendToGroup($realm,$s);
       break;
       
+    case "relay":
+      if ( ! isset($data["target"]) || empty($data["target"]) ) throw new Exception ("Missing TARGET");
+      $to=$data["target"];
+      if ($to == "*") {
+        $ret="Message is broadcast to all active users";
+        echo "Broadcasting to all in $realm\n";
+        $this->sendToEachInGroup($realm,$data);
+        break;
+      }
+      $targetConn=$this->findConnectionByName($to,$this->realms[$realm]);
+      if ( ! $targetConn) {
+        $ret="Pecipient $to is offline, try again later";
+        echo "No such online user $to@$realm\n";
+        break;
+      }
+      else {
+        $ret="Forwarding to $to";
+        echo "Relaying message to $to@$realm\n";
+        $targetConn->send(json_encode($data));
+      }
+      break;
+      
     case "echo":
       $from->send('{"alert":"echo reply"}');
       break;
@@ -166,7 +189,10 @@ class UserManager {
       $em=$e->getMessage();
       echo $em."\n";
       $this->sendAlert($from, $em);
+      return;
     }
+    
+    if ($ret) $this->sendAlert($from, $ret);
   }
   
   private function sendAlert(ConnectionInterface $to,$text) {
@@ -226,6 +252,15 @@ class UserManager {
     $json=json_encode($data);
     foreach ($this->realms[$realm] as $c) { $this->getConnection($c)->send($json); }
   }
+  
+  private function sendToEachInGroup($realm, Array $data) {
+    if (empty($this->realms[$realm])) return;
+    foreach ($this->realms[$realm] as $c) {
+      $data["target"]=$this->getName($c);
+      $json=json_encode($data);
+      $this->getConnection($c)->send($json);
+    }
+  }
 
 }// end UserManager
 
@@ -262,7 +297,7 @@ class CmdRelay implements HttpServerInterface {
   }
   
   public function onOpen(ConnectionInterface $conn, \Psr\Http\Message\RequestInterface $request = null ) { 
-    echo "Command connection established with  ".$conn->remoteAddress."\n";
+    //echo "Command connection established with  ".$conn->remoteAddress."\n";
     //var_dump($request);
     //echo $request["uri"]["query"];
     if ($request->getMethod() == "POST") {
@@ -296,11 +331,11 @@ class CmdRelay implements HttpServerInterface {
   }
 
   public function onClose(ConnectionInterface $conn) {
-    echo "Command connection closed\n";
+    //echo "Command connection closed\n";
   }
   
   public function onError(ConnectionInterface $conn, \Exception $e) {
-    echo "An error has occurred: {$e->getMessage()}\n";
+    echo "CmdRelay: Error: {$e->getMessage()}\n";
     $conn->close();
   }
   

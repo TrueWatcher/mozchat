@@ -54,6 +54,10 @@ td.delete:hover, td.play:hover, td.playDown:hover {
   color: #000;
 }
 
+p#userlistP span:hover {
+  background-color: #fff;
+}
+
 #medialistT td {
   font-size: 80%;
 }

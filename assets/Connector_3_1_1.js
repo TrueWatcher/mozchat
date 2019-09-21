@@ -382,14 +382,15 @@ mc.utils.Poller=function(responderUri, onData, onHang, userParams, serverParams)
 mc.utils.WsClient=function(onConnect, onData, onHang, userParams, serverParams, upConnection, connectAtOnce) {
   //console.log("serverParams.wsServerUri");
   var conn={onopen:notReady, onmessage:notReady, send:notReady},
-      myHello=JSON.stringify({user:serverParams.user, realm:serverParams.realm, act:"userHello"});
+      myHello=JSON.stringify({user:serverParams.user, realm:serverParams.realm, act:"userHello"}),
+      pollFactor=15000;
   var response=[], intervalHandler=false;
   if (typeof connectAtOnce == "undefined") connectAtOnce=true;
   
   function notReady() { throw new Error("The object is not ready"); }
   
   this.connect=function() {    
-    conn=new WebSocket(serverParams.wsServerUri);//'ws://localhost:8080'  
+    conn=new WebSocket(serverParams.wsServerUri);//'ws://localhost:8080'
     
     conn.onerror = function(e) {
       alert("Something is wrong with Websocket connection");
@@ -426,8 +427,8 @@ mc.utils.WsClient=function(onConnect, onData, onHang, userParams, serverParams, 
   
   if (userParams.pb.pollFactor != "off") {
     intervalHandler=setInterval(function() {
-      upConnection.sendGetCatalog(serverParams.user, serverParams.realm);
-    }, 15000);
+      upConnection.sendGetCatalog(pollFactor);
+    }, pollFactor);
   }
   
   function wss2https() {
@@ -440,6 +441,14 @@ mc.utils.WsClient=function(onConnect, onData, onHang, userParams, serverParams, 
   this.stop=function() {
     if (intervalHandler) clearInterval(intervalHandler);
   };
+  
+  this.sendRelay=function(msgObj) {
+    msgObj.act="relay";
+    msgObj.user=serverParams.user;
+    msgObj.realm=serverParams.realm;
+    this.sendData(JSON.stringify(msgObj));
+  };
+  
 };
 
 mc.Connector.PushLink=function(respondrUri, onData, onHang, serverParams, userParams, indicator) {
@@ -483,8 +492,9 @@ mc.Connector.PushLink=function(respondrUri, onData, onHang, serverParams, userPa
     ajaxerR.postAsFormData(stuff);  
   };
   
-  this.sendGetCatalog=function() {
+  this.sendGetCatalog=function(pollFactor) {
     var  stuff={ act: "getCatalog", user: serverParams.user, realm: serverParams.realm };
+    if (pollFactor) stuff.pollFactor=pollFactor;
     ajaxerR.postAsFormData(stuff);  
   };
   
@@ -500,7 +510,6 @@ mc.Connector.PushLink=function(respondrUri, onData, onHang, serverParams, userPa
   
   this.sendAsJson=function(msgObj, timeout=10000) {
     msgObj.user=serverParams.user;
-    msgObj.name=serverParams.user;
     msgObj.realm=serverParams.realm;
     ajaxerR.sendAsJson(msgObj, timeout);
   };

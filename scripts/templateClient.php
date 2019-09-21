@@ -105,8 +105,8 @@
   </span>
 </fieldset>
 
-<fieldset id="connectorPanel">
-  <p class="flexChild" id="userlistContainer"></p>
+<fieldset id="rtcPanel">
+  <p class="flexChild" id="userlistP"></p>
   
   <input type="text" id="peerInp" size="15" maxlength="30" placeholder="Peer username" />
   <input type="button" id="callBtn" value="Call" />
@@ -121,10 +121,8 @@
   <input type="text" id="textInp" name="text" size="80" maxlength="256" placeholder="Chat blah-blah" autocomplete="off" disabled>
   <input type="button" id="sendBtn" name="send" value="Send" disabled>
   <p id="alertP"></p>
+  <div id="chatText" style="width: 90%; max-width: 50em; height: 7em; overflow: scroll;"></div>
 </fieldset>
-
-<div id="chatText" style="width: 90%; max-width: 50em; height: 7em; overflow: scroll;">
-</div>
 
 <div class="flexChild" id="camera-container">
   <div class="camera-box">
@@ -156,7 +154,7 @@ mc.mimeDictionary=JSON.parse(mc.mimeDictionary);
 
 mc.serverParams='<?php print(json_encode($serverParams)); ?>';
 mc.serverParams=JSON.parse(mc.serverParams);
-mc.serverParams.iceString='<?php print($pr->g("iceString")); ?>';// breaks if printed with other params
+<?php if (isset($pr) && $pr->checkNotEmpty("iceString")) echo "mc.serverParams.iceString='".$pr->g("iceString")."'";// breaks if printed with other params?>
 
 var ur={ user: mc.serverParams.user, realm: mc.serverParams.realm };
 var rtcb={ user: mc.serverParams.user, realm: mc.serverParams.realm, targetUsername: "", clientID: "", sid: "" };
@@ -180,6 +178,7 @@ mc.TopManager=function() {
   function initZero() {
     recorderPanel.style.display="none";
     playerPanel.style.display="none";
+    rtcPanel.style.display="none";
     accountTopAlertP.innerHTML="Please introduce yourself and choose your thread";
     if(sp.realm) $("realmInput").value=sp.realm;
   }
