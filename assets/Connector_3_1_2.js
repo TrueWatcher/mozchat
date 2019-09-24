@@ -55,7 +55,7 @@ mc.Connector=function(serverParams, userParams) {
     for (; i < l; i+=1) { pullCallbacks[i](respObj); }    
   }
   
-  this.pull.reinit=function() {
+  this.pullReinit=function() {
     _this.pull.stop();
     _this.pull=getPullLink(mc.serverParams.wsOn); 
   };
@@ -222,14 +222,14 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator,onTimeout) { //N
     
     if (req.readyState != 4) return;
     if (watch) clearTimeout(watch);
+    lag=Date.now()-timer;
+    indicator.off();
+    busy=false;
     if (req.status != 200 && req.status != 204 && req.status != 304) {
       console.log(responderUrl+" ajax returned error "+req.status);
       req=null;
       return;
     }
-    lag=Date.now()-timer;
-    indicator.off();
-    busy=false;
     if (req.status != 200  && req.status != 304) {
       console.log("ajax returned code "+req.status);
       //onDataReceived(req.status);

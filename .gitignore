@@ -18,3 +18,4 @@
 browser.log
 manual.*
 /wshub/aws_ws.ini
+*/aws.ini

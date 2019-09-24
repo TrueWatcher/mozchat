@@ -245,6 +245,7 @@ mc.TopManager=function() {
   
   this.getRB=function() { return recorderBox; };
   this.getPB=function() { return playerBox; };
+  this.getRtcB=function() { return rtcBox; };
 };
 
 mc.tm=new mc.TopManager();

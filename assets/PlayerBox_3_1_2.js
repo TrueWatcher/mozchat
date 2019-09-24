@@ -37,7 +37,7 @@ mc.pb.PlayerBox=function(connector) {
   this.reinit=function() {
     // to revive polling after sleep on mobile
     this.dom2userParams();
-    connector.pull.reinit();
+    connector.pullReinit();
   };
   
   this.takeResponseP=function(resp) { 
