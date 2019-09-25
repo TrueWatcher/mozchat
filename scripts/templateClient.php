@@ -72,7 +72,7 @@
 <div id="playerRoom"></div>
 
 <fieldset id="playerPanel">
-  <p id="onlineS">
+  <p id="onlineS" class="hideable">
     Online: <span id="usersS" ></span>
   </p>
   <table id="medialistT">
@@ -134,7 +134,7 @@
 
 <div id="footer">
 &nbsp;<br />
-<a href="https://github.com/TrueWatcher/mozchat">mozchat</a>, an open source media chat by TrueWatcher 2018
+<a href="https://github.com/TrueWatcher/mozchat">mozchat</a>, an open source media chat by TrueWatcher 2019
 </div>
 
 <script>

@@ -115,8 +115,8 @@ var recorderBox=mc.tm.getRB(),
     shadow=new Shadow(), 
     shUser=shadow.getUser();
 
-var state,ok,err,blobKb,clip1,clip2,clip3,free,i,toSend,storedTime1, storedTime2, elapsed;
-var tr,me,descr,descr2;
+var state,ok,err,blobKb,clip1,clip2,clip3,free,i,toSend,toSend2,storedTime1, storedTime2, elapsed;
+var tr,span,me,descr,descr2;
 var shResp, shChangesMap;
 var ul,delBtn,dels,id;
 var resp,chm,pse,clipId,nextId,oldId,oldId2,playFrom,count,removedCount,targetRemovedCount;
@@ -144,12 +144,15 @@ function watchState(current, next, onChange, onSame) {
 //playerBox.setUpConnQueueMax(0);// disable queue of uplink
 
 print(">page");
-var testScript1=<?php print file_get_contents("test1.js"); ?>;
-var testScript2=<?php print file_get_contents("test2.js"); ?>;
-var testScript3=<?php print file_get_contents("test3.js"); ?>;
-var testScript=testScript1.concat(testScript2).concat(testScript3);
-//var testScript=testScript1.concat(testScript2);
-//var testScript=testScript3;
+var testScript1=<?php print file_get_contents("test1_chat.js"); ?>;
+var testScript2=<?php print file_get_contents("test2_recorder.js"); ?>;
+var testScript3=<?php print file_get_contents("test3_longPoll.js"); ?>;
+var testScript4=<?php print file_get_contents("test4_player.js"); ?>;
+//var testScript=testScript4;
+//var testScript=testScript1;
+//var testScript=testScript2;
+//var testScript=testScript2.concat(testScript3);
+var testScript=testScript1.concat(testScript2).concat(testScript3).concat(testScript4);
 var ci=new CommandIterator(testScript, 500);
 commandsRun(ci);
 

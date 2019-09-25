@@ -1,10 +1,13 @@
 [ 
-'println("Clearing files and reading the catalog"); \
+'println(""); \
+ println("Clearing files and reading the catalog"); \
  playerBox.sendClear();',
 '', '', '', 
 'assertContains("cleared", recorderAlertP.innerHTML, "wrong message", "server agreed");',
-'playerBox.sendPoll();','','playerBox.sendPoll();',
-'',
+'playerBox.sendPoll();',
+'//resp=playerBox.getResponse(); \
+ //console.log(mc.utils.dumpArray(resp)); \
+ //assertEqualsPrim(0, playerBox.getCatalogLength(), "Some data are present in inventory", "Inventory cleared");',
 'ok=($("medialistT").children.length===0); \
  assertTrue(ok,"Some data are present in the catalog","catalog cleared"); \
  free=parseInt(folderFreeInp.value); \

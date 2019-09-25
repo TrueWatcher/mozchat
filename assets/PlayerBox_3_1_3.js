@@ -46,7 +46,7 @@ mc.pb.PlayerBox=function(connector) {
     if (resp.users) { 
       viewP.showUsers(resp.users);
     }
-    if (resp.list) {
+    if (resp.hasOwnProperty("list")) {
       //console.log(mc.utils.dumpArray(userParams));
       changesMap=inventory.consumeNewCatalog(resp.list);
       viewP.applyDiff(changesMap);
@@ -125,7 +125,8 @@ mc.pb.PlayerBox=function(connector) {
         var oldId=inventory.changeId(i,newId);
         if ($(oldId)) $(oldId).id=newId;
         return oldId;
-      }
+      },
+      getCatalogLength: function() { return inventory.getCatalogLength(); }
     }
   };
   
@@ -295,6 +296,8 @@ mc.pb.Inventory=function(userParams) {
     catalog[index][0]=newId;
     return oldId;
   };
+  
+  this.getCatalogLength=function() { return catalog.length; };
   
 }// end Inxentory
 

@@ -11,7 +11,7 @@ class ChatRelay {
     $this->fullTarget=$pathBias.$realm."/".self::myFileName;
     if (class_exists("PageRegistry")) { 
       $pr=PageRegistry::getInstance();
-      if ($pr->checkNotEmpty("messageTTLS")) $this->validityS = $pr->g("messageTTLS");
+      if ($pr->checkNotEmpty("messageLifetimeSec")) $this->validityS = $pr->g("messageLifetimeSec");
     }
   }
 

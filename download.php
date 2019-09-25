@@ -51,8 +51,11 @@ try {
     $longPollStepMs=300;
     $cycles=ceil($longPollPeriodS*1000/$longPollStepMs);
     $usersCycle=floor(UsersMonitor::fileFadeS($pr)*1000/$longPollStepMs);
+    $cr=new ChatRelay($pathBias,$realm);
     for ($i=0; $i<=$cycles; $i+=1) {
       $forceUpdateUsers=( $i % $usersCycle === 0 );
+      $rr=$cr->tryExtract($user);
+      if ( ! empty($rr)) break;
       $rr=anyNews($pr,$input,$targetPath,$forceUpdateUsers);
       if ($rr !== 304) break;
       usleep(1000*$longPollStepMs);
@@ -64,8 +67,8 @@ try {
   
   case "clearMedia":
     $inv=new Inventory();
-    $inv->init($targetPath,$pr->g("mediaFolder"));
-    $inv->clear();
+    //$inv->init($targetPath,$pr->g("mediaFolder"));
+    $inv->clear($targetPath,$pr->g("mediaFolder"));
     $resp["alert"]="files cleared";
     break;
   

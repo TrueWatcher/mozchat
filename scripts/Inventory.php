@@ -258,8 +258,11 @@ class Inventory {
     // media must be stored in "mediaBLABLA" folder
     $mfn=self::checkMediaFolderName($mfn);
     $mediaFolder=$tp.$mfn;
-    if ( ! file_exists($mediaFolder)) return true;
-    array_map('unlink', glob($mediaFolder."/*.*"));
+    if (file_exists($mediaFolder)) {
+      array_map('unlink', glob($mediaFolder."/*.*"));
+    }
+    $this->data=[];
+    file_put_contents($tp.self::$myFileName, json_encode($this->data));
   } 
 
 }// end Inventory

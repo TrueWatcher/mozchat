@@ -90,7 +90,6 @@ class PageRegistry extends SingletAssocArrayWrapper {
     "hideExpired"=>1,
     // webRtc specific:
     "messageLifetimeSec"=>300,
-    "messageTTLS"=>300,
     "shouldLogPolls"=>1,
     "callLogLimit"=>20
   ];
