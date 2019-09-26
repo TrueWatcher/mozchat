@@ -88,15 +88,17 @@ var recorderBox=mc.tm.getRB(),
     shadow=new Shadow(), 
     shUser=shadow.getUser();
 
-var ok,err,blobKb,clip1,clip2,clip3,free,i,toSend,storedTime1, storedTime2, elapsed;
+var ok,err,resp,blobKb,clip1,clip2,clip3,free,i,toSend,toSend2,span,storedTime1, storedTime2, elapsed;
 var tr,me,descr,descr2;
 var shResp, shChangesMap;
 var ul,delBtn,dels,id;
 
 print(">page");
-var testScript21=<?php print file_get_contents("test21.js"); ?>;;
-//var testScript=testScript21.concat(testScript22);
-var ci=new CommandIterator(testScript21);
+var testScript1=<?php print file_get_contents("testWS1_chat.js"); ?>;;
+var testScript2=<?php print file_get_contents("testWS2_recorder.js"); ?>;;
+//var testScript=testScript1;
+var testScript=testScript1.concat(testScript2);
+var ci=new CommandIterator(testScript);
 commandsRun(ci);
 
 </script>

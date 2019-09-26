@@ -266,7 +266,7 @@ mc.pb.Inventory=function(userParams) {
       id=catalog[i][0];
       if ( ! findClipById(newCat,lNew,id) ) removed.push(catalog[i]);
     }
-    r={removed:removed, added:added};
+    r={ removed:removed, added:added, newLength: lNew };
     return r;
   }
   
@@ -306,6 +306,7 @@ mc.pb.ViewP=function() {
       user="",
       playerRoom=document.getElementById("playerRoom"),
       hideable=$("playerPanel").getElementsByClassName("hideable"),
+      emptyListTr='<tr id="listPlaceholder"><td>&lt;no records&gt;</td></tr>',
       showMore=0;
   
   function getShowMore() { return showMore; }
@@ -341,13 +342,17 @@ mc.pb.ViewP=function() {
   this.applyDiff=function(diff) {
     var rml=diff.removed.length;
     var adl=diff.added.length;
-    var i,tr;
+    var mle=$("medialistT");
+    var i, tr, phe;
 
     for(i=0; i<rml; i+=1) {
       tr=document.getElementById(diff.removed[i][0]);
       tr.parentNode.removeChild(tr);
       tr=null;
     }
+    phe=document.getElementById("listPlaceholder");
+    if (diff.newLength > 0) { if (phe) phe.parentNode.removeChild(phe); }
+    else { if ( phe == null ) mle.innerHTML=emptyListTr; }
     for(i=0; i<adl; i+=1) {
       tr=renderLine(diff.added[i]);
       //medialistT.appendChild(tr); // latest at bottom

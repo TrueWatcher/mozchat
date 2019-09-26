@@ -1,5 +1,6 @@
 [ 
-'','',
+'',
+'println(""); println("Basic record/save tests over Websockets"); println("");',
 'println("Checking Websockets");\
  assertTrue(sp.wsOn, "ws turned off", "ws turned on");',
 '','','',/* skip init request for catalog */
@@ -11,7 +12,7 @@
 'playerBox.sendClear();',
 'ok=recorderAlertP.innerHTML.indexOf("cleared") >= 0; \
  assertTrue(ok, "wrong message="+recorderAlertP.innerHTML, "server agreed");',
-'ok= ! medialistT.hasChildren; \
+'ok=( $("medialistT").children.length===1 && $("medialistT").children[0].innerHTML.indexOf("no records") > 0 ); \
  assertTrue(ok,"Some data are present in the catalog","catalog cleared"); \
  free=parseInt(folderFreeInp.value); \
  assertEqualsPrim(sp.maxMediaFolderBytes/1000, free, "Wrong free space", "All space is free");',
@@ -145,7 +146,7 @@
  print(dels.length+" del links found ");\
  assertTrue( !!dels.length, "Missing DELETE link", "DELETE link found" ); \
  if (dels.length > 1) delBtn=dels[1];\
- else delBtn=[0]; \
+ else delBtn=dels[0]; \
  id=delBtn.parentNode.id; \
  print("deleting "+id+" ");\
  delBtn.click();',

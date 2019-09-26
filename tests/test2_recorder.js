@@ -1,14 +1,14 @@
 [ 
-'println(""); \
- println("Clearing files and reading the catalog"); \
- playerBox.sendClear();',
+'println(""); println("Testing record/save basic operations"); println(""); \
+ println("Clearing files and reading the catalog");',
+'playerBox.sendClear();',
 '', '', '', 
 'assertContains("cleared", recorderAlertP.innerHTML, "wrong message", "server agreed");',
 'playerBox.sendPoll();',
-'//resp=playerBox.getResponse(); \
- //console.log(mc.utils.dumpArray(resp)); \
- //assertEqualsPrim(0, playerBox.getCatalogLength(), "Some data are present in inventory", "Inventory cleared");',
-'ok=($("medialistT").children.length===0); \
+'resp=playerBox.getResponse(); \
+ console.log(mc.utils.dumpArray(resp)); \
+ assertEqualsPrim(0, playerBox.getCatalogLength(), "Some data are present in inventory", "Inventory cleared");',
+'ok=( $("medialistT").children.length===1 && $("medialistT").children[0].innerHTML.indexOf("no records") > 0 ); \
  assertTrue(ok,"Some data are present in the catalog","catalog cleared"); \
  free=parseInt(folderFreeInp.value); \
  assertEqualsPrim(sp.maxMediaFolderBytes/1000, free, "Wrong free space", "All space is free");',
@@ -46,9 +46,9 @@
 'assertContains("Server got ", recorderAlertP.innerHTML, "wrong upload message","message ok" );',
 'playerBox.sendPoll();',
 '',
-'assertTrue(medialistT.firstChild, "Empty catalog","catalog got some data");', 
 'tr=medialistT.firstChild.innerHTML; \
- assertContains(sp.user, tr, "My good name is absent","My username is present"); \
+ assertTrue(tr.indexOf("no records") < 0, "Empty catalog","catalog got some data");', 
+'assertContains(sp.user, tr, "My good name is absent","My username is present"); \
  assertContains(clip1, tr, "My description is absent","My description is present"); ',
 
 'println("Testing repeated send and folder size limit");',
@@ -93,7 +93,7 @@
 '',
 'var freeFinally=parseInt(folderFreeInp.value); \
  assertEqualsPrim(sp.maxMediaFolderBytes/1000, freeFinally, "Wrong free space", "All space is eventually free"); \
- ok= ! medialistT.hasChildren; \
+ ok=( $("medialistT").children.length===1 && $("medialistT").children[0].innerHTML.indexOf("no records") > 0 ); \
  assertTrue(ok,"Some data are present un the catalog","Catalog is empty"); ',
 
 'println("Testing clips count limit");',
@@ -123,7 +123,7 @@
  tr=medialistT.firstChild.innerHTML; \
  assertNotContains(clip1, tr, "My first clip is still present", "My first clip is removed"); \
  assertContains(clip2, tr, "My next clips are missing","My next clips are there"); \
- tr=medialistT.children.length; \
+ tr=medialistT.getElementsByTagName("TR").length; \
  assertEqualsPrim(parseInt(maxClipCountS.innerHTML), tr, "Wrong clips count", "Clips count limit is enforced"); \
 ', 
  

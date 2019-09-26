@@ -180,6 +180,8 @@ function translateArray(arr) {
       }
       console.log("Line:"+now);
       console.log("Error:"+e.message);
+      if (! commandIterator.isRelaxed()) throw new Error(e.message);
+      commandIterator.clearRelaxed();
     }
     if ( ! commandIterator.isStopped()) {
       setTimeout(
@@ -196,8 +198,9 @@ function translateArray(arr) {
     if (!(lines instanceof Array)) throw new TestError ("Non-array argument "+(typeof lines));
     var index=0, l=lines.length, rounds=0;
     if (typeof maxRounds == "undefined") maxRounds=300;
-    var stopped=false;
-    var looping=false;
+    var stopped=false,
+        looping=false,
+        relaxed=false;
     
     /**
      * 
@@ -214,12 +217,14 @@ function translateArray(arr) {
       }
       r=lines[index];
       rounds+=1;
-      if ( rounds>maxRounds ) {
+      if (rounds > maxRounds) {
         //console.log("maxRounds exceeded");
         throw new TestError ("Limit of "+maxRounds+" commands exceeded");
       }  
-      if (!looping) { index+=1; }
-      if ( index>=l ) {
+      if ( ! looping) {
+        index+=1;
+      }
+      if (index >= l) {
         this.stop();
       }
       return r;
@@ -240,6 +245,10 @@ function translateArray(arr) {
       if (looping) index+=1;
       if ( index>=l ) { this.stop(); }
     };
+    
+    this.isRelaxed=function() { return relaxed; }
+    this.setRelaxed=function() { relaxed=true; }
+    this.clearRelaxed=function() { relaxed=false; }
   }
   
   function cl(id) {
