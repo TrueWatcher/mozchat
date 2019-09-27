@@ -351,15 +351,42 @@ mc.pb.ViewP=function() {
       tr=null;
     }
     phe=document.getElementById("listPlaceholder");
-    if (diff.newLength > 0) { if (phe) phe.parentNode.removeChild(phe); }
-    else { if ( phe == null ) mle.innerHTML=emptyListTr; }
+    if (diff.newLength > 0) {// remove placeholder
+      if (phe) {
+        phe.parentNode.removeChild(phe);
+        phe=null;
+      }
+    }
+    else {// add placeholder
+      if ( phe == null ) replace(mle,emptyListTr);//mle.innerHTML=emptyListTr;
+    }
     for(i=0; i<adl; i+=1) {
       tr=renderLine(diff.added[i]);
-      //medialistT.appendChild(tr); // latest at bottom
-      $("medialistT").insertBefore(tr, medialistT.firstChild);// latest at top
-      tr=null;
+      prepend(mle,tr);
     }
   };
+  
+  function prepend(table,tr) {
+    var firstInTable=table.firstChild;
+    if (firstInTable === null || firstInTable.nodeName === "TR") {
+      table.insertBefore(tr, firstInTable);// latest at top
+    }
+    else if (firstInTable.nodeName === "TBODY") {
+      firstInTable.insertBefore(tr, firstInTable.firstChild);// latest at top
+    }
+    else throw new Error("Table contains unknown element "+firstInTable.nodeName);
+  }
+  
+  function replace(table,trString) {
+    var firstInTable=table.firstChild;
+    if (firstInTable === null || firstInTable.nodeName === "TR") {
+      table.innerHTML=trString;
+    }
+    else if (firstInTable.nodeName === "TBODY") {
+      firstInTable.innerHTML=trString;
+    }
+    else throw new Error("Table contains unknown element "+firstInTable.nodeName);
+  }
   
   // @return HTMLElement tr
   function renderLine(l) {
@@ -637,7 +664,7 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
       el.oncanplaythrough=function() {  
         //console.log("Media is ready"); 
         var promise=el.play(); 
-        promise.catch(error => {
+        promise.catch(function(error) {
           if (error.name === "NotAllowedError") { alert("You should enable autoplay in you browser"); }
           else { alert("Something is wrong with media playing"); }
         });

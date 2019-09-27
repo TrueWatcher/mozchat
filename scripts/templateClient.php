@@ -75,8 +75,7 @@
   <p id="onlineS" class="hideable">
     Online: <span id="usersS" ></span>
   </p>
-  <table id="medialistT">
-  </table>
+  <table id="medialistT"></table>
   <p id="freeP" class="hideable">
     Free:<input type="text" id="folderFreeInp" class="inline" style="width : 6em;" />
   </p>

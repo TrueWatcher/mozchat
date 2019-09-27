@@ -141,6 +141,8 @@ function watchState(current, next, onChange, onSame) {
   }
 }
 
+function tr0() { return $("medialistT").getElementsByTagName("TR")[0]; }
+
 //playerBox.setUpConnQueueMax(0);// disable queue of uplink
 
 print(">page");

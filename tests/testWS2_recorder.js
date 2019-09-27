@@ -12,7 +12,7 @@
 'playerBox.sendClear();',
 'ok=recorderAlertP.innerHTML.indexOf("cleared") >= 0; \
  assertTrue(ok, "wrong message="+recorderAlertP.innerHTML, "server agreed");',
-'ok=( $("medialistT").children.length===1 && $("medialistT").children[0].innerHTML.indexOf("no records") > 0 ); \
+'ok=( $("medialistT").getElementsByTagName("TR").length===1 && tr0().innerHTML.indexOf("no records") > 0 ); \ \
  assertTrue(ok,"Some data are present in the catalog","catalog cleared"); \
  free=parseInt(folderFreeInp.value); \
  assertEqualsPrim(sp.maxMediaFolderBytes/1000, free, "Wrong free space", "All space is free");',
@@ -48,8 +48,8 @@
  uploadStoredBtn.click();',
 'ok=recorderAlertP.innerHTML.indexOf("Server got ") >= 0; \
  assertTrue(ok, "wrong upload message","message ok" );',
-'assertTrue(medialistT.firstChild, "Empty catalog","catalog got some data");', 
-'tr=medialistT.firstChild.innerHTML; \
+'assertTrue(tr0(), "Empty catalog","catalog got some data");', 
+'tr=tr0().innerHTML; \
  me=tr.indexOf(sp.user) >= 0; \
  assertTrue(me,"My good name is absent","My username is present"); \
  descr=tr.indexOf(clip1) >= 0; \
@@ -71,7 +71,7 @@
  assertTrue(elapsed <= sp.clipLifetimeSec, "Increase the lifetime", "No new files have expired yet")',
 'free=parseInt(folderFreeInp.value); \
  assertTrue(free <= blobKb, "Wrong FREE after salvo", "Free space is less than clip size"); \
- var tr=medialistT.firstChild.innerHTML; \
+ var tr=tr0().innerHTML; \
  var descr=tr.indexOf(clip1) >= 0; \
  assertTrue( ! descr,"My first clip is still present","My first clip is removed"); \
  descr=tr.indexOf(clip2) >= 0; \

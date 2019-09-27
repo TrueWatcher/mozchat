@@ -82,6 +82,8 @@ function Shadow() {
   this.disconnect=function() { return wsSource.disconnect(); };
 }// end Shadow
 
+function tr0() { return $("medialistT").getElementsByTagName("TR")[0]; }
+
 var recorderBox=mc.tm.getRB(),
     playerBox=mc.tm.getPB().getDebugApi(), 
     sp=mc.serverParams,

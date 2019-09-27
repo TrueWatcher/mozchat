@@ -23,8 +23,8 @@
  if ( ! chm.toPlay) { playerBox.sendPoll(); } \
  else { \
   console.log(mc.utils.dumpArray(chm)); \
-  tr=medialistT.firstChild.innerHTML; \
-  assertContains(clip1, tr, "My first clip is missing","My first clip is present"); \
+  tr=tr0(); \
+  assertContains(clip1, tr.innerHTML, "My first clip is missing","My first clip is present"); \
   clipId=chm.added[0][0]; \
   pse=playerBox.getPlayerStateExt(); \
   console.log(mc.utils.dumpArray(pse)); \
@@ -115,16 +115,15 @@
  clip2="Clip 2"; \
  descriptionInput.value=clip2; \
 ',
-'ci.loop();',
-'assertEqualsPrim("idle", playerBox.getPlayerStateExt().state, "Wrong player state", "Initially  state=idle"); \
- playFrom=medialistT.firstChild.nextSibling.nextSibling.getElementsByClassName("playDown")[0]; \
- clipId=medialistT.firstChild.nextSibling.nextSibling.id; \
+'assertEqualsPrim("idle", playerBox.getPlayerStateExt().state, "Wrong player state", "Initially  state=idle");',
+'tr=tr0(); \
+ playFrom=tr.nextSibling.nextSibling.getElementsByClassName("playDown")[0]; \
+ clipId=tr.nextSibling.nextSibling.id; \
  playFrom.click(); \
- ci.inc(); \
 ',
 'pse=playerBox.getPlayerStateExt(); \
  assertEqualsPrim("playingNLoading", pse.state, "Wrong player state", "After PLAYFROM state=playingNLoading"); \
- ci.inc(); \
+ ci.loop(); \
 ',
 'pse=playerBox.getPlayerStateExt(); \
  print(pse.state+" "); \
@@ -156,13 +155,14 @@
 ',
 'playerBox.sendPoll();\
  watchState("playingNLoading", "playing", function() { \
-    tr=medialistT.firstChild.innerHTML; \
-    assertContains(clip2, tr, "My further clips are missing","My further clip is present"); \
-    ok=medialistT.firstChild.classList.contains("p"); \
+    tr=tr0(); \
+    assertContains(clip2, tr.innerHTML, "My further clips are missing","My further clip is present"); \
+    ok=tr.classList.contains("p"); \
     assertTrue( ok, "Wrong clip class -- not p", "Clip class p" ); \
 })',
 'watchState( "playing", "idle", function() { \
-    ok=medialistT.firstChild.classList.contains("g"); \
+    tr=tr0(); \
+    ok=tr.classList.contains("g"); \
     assertTrue( ok, "Wrong clip class -- not g", "State=IDLE Upper clip class g" ); \
 })',   
 'ci.noLoop();',
@@ -180,9 +180,9 @@
  ci.loop(); \
 ',
 'watchState( "suspendedIdle", "suspendedLoading", function() { \
-   tr=medialistT.firstChild.innerHTML; \
-   assertContains(clip3, tr, "My 3rd clips are missing","Got a clip - My 3rd clip is present"); \
-   ok=medialistT.firstChild.classList.contains("l"); \
+   tr=tr0(); \
+   assertContains(clip3, tr.innerHTML, "My 3rd clips are missing","Got a clip - My 3rd clip is present"); \
+   ok=tr.classList.contains("l"); \
    assertTrue( ok, "Wrong clip class", "Got a clip - Upper clip class=l" ); \
 }, function() { \
    playerBox.sendPoll(); \
@@ -190,9 +190,8 @@
 'ci.inc();','ci.inc();','ci.inc();',// wait for one more clip
 'playerBox.sendPoll(); \
  ci.inc();',
-'ok= ! medialistT.firstChild.classList.contains("l"); \
- ok &= ! medialistT.firstChild.classList.contains("p"); \
- ok &= ! medialistT.firstChild.classList.contains("g"); \
+'tr=tr0(); \
+ ok= ! tr.classList.contains("l") && ! tr.classList.contains("p") && ! tr.classList.contains("g"); \
  assertTrue( ok, "Wrong upper clip class - not empty", "Got next clip - Upper clip class=empty" ); \
  recordBtn.click(); \
  playerBox.sendPoll(); \
@@ -200,9 +199,10 @@
 ', 
 'pse=playerBox.getPlayerStateExt(); \
  assertEqualsPrim("playingNLoading", pse.state, "Wrong player state", "After STOPRECORD - Player state=playingNLoading"); \
- ok=( medialistT.firstChild.classList.contains("l") ); \
+ tr=tr0(); \
+ ok=tr.classList.contains("l"); \
  assertTrue( ok, "Wrong upper clip class - not l", "Upper clip class l" ); \
- ok=medialistT.firstChild.nextSibling.classList.contains("p"); \
+ ok=tr.nextSibling.classList.contains("p"); \
  assertTrue( ok, "Wrong second clip class - not p", "Second clip class p" ); \
  ci.inc(); \
 ',
@@ -210,7 +210,7 @@
  print(pse.state+" "); \
  if ( pse.state != "idle") { playerBox.sendPoll(); } \
  else { \
-   ok=medialistT.firstChild.classList.contains("g"); \
+   ok=tr0().classList.contains("g"); \
    assertTrue( ok, "Wrong clip class", "State=IDLE Upper clip class g" ); \
    ci.inc(); \
  } \
@@ -242,13 +242,13 @@
   ci.inc(); \
  } \
 ',
-'tr=medialistT.firstChild.innerHTML; \
- assertContains(clip1, tr, "My 1st clips are missing","My 1st clip is present"); \
- clipId=medialistT.firstChild.id; \
+'tr=tr0(); \
+ assertContains(clip1, tr.innerHTML, "My 1st clips are missing","My 1st clip is present"); \
+ clipId=tr.id; \
  print(clipId+" "); \
  ci.inc(); \
 ',
-'id=medialistT.firstChild.id; \
+'id=tr0().id; \
  if (id == clipId) { playerBox.sendPoll(); } \
  else { \
    count=1; \
@@ -276,7 +276,7 @@
  else { \
    tr=document.getElementById(clipId); \
    if (tr) console.log("tr exists, id="+clipId+", parent="+tr.parentNode.nodeName); \
-   ok= ! tr || tr.parentNode.nodeName != "TABLE"; \
+   ok= ! tr || tr.parentNode.nodeName != "TABLE" || tr.parentNode.nodeName != "TBODY"; \
    assertTrue( ok, "First clip id is still present", "First clip id flushed"); \
    if ( targetRemovedCount != 1) console.log("First clip repeatedly removed"); \
    assertTrue( removedCount-targetRemovedCount >= 1, "Only one removal", "Following clip is also flushed"); \
@@ -307,7 +307,7 @@
 'ci.noLoop();',
 '','','',
 'pse=playerBox.getPlayerStateExt(); \
- ok=medialistT.firstChild.classList.contains("g"); \
+ ok=tr0().classList.contains("g"); \
  assertTrue( ok, "Wrong clip class", "Upper clip class g" ); \
  trs=medialistT.getElementsByTagName("TR"); \
  tr=trs[trs.length-1]; \

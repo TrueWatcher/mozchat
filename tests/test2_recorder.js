@@ -8,7 +8,7 @@
 'resp=playerBox.getResponse(); \
  console.log(mc.utils.dumpArray(resp)); \
  assertEqualsPrim(0, playerBox.getCatalogLength(), "Some data are present in inventory", "Inventory cleared");',
-'ok=( $("medialistT").children.length===1 && $("medialistT").children[0].innerHTML.indexOf("no records") > 0 ); \
+'ok=( $("medialistT").getElementsByTagName("TR").length===1 && tr0().innerHTML.indexOf("no records") > 0 ); \
  assertTrue(ok,"Some data are present in the catalog","catalog cleared"); \
  free=parseInt(folderFreeInp.value); \
  assertEqualsPrim(sp.maxMediaFolderBytes/1000, free, "Wrong free space", "All space is free");',
@@ -46,7 +46,7 @@
 'assertContains("Server got ", recorderAlertP.innerHTML, "wrong upload message","message ok" );',
 'playerBox.sendPoll();',
 '',
-'tr=medialistT.firstChild.innerHTML; \
+'tr=tr0().innerHTML; \
  assertTrue(tr.indexOf("no records") < 0, "Empty catalog","catalog got some data");', 
 'assertContains(sp.user, tr, "My good name is absent","My username is present"); \
  assertContains(clip1, tr, "My description is absent","My description is present"); ',
@@ -69,7 +69,7 @@
  assertTrue(elapsed <= sp.clipLifetimeSec, "Increase the lifetime", "No new files have expired yet")',
 'free=parseInt(folderFreeInp.value); \
  assertTrue(free <= blobKb, "Wrong FREE after salvo", "Free space is less than clip size"); \
- tr=medialistT.firstChild.innerHTML; \
+ tr=tr0().innerHTML; \
  assertNotContains(clip1, tr, "My first clip is still present", "My first clip is removed"); \
  assertContains(clip2, tr, "My next clips are missing","My next clips are there"); \
 ',
@@ -107,7 +107,7 @@
  descriptionInput.value=clip1; \
  uploadStoredBtn.click();',
 'playerBox.sendPoll();',
-'tr=medialistT.firstChild.innerHTML; \
+'tr=tr0().innerHTML; \
  assertContains(clip1, tr, "My first clip is missing","My first clip is present"); \
  toSend=parseInt(maxClipCountS.innerHTML)+1; \
  i=0; \
@@ -120,7 +120,7 @@
 'playerBox.sendPoll();',
 'free=parseInt(folderFreeInp.value); \
  assertTrue(free > blobKb, "Wrong FREE after salvo", "Free space is not limiting"); \
- tr=medialistT.firstChild.innerHTML; \
+ tr=tr0().innerHTML; \
  assertNotContains(clip1, tr, "My first clip is still present", "My first clip is removed"); \
  assertContains(clip2, tr, "My next clips are missing","My next clips are there"); \
  tr=medialistT.getElementsByTagName("TR").length; \
