@@ -1,6 +1,6 @@
 <?php
 
-class UsersMonitor {
+class UserMonitor {
   private static $myFileName="users.json";
   private $myFileFull="";
   private $data=[];
@@ -58,15 +58,16 @@ class UsersMonitor {
     $status="online";
     $res=[];
     $t=time();
-    foreach($this->data[$status] as $u=>$expire) {
-      if ($expire > $t) { $res[$u]=$expire; }
+    foreach($this->data[$status] as $u=>$userData) {
+      $expire=$userData[0];
+      if ($expire > $t) { $res[$u]=$userData; }
     }
     $this->data[$status]=$res;  
   }
   
   private function mark($user,$status,$validForS) {
     $expire=time()+$validForS;
-    $this->data[$status][$user]=$expire;
+    $this->data[$status][$user]=[ $expire, $_SERVER['REMOTE_ADDR'] ];
   }
   
   private function presentOnline() {
@@ -75,4 +76,12 @@ class UsersMonitor {
     return implode(", ",$dok);
   }
   
-}// end UsersMonitor
+  public function getIpByName($tp,$user) {
+    $this->read($tp);
+    $status="online";
+    $group=$this->data[$status];
+    if (! array_key_exists($user,$group)) return false;
+    return $group[$user][1];
+  }
+  
+}// end UserMonitor

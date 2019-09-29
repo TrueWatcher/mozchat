@@ -516,3 +516,21 @@ mc.utils.escapeHtml=function(text) {
   };
   return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 };
+
+mc.utils.initErrorReporter=function(upLink) {
+  window.onerror=function(errorMsg, url, lineNumber, column, errorObj) {
+    try {
+      var o={ errorMsg: errorMsg, url: encodeURIComponent(url), lineNumber: lineNumber, errorObj: errorObj.toString() };
+      if (errorObj.stack) o.errorObj=errorObj.stack;
+      upLink.sendLogError(o);
+      console.log("An error occured and has been reported to server");
+      return false;
+    }
+    catch (e) {
+      var s=errorMsg+' Script: '+url+' Line: '+lineNumber+' Column: '+column+' StackTrace: '+errorObj;
+      console.log("Failed to report Error:"+s);
+      console.log("While trying, got Error:"+e.message);
+    }
+    return false;
+  };
+};

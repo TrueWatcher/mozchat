@@ -111,6 +111,7 @@ class PageRegistry extends SingletAssocArrayWrapper {
       "playNew"=>1,
       "skipMine"=>1,
       "showMore"=>0,
+      "reportErrors"=>0,
       // webRtc specific:
       "serverPath"=>"",
       "serverName"=>"",

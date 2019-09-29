@@ -16,7 +16,6 @@ class ChatRelay {
   }
 
   public function put(Array $msg) {
-    $note=[];
     $buf=$this->readBuffer();
     $n=count($buf);
     $buf=$this->removeExpired($buf);
@@ -25,8 +24,7 @@ class ChatRelay {
     $buf[]=$msg;
     $n.="/".count($buf);
     $this->writeBuffer($buf);
-    $note["alert"]=$n;
-    return $note;
+    return $n;
   }
   
   private function addMarks(Array $msg) {

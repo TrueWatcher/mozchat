@@ -5,7 +5,7 @@ class CallLogger {
   const myFileName="calls.csv";
   const SEP=";";
   const NL="\n";
-  const fields=["started", "A", "B", "sid", "ticks", "secs" , "state"];
+  const fields=["started", "ts", "A", "IPa", "B", "IPb", "sid", "secs" , "state"];
   private $buf="";
   private $fullTarget="";
   private $shouldLogPolls=1;
@@ -19,7 +19,7 @@ class CallLogger {
   }
   
   public function go($input, $user) {
-    if ($input['act'] == "poll") {
+    if ($input['act'] == "poll" || $input['act'] == "longPoll" || $input['act'] == "getCatalog") {
       if ($this->shouldLogPolls) $this->logPoll($input, $user);
       return;
     }
@@ -72,9 +72,11 @@ class CallLogger {
     return count(array_splice($this->buf, 1, $over));
   }
   
-  public function logAccept($input) {
+  private function logAccept($input) {
+    $IPb=$_SERVER['REMOTE_ADDR'];
     $line=[
-      "started"=>time(), "A"=>$input['target'], "B"=>$input['user'], "sid"=>$input['sid'], "ticks"=>0, "secs"=>0, "state"=>"new"
+      "started"=>date(DATE_ATOM), "ts"=>time(), "A"=>$input['target'], "IPa"=>"?", "B"=>$input['user'], "IPb"=>$IPb,
+      "sid"=>$input['sid'], "secs"=>0, "state"=>"new"
     ];
     $this->readBuf();
     $this->buf[]=implode(self::SEP,$line).self::NL;
@@ -82,15 +84,13 @@ class CallLogger {
     $this->write();
   }
   
-  public function logPoll($input, $user) {
+  private function logPoll($input, $user) {
     if ( ! $this->shouldLogPolls) return false;
     
     $doLogPoll=function ($line, $input, $user) {
-      if ($line['A'] != $user) return false; // avoid double counting
-      if ( ! isset($input['pollFactor']) || ! $input['pollFactor'] ) return false;
       if ($line['state'] == "off") return false;
-      
-      $line['ticks'] += $input['pollFactor'];
+      if ($line['IPa'] == "?" && $line['A'] == $user) $line['IPa']=$_SERVER['REMOTE_ADDR'];
+      $line['secs'] = time()-$line['ts'];
       $line['state'] = "on";
       return $line;
     };
@@ -98,11 +98,10 @@ class CallLogger {
     $this->processLine($input, $user, $doLogPoll);
   }
   
-  public function logHangup($input, $user) {
+  private function logHangup($input, $user) {
     $doLogHangup=function ($line, $input, $user) {
       $line['state'] = "off";
-      $line['secs'] = time()- $line['started'];
-      $line['started'] = date(DATE_ATOM, $line['started']);
+      $line['secs'] = time()-$line['ts'];
       return $line;
     };
     

@@ -102,7 +102,7 @@ mc.rtcb.ViewW=function() {
   
 };// end ViewW
 
-mc.rtcb.Controller=function() {
+mc.rtcb.RtcBox=function() {
 
 var vw,
     peerBox,
@@ -133,6 +133,11 @@ var handleMessage=function handleMessage(msg) {
       processedByPeerBox=false;
 
   //log("Message received: "+mc.utils.dumpArray(msg));
+      
+  if (msg.pack  && msg.pack instanceof Array) {
+    msg.pack.forEach(function(m) { handleMessage(m); });
+    return;
+  }
 
   if (msg.alert) { vw.showAlert(msg.alert); }
   if (msg.date) { timeStr = new Date(msg.date).toLocaleTimeString(); }
@@ -540,7 +545,10 @@ mc.rtcb.SignallingConnection=function(connector,WsOrAjax) {
     connector.pull.registerPullCallback(aHandleMessage);
   }
       
-  function sendRelayWs(msgObj) { connector.pull.sendRelay(msgObj); }
+  function sendRelayWs(msgObj) {
+    if (msgObj.type && msgObj.type == "message") connector.push.sendRelay(msgObj);
+    else connector.pull.sendRelay(msgObj);
+  }
   
   function sendLogNRelayWs(msgObj) {
     connector.pull.sendRelay(msgObj);// relay through WS

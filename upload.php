@@ -21,6 +21,8 @@ $input=$_REQUEST;
 try {
   $resp=[];
   $p=[];
+  $rr=""; $rrr="";
+  //print_r($input);
   list($act,$user,$realm)=checkInput($pathBias,$input);
   $targetPath=$pathBias.$input["realm"]."/";
   $iniParams=IniParams::read($targetPath);
@@ -56,6 +58,11 @@ try {
     $resp=204;
     break;
   
+  case "logError":
+    logError($pathBias,$input);
+    $resp=204;
+    break;
+  
   case "clearMedia":
     $inv=new Inventory();
     //$inv->init($targetPath,$pr->g("mediaFolder"));
@@ -86,16 +93,33 @@ try {
     
   case "getCatalog":
     if ( ! $wsOn) throw new DataException("Unappropriate command=$act!");
+    if (isset($input['sid'])) {
+      (new CallLogger($pathBias,$realm))->go($input, $user);
+    }
+    $cr=new ChatRelay($pathBias,$realm);
+    $found=$cr->tryExtract($user);
+    if ($found) $rr=packAndSend($user,$realm,"forward",$found,$pr);
     $inv=new Inventory();
     $inv->init( $targetPath, $pr->g("mediaFolder"), $pr->g("hideExpired") );
-    $rr=sendCatalogToWs($inv,$pr,$user,$realm,"Catalog refreshed");
-    $resp["alert"]="hub response:".$rr;
+    $rrr= sendCatalogToWs($inv,$pr,$user,$realm,"Catalog refreshed");
+    $resp["alert"]="hub response:".$rr.",".$rrr;
     break;
   
   case "relay":
     if (empty($input)) throw new DataException("Missing command or data");
+    if ( ! isset($input["target"])) throw new DataException("Missing TARGET");
+    if ($wsOn) {
+      $wsResult=packAndSend($input["target"],$realm,"forward",$input,$pr); 
+      if ( strpos($wsResult,"Ok") === 0) {
+        $resp["alert"]="message forwarded to $user";
+        break;
+      }
+      else { $rr=$wsResult.", message is stored "; }
+      // fall-through
+    }
     $cr=new ChatRelay($pathBias,$realm);
-    $resp=$cr->put($input);
+    $rrr=$cr->put($input);
+    $resp["alert"]=$rr.$rrr;
     break;
     
   case "logNrelay":
@@ -252,13 +276,37 @@ function realmIsOk($pathBias,$input) {
 }
 
 function reportMimeFault($pathBias,$input) {
-  $browserLogFile=$pathBias."browser.log";
   $rec="";
-  $rec.=$input["user"]." ".$_SERVER["HTTP_REMOTE_ADDR"]." ".$input["realm"]."\n";
-  $rec.=$_SERVER["HTTP_USER_AGENT"]."\n";
-  $rec.=$input["mimesList"]."\n";
-  $rec.="\n";
-  file_put_contents($browserLogFile,$rec);  
+  $rec.="Mime fault:".$input["mimesList"]."\n";
+  addToErrorLog($pathBias,$rec,$input); 
+}
+
+function logError($pathBias,$input) {
+  $rec="";
+  $errorFormat="%s in %s, line:%s\n%s\n";
+  $rec.=sprintf($errorFormat, $input["errorMsg"], $input["url"], $input["lineNumber"], $input["errorObj"])."\n";
+  addToErrorLog($pathBias,$rec,$input);
+}
+
+function addToErrorLog($pathBias,$rec,$input) {
+  $limitB=2000;
+  $logFile=$pathBias."error.log";
+  $sep="-----\n";
+  $header="[".date(DATE_ATOM)."] ".$input["user"]."@".$input["realm"]." ".$_SERVER["REMOTE_ADDR"]."\n";
+  $header.=$_SERVER["HTTP_USER_AGENT"]."\n";
+  $rec=$header.$rec.$sep;
+  $size=strlen($rec);
+  if ($size > $limitB) throw new DataException("Too long message");
+  if (file_exists($logFile)) $size+=filesize($logFile);
+  $exceed=$size-$limitB;
+  if ($exceed <= 0) file_put_contents($logFile,$rec,FILE_APPEND);
+  else {
+    $buf=file_get_contents($logFile);
+    $sepPos=strpos($buf,$sep,$exceed);
+    if ($sepPos !== false) $buf=substr($buf,$sepPos+strlen($sep));
+    else $buf="";
+    file_put_contents($logFile,$buf.$rec);
+  }
 }
 
 function unlinkById($id,Inventory $inv,$input) {

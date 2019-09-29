@@ -7,7 +7,7 @@ require_once("scripts/AssocArrayWrapper.php");
 require_once("scripts/MyExceptions.php");
 require_once("scripts/registries.php");
 require_once("scripts/Inventory.php");
-require_once("scripts/UsersMonitor.php");
+require_once("scripts/UserMonitor.php");
 require_once("scripts/ChatRelay.php");
 require_once("scripts/CallLogger.php");
 
@@ -39,6 +39,9 @@ try {
     break;
   
   case "poll":
+    if (isset($input['sid'])) {
+      (new CallLogger($pathBias,$realm))->go($input, $user);
+    }
     $cr=new ChatRelay($pathBias,$realm);
     $resp=$cr->tryExtract($user);
     if ( ! empty($resp)) break;
@@ -46,11 +49,14 @@ try {
     if (isset($input["hangS"])) sleep($input["hangS"]);
     break;
   
-  case "longPoll":    
+  case "longPoll":
+    if (isset($input['sid'])) {
+      (new CallLogger($pathBias,$realm))->go($input, $user);
+    }
     $longPollPeriodS=$pr->g("longPollPeriodS");
     $longPollStepMs=300;
     $cycles=ceil($longPollPeriodS*1000/$longPollStepMs);
-    $usersCycle=floor(UsersMonitor::fileFadeS($pr)*1000/$longPollStepMs);
+    $usersCycle=floor(UserMonitor::fileFadeS($pr)*1000/$longPollStepMs);
     $cr=new ChatRelay($pathBias,$realm);
     for ($i=0; $i<=$cycles; $i+=1) {
       $forceUpdateUsers=( $i % $usersCycle === 0 );
@@ -118,7 +124,7 @@ function anyNews(PageRegistry $pr,$input,$targetPath,$forceUpdateUsers=null) {
   $r=[];
   $inventoryUpdated = ( $pr->checkNotEmpty("removeExpiredFromDir") || isset($input["removeExpired"]) || ! Inventory::isStillValid($targetPath,$input) );
   if (is_null($forceUpdateUsers)) {
-    $usersToBeUpdated = ! UsersMonitor::isStillValid($targetPath,$input["usersSince"],$pr);
+    $usersToBeUpdated = ! UserMonitor::isStillValid($targetPath,$input["usersSince"],$pr);
   }
   else { $usersToBeUpdated = $forceUpdateUsers; }
   //$delta=filemtime($targetPath."users.json")-$input["since"];
@@ -132,7 +138,7 @@ function anyNews(PageRegistry $pr,$input,$targetPath,$forceUpdateUsers=null) {
     $r=makeCatalog($inv, $pr, "Catalog updated", $targetPath);
   }
   if ($usersToBeUpdated) {
-    $um=new UsersMonitor();
+    $um=new UserMonitor();
     $rmo=$um->markOnlineAndReport($targetPath,$input,$pr);
     $userListIsSame=($rmo === true);
     if ( ! $userListIsSame) {

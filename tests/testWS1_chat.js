@@ -34,7 +34,7 @@
 ',
 'println("Testing message broadcast");',
 '$("peerInp").value="*"; \
- toSend="testMsg04 broadvast"; \
+ toSend="testMsg04 broadcast"; \
  $("textInp").value=toSend; \
  $("sendBtn").click(); \
  assertEqualsPrim("", $("textInp").value, "Text box not cleared:"+$("textInp").value, "Text box cleared"); \

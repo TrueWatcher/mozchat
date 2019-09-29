@@ -24,7 +24,7 @@ mc.Connector=function(serverParams, userParams) {
   
   function pushCallAllBack(respObj) {
     var i=0, l=pushCallbacks.length;
-    if (l == 0) throw new Error("No callbacks found");
+    //if (l == 0) throw new Error("No callbacks found");
     for (; i < l; i+=1) { pushCallbacks[i](respObj); }    
   }  
   
@@ -314,7 +314,10 @@ mc.utils.Poller=function(responderUri, onData, onHang, userParams, serverParams)
   this.onTick=function() {
     var pf=userParams.pb.pollFactor;
     //console.log("pollFactor="+pf);
-    if (typeof pf == "undefined") throw new Error("Cannot get pollFactor:"+typeof userParams+"/"+typeof pf);
+    if (typeof pf == "undefined") {
+      return;
+      throw new Error("Cannot get pollFactor:"+typeof userParams+"/"+typeof pf);
+    }
     if (pf === "off") return;
     if (pf === "l") {
       if ( ! ajaxerP.isBusy()) _this.sendLongPoll();
@@ -338,6 +341,8 @@ mc.utils.Poller=function(responderUri, onData, onHang, userParams, serverParams)
     qs+="&act=poll";
     qs=addUpdatedMarks(qs);
     qs+="&pollFactor="+userParams.pb.pollFactor;
+    //console.log(mc.utils.dumpArray(userParams.rtcb));
+    if (userParams.rtcb.sid) qs+="&sid="+userParams.rtcb.sid;
     if (moreParams) qs+="&"+moreParams;
     ajaxerP.getRequest(qs, 2000);   
   };
@@ -348,6 +353,7 @@ mc.utils.Poller=function(responderUri, onData, onHang, userParams, serverParams)
     qs+="&act=longPoll";
     qs=addUpdatedMarks(qs);
     qs+="&myUsersList="+encodeURIComponent(myUsersList);
+    if (userParams.rtcb.sid) qs+="&sid="+userParams.rtcb.sid;
     if (moreParams) qs+="&"+moreParams;
     ajaxerP.getRequest(qs, serverParams.longPollPeriodS*1000+2000);    
   };
@@ -371,7 +377,7 @@ mc.utils.Poller=function(responderUri, onData, onHang, userParams, serverParams)
     onData(resp);
   }
   
-  if (userParams.pb.pollFactor != "off") this.sendPoll();
+  //if (userParams.pb.pollFactor != "off") this.sendPoll();
   intervalHandler=setInterval(_this.onTick, 100);
 
   this.stop=function() {
@@ -495,6 +501,7 @@ mc.Connector.PushLink=function(respondrUri, onData, onHang, serverParams, userPa
   this.sendGetCatalog=function(pollFactor) {
     var  stuff={ act: "getCatalog", user: serverParams.user, realm: serverParams.realm };
     if (pollFactor) stuff.pollFactor=pollFactor;
+    if (userParams.rtcb.sid) stuff.sid=userParams.rtcb.sid;
     ajaxerR.postAsFormData(stuff);  
   };
   
@@ -505,6 +512,11 @@ mc.Connector.PushLink=function(respondrUri, onData, onHang, serverParams, userPa
   
   this.sendLogNRelay=function(msgObj) {
     msgObj.act="logNrelay";
+    this.sendAsJson(msgObj);
+  };
+  
+  this.sendLogError=function(msgObj) {
+    msgObj.act="logError";
     this.sendAsJson(msgObj);
   };
   

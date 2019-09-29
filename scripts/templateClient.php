@@ -21,6 +21,25 @@
 </fieldset>
 </form>
 
+<fieldset id="rtcPanel">
+  <p class="flexChild" id="userlistP"></p>
+  
+  <input type="text" id="peerInp" size="15" maxlength="30" placeholder="Peer username" />
+  <input type="button" id="callBtn" value="Call" />
+  <input type="button" id="hangupBtn" value="Hang up" disabled />
+  <br />
+  <button id="stateIndBtn" title="device state" >not ready</button>
+  <input type="checkbox" id="answerCx" checked />
+  <label for="answerCx">answer immediately</label>
+  <input type="checkbox" id="ringCx" checked />
+  <label for="ringCx">ring</label>
+  <br />
+  <input type="text" id="textInp" name="text" size="80" maxlength="256" placeholder="Chat blah-blah" autocomplete="off" disabled>
+  <input type="button" id="sendBtn" name="send" value="Send" disabled>
+  <p id="alertP"></p>
+  <div id="chatText" style="width: 90%; max-width: 50em; height: 7em; overflow: scroll; border: 1px gray solid;"></div>
+</fieldset>
+
 <fieldset id="recorderPanel">
   <span id="recorderControlsS"  class="hideable">
     Server limits: clip <span id="maxSizeS"></span>,
@@ -51,7 +70,7 @@
     <label for="holdPlayWhileRecChkb">pause player</label><input type="checkbox" id="holdPlayWhileRecChkb" checked="checked">
     <br />
   </span>
-  <button id="toggleHideableRecB" title="Show more/less">◔</button>
+  <button id="toggleHideableRecB" title="Expand/hide controls">E</button>
   <input type="text" id="descriptionInput" placeholder="You may type here a description before recording" />
   <br />
   <button id="recordBtn">Oops...</button>
@@ -82,7 +101,7 @@
   <p id="playerAlertP" class="hideable">
     Something is wrong if you see this
   </p>
-  <button id="toggleHideablePlB" title="Show more/less">◔</button>
+  <button id="toggleHideablePlB" title="Expand/hide controls">E</button>
   <input type="button" id="clearBtn" value="Stop" />
   <input type="button" id="standbyBtn" value="Standby" />
   <input type="button" id="stopAfterBtn" value="Stop after current" class="hideable" />
@@ -104,29 +123,10 @@
   </span>
 </fieldset>
 
-<fieldset id="rtcPanel">
-  <p class="flexChild" id="userlistP"></p>
-  
-  <input type="text" id="peerInp" size="15" maxlength="30" placeholder="Peer username" />
-  <input type="button" id="callBtn" value="Call" />
-  <input type="button" id="hangupBtn" value="Hang up" disabled />
-  <br />
-  <button id="stateIndBtn" title="device state" >not ready</button>
-  <input type="checkbox" id="answerCx" checked />
-  <label for="answerCx">answer immediately</label>
-  <input type="checkbox" id="ringCx" checked />
-  <label for="ringCx">ring</label>
-  <br />
-  <input type="text" id="textInp" name="text" size="80" maxlength="256" placeholder="Chat blah-blah" autocomplete="off" disabled>
-  <input type="button" id="sendBtn" name="send" value="Send" disabled>
-  <p id="alertP"></p>
-  <div id="chatText" style="width: 90%; max-width: 50em; height: 7em; overflow: scroll;"></div>
-</fieldset>
-
 <div class="flexChild" id="camera-container">
   <div class="camera-box">
-    <video id="received_video" autoplay></video>
-    <video id="local_video" autoplay muted></video>
+    <video id="received_video" style="display: none;" autoplay></video>
+    <video id="local_video" style="display: none;" autoplay muted></video>
     <audio id="received_audio" autoplay></audio>
   </div>
 </div>
@@ -183,6 +183,9 @@ mc.TopManager=function() {
   }
   
   function initFull() {
+    connector=new mc.Connector(mc.serverParams, mc.userParams);
+    if(sp.reportErrors) mc.utils.initErrorReporter(connector.push);
+    
     mc.screenParams=mc.utils.getScreenParams();
     adjustLayout(mc.screenParams);
     
@@ -198,16 +201,9 @@ mc.TopManager=function() {
       throw new Error(found.outcome);
     }
     
-    var onBeforerecording=function(params) {
-      if (params.holdPlayWhileRec) playerBox.pause();
-    };
+    var onBeforerecording=function(params) { if (params.holdPlayWhileRec) playerBox.pause(); };
     
-    var onAfterrecording=function() {
-      playerBox.unpause()
-    };
-    
-    // rb is re-initialized in RecorderBox.init, pb in PlayerBox.init
-    connector=new mc.Connector(mc.serverParams, mc.userParams);
+    var onAfterrecording=function() { playerBox.unpause(); };
 
     recorderBox=new mc.rb.RecorderBox(connector, onBeforerecording, onAfterrecording);
     recorderBox.init(mc.serverParams);
@@ -217,7 +213,7 @@ mc.TopManager=function() {
     
     kbm=new mc.utils.KeyboardMonitor(recorderBox.recorderOn, recorderBox.recorderOff, playerBox.clear);
     
-    rtcBox=new mc.rtcb.Controller();
+    rtcBox=new mc.rtcb.RtcBox();
     rtcBox.init(connector);
   }
     

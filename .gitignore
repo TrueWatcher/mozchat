@@ -16,6 +16,7 @@
 */calls.csv
 */messages.json
 browser.log
+error.log
 manual.*
 /wshub/aws_ws.ini
 */aws.ini

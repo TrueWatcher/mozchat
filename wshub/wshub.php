@@ -62,27 +62,24 @@ class UserManager {
       }
       $group=$this->realms[$realm];
       if (empty($group)) {
-        throw new Exception ("Cannot pass message as there are no clients in $realm");
+        throw new Exception ("There are no clients in $realm");
       }
       $user=false;
-      if (isset($data["user"]) && strlen($data["user"])) {
+      if (isset($data["user"]) && strlen($data["user"]) && $data["user"] != "*") {
         $user=$data["user"];
         $singleConn=$this->findConnectionByName($user,$group);
         if ($singleConn === false) {
-          throw new Exception ("Cannot pass message as there is no client $user in $realm");
+          throw new Exception ("There is no client $user in $realm");
         }
       }
       $this->sendHttpReply($from, 'Ok');      
-      if ($user) {
+      if ($user && $user != "*") {
         echo "Passing message from cmd to $user@$realm\n";
         $singleConn->send($data["payload"]);
-        return;
+        break;
       }
       echo "Passing message from cmd to ".count($group)." clients of $realm\n";
-      foreach ($group as $client) {
-        $conn=$this->getConnection($client);
-        $conn->send($data["payload"]);
-      }
+      $this->sendToEachInGroup($realm, json_decode($data["payload"], true));
       break;
 
     case "echo":
