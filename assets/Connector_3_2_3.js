@@ -76,29 +76,30 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator,onTimeout) { //N
   this.transport=null;
   
   // query string or Form
-  this.postRequest=function(what, timeoutMs, enc) {
-    if ( ! what) throw new Error ("no data");
-    if ( enqueueMsg(what, "post") ) return;
+  this.postRequest=function(stuff, timeoutMs, method) {
+    if (typeof method == "undefined") method=_this.transport; 
+    if ( ! stuff) throw new Error ("no data");
+    if ( enqueueMsg(stuff, method) ) return;
     // unconditional entry point for from-queue messages
-    doPostRequest(what, timeoutMs, enc);
+    doPostRequest(stuff, timeoutMs, method);
   };
   
-  function doPostRequest(what, timeoutMs, enc) {
-    if (typeof enc == "undefined") enc=_this.transport;
+  function doPostRequest(stuff, timeoutMs, method) {
+    if (typeof method == "undefined" || method.indexOf("post") < 0) throw new Error("Wrong METHOD="+metod+" -- cannot set encoding");
     timer=Date.now();
     req=new XMLHttpRequest();
     req.open("POST",urlOffset+responderUrl,true); // POST
-    //console.log("ENCODING="+enc);
-    if (enc == "postmulti") req.setRequestHeader("Content-Type","multipart/form-data");// for POST; should go _after_ req.open!
-    else if (enc == "posturle") req.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+    //console.log("ENCODING="+method);
+    if (method == "postmulti") req.setRequestHeader("Content-Type","multipart/form-data");// for POST; should go _after_ req.open!
+    else if (method == "posturle") req.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
     req.onreadystatechange=receive;// both
     indicator.on();
     busy=true;
     if (timeoutMs && onTimeout) {
       watch=window.setTimeout(_this.timeoutInner, timeoutMs);
     }
-    //console.log("posting "+what);
-    var q=req.send(what); // POST
+    //console.log("posting "+stuff);
+    var q=req.send(stuff); // POST
   }
   
   // queryString or urlencoded queryString
@@ -153,21 +154,22 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator,onTimeout) { //N
     req = null;
   }
   
-  function enqueueMsg(what, aMethod) {
+  function enqueueMsg(stuff, method) {
     if ( queueMax <= 0 && busy) throw new Error("Ajaxer "+responderUrl+" is busy");
     if ( queue.length == 0 && ! busy) return false; // if there is queue, put it there
     if (queue.length+1 >= queueMax) throw new Error("Ajaxer "+responderUrl+" is overflown");
-    queue.push({ msg: what, method : aMethod });
+    queue.push({ msg: stuff, method : method });
     console.log("Ajaxer "+responderUrl+": queued "+queue.length+"th message");
     return true;
   }
   
-  this.postAsFormData=function(msgObj, to) {
+  this.postAsFormData=function(msgObj, to, method) {
+    if ( ! method) method="postfd";
     var fd=new FormData(), p;
     for (p in msgObj) {
       if (msgObj.hasOwnProperty(p)) fd.append(p, msgObj[p]);
     }
-    this.postRequest(fd, to, "postfd");
+    this.postRequest(fd, to, method);
   };
   
   this.sendAsJson=function(msgObj, to) { alert("redefine me!"); };
@@ -182,10 +184,10 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator,onTimeout) { //N
         _this.postAsFormData(msgObj, to);
       };
     }
-    else if (t.charAt(0) == "p") {
+    else if (t.indexOf("post") === 0) {
       _this.sendAsJson=function(msgObj, to) {
         var msgPost = "json="+JSON.stringify(msgObj);
-        _this.postRequest(msgPost, to);
+        _this.postRequest(msgPost, to, t);
       };
     }
     else if (t == "get") {
@@ -272,7 +274,7 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator,onTimeout) { //N
     busy=true;
     setTimeout(function() {
       console.log("Ajaxer "+responderUrl+": unqueued a message, "+queue.length+" remain");
-      if (fromQueue.method == "post") doPostRequest(fromQueue.msg); 
+      if (fromQueue.method.indexOf("post") === 0) doPostRequest(fromQueue.msg, 0, fromQueue.method); 
       else if (fromQueue.method == "get") doGetRequest(fromQueue.msg);
       else if (fromQueue.method == "jsonp") doJsonpRequest(fromQueue.msg);
       else throw new Error("Unknown method: "+fromQueue.method);         

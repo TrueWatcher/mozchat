@@ -27,8 +27,7 @@ mc.rb.RecorderBox=function(connector, onBeforerecording, onAfterrecording) {
     userParams=mc.userParams.rb;
     
     //console.log(mc.utils.dumpArray(userParams));
-    
-    //upConnection=new mc.rb.UpConnection(fromServer.serverPath+fromServer.pathBias+"upload.php", takeResponseR, onHang,  serverParams, userParams, viewR.uploadIndicator);
+
     //alert(">"+typeof connector.echo);
     upConnection.registerPushCallback(_this.takeResponseR);
     

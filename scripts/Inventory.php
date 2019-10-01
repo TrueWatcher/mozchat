@@ -115,6 +115,7 @@ class Inventory {
   
   function pickUploadedBlob($newName,$input,PageRegistry $pr) {
     // overcheck
+    if ( ! isset($_FILES['blob']) || ! isset($_FILES['blob']['tmp_name'])) throw new DataException("Uploading failed, check POST headers");
     if (file_exists($this->mediaFolder."/".$newName)) throw new DataException("File ".$newName." already exists");
     $r=move_uploaded_file($_FILES['blob']['tmp_name'], $this->mediaFolder."/".$newName);
     if ( ! $r) throw new DataException("Moving failed");
