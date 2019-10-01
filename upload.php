@@ -192,7 +192,8 @@ function sendWithPost(Array $data) {
       //'protocol_version'=>1.1,
       'method'=>"POST",
       'header'=>implode("\r\n",[
-         "Accept: */*'", "Content-type: application/x-www-form-urlencoded",                 "Host: localhost:8081", "User-Agent: SuperAgent 1.0", 
+         "Accept: */*'", "Content-type: application/x-www-form-urlencoded", 
+         "Host: localhost:8081", "User-Agent: SuperAgent 1.0", 
          "Content-lenght: ".strlen($c), "Connection: close" 
        ])."\r\n\r\n",
       'content'=>$c."\r\n"
@@ -244,7 +245,10 @@ function checkBlob($files,$pr) {
 function checkInput($pathBias,& $input) {
   $r=true;
   consumeJson($input);
-  if ( ! isset($input["user"]) || ! isset($input["realm"]) ) { $r="Missing USER or REALM"; }
+  if ( ! isset($input["user"]) || ! isset($input["realm"]) ) {
+    $r="Missing USER or REALM (act=".@$input["act"].")";
+    //print_r($input);
+  }
   else if ( charsInString($input["user"],"<>&\"':;()") ) { $r="Forbidden symbols in username"; }
   else if ( strlen($input["user"]) > 30 ) { $r="Too long username"; }
   else if ( ! realmIsOk($pathBias,$input)) {

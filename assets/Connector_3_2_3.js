@@ -46,7 +46,7 @@ mc.Connector=function(serverParams, userParams) {
   
   function onWsconnected() {
     console.log("requesting the catalog from uplink");
-    _this.push.sendGetCatalog(serverParams.user, serverParams.realm);
+    _this.push.sendGetCatalog();
   }
   
   function callAllBack(respObj) {
@@ -276,7 +276,7 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator,onTimeout) { //N
       else if (fromQueue.method == "get") doGetRequest(fromQueue.msg);
       else if (fromQueue.method == "jsonp") doJsonpRequest(fromQueue.msg);
       else throw new Error("Unknown method: "+fromQueue.method);         
-    }, 30);
+    }, 100);
     return true;
   }
   
@@ -399,7 +399,7 @@ mc.utils.WsClient=function(onConnect, onData, onHang, userParams, serverParams, 
     conn=new WebSocket(serverParams.wsServerUri);//'ws://localhost:8080'
     
     conn.onerror = function(e) {
-      alert("Something is wrong with Websocket connection");
+      alert("Something is wrong with your Websockets connection. Reload the page");
       if (wss2https()) {
         $("accountTopAlertP").innerHTML='<a href="'+wss2https()+'" target="_blank">Please, check WS certificate</a>';
       }
@@ -485,24 +485,29 @@ mc.Connector.PushLink=function(respondrUri, onData, onHang, serverParams, userPa
   
   _this.sendClear=function() {
     var stuff= { act: "clearMedia", user: serverParams.user, realm: serverParams.realm };
-    ajaxerR.postAsFormData(stuff);
+    //ajaxerR.postAsFormData(stuff);
+    this.sendAsJson(stuff);
   }
   
   _this.sendDelete=function(file) {
     var stuff={ act: "delete", user: serverParams.user, realm: serverParams.realm, id: file };
-    ajaxerR.postAsFormData(stuff);    
+    //ajaxerR.postAsFormData(stuff);
+    this.sendAsJson(stuff);    
   };
 
   _this.sendRemoveExpired=function() {
     var stuff={ act: "removeExpired", user: serverParams.user, realm: serverParams.realm };
-    ajaxerR.postAsFormData(stuff);  
+    //ajaxerR.postAsFormData(stuff);
+    this.sendAsJson(stuff);
   };
   
   this.sendGetCatalog=function(pollFactor) {
     var  stuff={ act: "getCatalog", user: serverParams.user, realm: serverParams.realm };
     if (pollFactor) stuff.pollFactor=pollFactor;
     if (userParams.rtcb.sid) stuff.sid=userParams.rtcb.sid;
-    ajaxerR.postAsFormData(stuff);  
+    if ( ! stuff.user) throw new Error("Failed to take USER");
+    //ajaxerR.postAsFormData(stuff);
+    this.sendAsJson(stuff);
   };
   
   this.sendRelay=function(msgObj) {
