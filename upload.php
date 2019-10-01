@@ -259,8 +259,13 @@ function checkInput($pathBias,& $input) {
 function consumeJson(& $input) {  
   if ( ! array_key_exists("json",$input)) return;
   $fromJson=[];
-  if ( strpos($input["json"],"%3A") === false ) { $fromJson=json_decode($input["json"], true); }
-  else { $fromJson=json_decode(urldecode($input["json"]), true); }
+  if ( strpos($input["json"],"%3A") !== false ) { $input["json"]=urldecode($input["json"]); }
+  $input["json"]=str_replace("\n", "\\n", $input["json"]);
+  $fromJson=json_decode($input["json"], true);
+  if (! is_array($fromJson)) {
+    echo $input["json"]; echo ">>"; var_dump($fromJson);
+    throw new DataException("JSON perse error");
+  }
   $input=array_merge($input,$fromJson);
   unset($input["json"]);
 }
@@ -289,7 +294,7 @@ function logError($pathBias,$input) {
 }
 
 function addToErrorLog($pathBias,$rec,$input) {
-  $limitB=2000;
+  $limitB=30000;
   $logFile=$pathBias."error.log";
   $sep="-----\n";
   $header="[".date(DATE_ATOM)."] ".$input["user"]."@".$input["realm"]." ".$_SERVER["REMOTE_ADDR"]."\n";

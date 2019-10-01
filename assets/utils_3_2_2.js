@@ -99,18 +99,20 @@ mc.utils.checkAutoplay=function(audioFile, onNotallowed, onError) {
   //el.autoplay=false;
   el.oncanplaythrough=function() {  
     //console.log("Media is ready"); 
-    var promise=el.play(); 
-    promise.catch(function(error) {
-      if (error.name === "NotAllowedError") { 
-        alert("You should enable autoplay in you browser");
-        if (onNotallowed instanceof Function) onNotallowed();
-      }
-      else {
-        alert("Something is wrong with media playing:"+error.name); 
-        if (onError instanceof Function) onError();
-      }
-    });
-    promise.then(function() { console.log("autoplay ok"); });
+    var promise=el.play();
+    if (promise.catch && promise.catch instanceof Function) {
+      promise.catch(function(error) {
+        if (error.name === "NotAllowedError") { 
+          alert("You should enable autoplay in you browser");
+          if (onNotallowed instanceof Function) onNotallowed();
+        }
+        else {
+          alert("Something is wrong with media playing:"+error.name); 
+          if (onError instanceof Function) onError();
+        }
+      });
+      promise.then(function() { console.log("autoplay ok"); });
+    }
   };
   el.onended=function() { document.body.removeChild(el); };
   el.src=audioFile;
@@ -521,7 +523,7 @@ mc.utils.initErrorReporter=function(upLink) {
   window.onerror=function(errorMsg, url, lineNumber, column, errorObj) {
     try {
       var o={ errorMsg: errorMsg, url: encodeURIComponent(url), lineNumber: lineNumber, errorObj: errorObj.toString() };
-      if (errorObj.stack) o.errorObj=errorObj.stack;
+      if (errorObj.stack) o.errorObj=encodeURIComponent(errorObj.stack);
       upLink.sendLogError(o);
       console.log("An error occured and has been reported to server");
       return false;

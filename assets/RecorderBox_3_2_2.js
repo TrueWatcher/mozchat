@@ -230,6 +230,8 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
     
     indicator.off();
     
+    mc.utils.checkAutoplay( viewR.audios.open.src );
+    
     _this.onOff=function(a) {
       if (a === "*") a= ! isOn;
       else if (a == isOn) return false;
@@ -287,6 +289,12 @@ mc.rb.ViewR=function() {
       
   function getShowMore() { return showMore; }
   function setShowMore(s) { showMore=s; }
+  
+  var spt=mc.serverParams.serverPath;
+  this.audios={
+    open : { src : spt+"assets/i30_open.mp3", el : new Audio() }
+  };
+  this.audios.open.el.src=this.audios.open.src;
   
   this.toggleHideable=function() { mc.utils.toggleHideable(hideable,getShowMore,setShowMore); };
   this.toggleHideable();

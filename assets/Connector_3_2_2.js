@@ -51,7 +51,7 @@ mc.Connector=function(serverParams, userParams) {
   
   function callAllBack(respObj) {
     var i=0, l=pullCallbacks.length;
-    if (l == 0) throw new Error("No callbacks found");
+    //if (l == 0) throw new Error("No callbacks found");
     for (; i < l; i+=1) { pullCallbacks[i](respObj); }    
   }
   

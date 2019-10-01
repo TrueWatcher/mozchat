@@ -660,14 +660,16 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
       //tryHandover();
     };
     if (autoplay) {
-      //el.autoplay=autoplay; may fail as autoplay is disabled in some browsers
+      el.autoplay=true; //may fail as autoplay is disabled in some browsers
       el.oncanplaythrough=function() {  
         //console.log("Media is ready"); 
-        var promise=el.play(); 
-        promise.catch(function(error) {
-          if (error.name === "NotAllowedError") { alert("You should enable autoplay in you browser"); }
-          else { alert("Something is wrong with media playing"); }
-        });
+        var promise=el.play();
+        if (promise.catch && promise.catch instanceof Function) { 
+          promise.catch(function(error) {
+            if (error.name === "NotAllowedError") { alert("You should enable autoplay in you browser"); }
+            else { alert("Something is wrong with media playing"); }
+          });
+        }
       };
     }
     //el.controls=true;

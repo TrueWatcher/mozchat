@@ -40,6 +40,8 @@
   <div id="chatText" style="width: 90%; max-width: 50em; height: 7em; overflow: scroll; border: 1px gray solid;"></div>
 </fieldset>
 
+<div id="playerRoom"></div>
+
 <fieldset id="recorderPanel">
   <span id="recorderControlsS"  class="hideable">
     Server limits: clip <span id="maxSizeS"></span>,
@@ -87,8 +89,6 @@
   
   <p id="recorderAlertP"></p>
 </fieldset>
-
-<div id="playerRoom"></div>
 
 <fieldset id="playerPanel">
   <p id="onlineS" class="hideable">
