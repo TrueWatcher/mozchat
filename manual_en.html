@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Multimedia chat</title>
+  <link rel="stylesheet" type="text/css" href="" media="all" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.5" />
+</head>
+<body>
+<p>Mozchat, an open source web phone and media chat by TrueWatcher 2019</p>
+
+<h1>THE USER MANUAL</h1>
+
+<h2>Requirements</h2>
+
+<p>FireFox 55+, Chrome 52+ for desktop or Android</p>
+<p>The WebRTC phone connection may work unreliably without apparent reason; with many mobile operators, a TURN server is required to make any connection. Media chatting in audioStream and videoStream modes require fast network and system. The mediaChat mode (the latest default) usually works even over GPRS/EDGE.</p>
+
+<h2>Getting started</h2>
+
+<p>On the entry screen, enter your username and thread name and click Register or Enter.</p>
+<p>If everything works, you'll see the second, bigger, screen, and the browser's request to share your microphone. After giving permission, a big button named "Record" will appear near the middle of the page.</p>
+<p>---------</p>
+<p>If something goes wrong, for example, the browser lacks some required feature (getUserMedia, PeerConnection), the application will not be able to start normally and there will be no Record button. Maybe, there'll be an error message with some detail. Update your browser, do yourself a favour :).</p>
+<p>If you deny sharing microphone (or the browser cannot use it for some other reason), the Recorder will not start, but the Player will be workable.  The big button will be marked "Inactive" and there will be a error message.</p>
+<p>Some browsers (not recent versions) do not automatically play received messages, although play them normally by the "play" button. This issue is caused by the disabled "autoplay" setting, and can be cured by enabling it. Modern browsers automatically enable autoplay when microphone is used.</p>
+
+<h2>Using with default settings</h2>
+
+<p>There's an online <b>user list</b> on top of the Phone/chat panel, it must at least contain your username. Clicking a username sets it as a recipient. It's also possible to enter it into the <b>peer name</b> field manually :)</p>
+
+<p><b>Call and HangUp</b> buttons start call to the selected peer, or abort it, respectively. Currently, only voice call without video is supported, taking up about 50-100kbps of bandwidth. There's a <b>phone state</b> "button" below, it must be marked "ready" in up-and-waiting state, or "speak" if phone connection is successfully established. It's not clickable.</p>
+
+<p>The <b>chat message</b> field allows to enter a text message for the selected peer, which will be sent on pressing Enter or clicking the <b>Send button</b>. Under the Send button there's a server message line, still lower there's a chat window, which is initially empty.</p>
+
+<p>There are Recorder and Player panels under the Phone/chat panel, they are used to send and receive audio/video messages through the server.</p>
+
+<p>The <b>Record</b> button turns the Recorder on/off. Pressing/releasing the spacebar does the same. By default, a recorded message is immediately sent to server and received by all active users of the thread.</p>
+
+<p>The Player panel begins from a <b>list of records</b>, stored on the server (also called "clips" in this manual), which may turn out to be empty.</p>
+
+<p>When server get new clips, they are automatically played by the player, in the timely order.</p>
+
+<p>The <b>Stop</b> button stops playing if it goes on :). The Esc key has the same effect.</p>
+
+<p>The <b>Standby</b> button pauses the player, incoming clips are just added to the list. On second press, the Player will continue from where it was paused or from the first new clip.</p>
+
+<p>Buttons marked <b>E</b> expand/shrink panels with more settings and data.</p>
+
+<p></p>
+
+<h2>Phone/chat settings</h2>
+
+<p><b>answer immediately</b><br /> accepts call and starts phone connection immediately on receiving invitation (FireFox requests microphone permission each time, Chrome does not) If this is unchecked, the script will always ask permission to answer a call.</p>
+
+<p><b>ring</b><br /> play a ringtone when getting an incoming call.</p>
+
+<p>If the peer is not available, a phone call fails, but a chat message will be stored on the server for some time (default 5 min) and will be delivered if he/she gets online.</p>
+
+<h2>Recorder settings</h2>
+
+<p><b>server limits</b><br />
+  among other useful info, "lifetime" is the time for which a clip is kept on the server</p>
+
+<p><b>audio./video</b><br />
+  record audio or video, the browser will re-ask permission on switching. Video produces heavy traffic. If this setting is not visible, only "audio" is allowed in the thread.</p>
+
+<p><b>upload/stop</b><br /> 
+  upload - send a recorded chunk to the server and continue recording<br /><br />
+  
+  stop - stop recording and show Play and Upload buttons and "The File" link. By right-clicking the link, the record may be saved as a local file. Pressing Upload sends the record to server. If the record size is bigger than allowed limit (server limits - clip), upload will be denied<br /><br />
+  
+  if this setting is not visible, only "stop" is allowed in the thread</p>
+
+<p><b>chunk</b><br />
+  max size of record in seconds, after which upload/stop is triggered</p>
+
+<p><b>description</b><br />
+  the text to be shown as a clip title in the list</p>
+
+<p><b>pause player</b><br />
+  pauses the player when recording is on. Uncheck it, if you have earphones and ability to speak and listen simultaneously
+
+<h2>Player controls</h2>
+
+<p><b>buttons in clip list</b><br />
+  <b>delete</b> user can always remove his/her clips, but not other users' clips<br />
+  <b>play</b> play only this clip<br />
+  <b>play from</b> play this clip and newer ones, subject to the "skip mine" filter (see below), cancels the standby mode</p>
+
+<p><b>Stop After</b><br />
+  stop playing when the current clip ends</p>
+
+<p><b>refresh</b><br />
+  interval of polling the server (seconds), "long" - use the long polling hack, "off" - turn polling off. Ignored in Websockets mode.</p>
+
+<p><b>free</b><br />
+  free space in the server folder, used by tests</p>
+
+<p><b>play new</b><br />
+  play new clips automatically, used by tests</p>
+
+<p><b>skip mine</b><br />
+  do not play user's own clips. An efficient test of the system is to uncheck this and make a record.</p>
+
+<p></p>
+  
+<h2>More</h2>
+
+<p><a href="https://github.com/TrueWatcher/mozchat/blob/master/README.md">https://github.com/TrueWatcher/mozchat/blob/master/README.md</a></p>
+
+</body>
+</html>

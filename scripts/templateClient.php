@@ -16,7 +16,7 @@
   <br />
   <input type="submit" id="exitBtn" value="Register" />
   <a href="?">Exit</a>
-  <a href="manual.html" target="_blank" >Help</a>
+  <a href="<?php if ( isset($pr) && $pr->checkNotEmpty("lang") && $pr->g("lang") != "en" ) echo "manual_".$pr->g("lang").".html"; else echo "manual_en.html"; ?>" target="_blank" >Help</a>
   <p id="accountBottomAlertP"></p>
 </fieldset>
 </form>
@@ -49,11 +49,6 @@
     folder <span id="folderSizeS"></span>,
     clips <span id="maxClipCountS"></span>
     <br />
-    <span id="audioOrVideoS">
-      <label for="audioOrVideoRad1">audio</label><input type="radio" id="audioOrVideoRad1" name="audioOrVideoRad" value="audio" checked="checked" />
-      <label for="audioOrVideoRad2">or video</label><input type="radio" id="audioOrVideoRad2" name="audioOrVideoRad" value="video" />
-      &nbsp;
-    </span>  
     Chunk:
     <select id="chunkSelect" >
       <option value="1" selected="selected">1s</option>
@@ -73,7 +68,12 @@
     <br />
   </span>
   <button id="toggleHideableRecB" title="Expand/hide controls">E</button>
-  <input type="text" id="descriptionInput" placeholder="You may type here a description before recording" />
+  <span id="audioOrVideoS">
+    <label for="audioOrVideoRad1">audio</label><input type="radio" id="audioOrVideoRad1" name="audioOrVideoRad" value="audio" checked="checked" />
+    <label for="audioOrVideoRad2">or video</label><input type="radio" id="audioOrVideoRad2" name="audioOrVideoRad" value="video" />
+    &nbsp;
+  </span> 
+  <input type="text" id="descriptionInput" placeholder="You may type here a description before recording" class="hideable" />
   <br />
   <button id="recordBtn">Oops...</button>
   <input type="text" id="timerInd" style="width : 3em;" class="inline" value="0" />s&nbsp;
@@ -133,7 +133,7 @@
 
 <div id="footer">
 &nbsp;<br />
-<a href="https://github.com/TrueWatcher/mozchat">mozchat</a>, an open source media chat by TrueWatcher 2019
+<a href="https://github.com/TrueWatcher/mozchat">mozchat</a>, an open source web phone and media chat by TrueWatcher 2019
 </div>
 
 <script>
