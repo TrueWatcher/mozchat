@@ -67,6 +67,7 @@
  } \
 ',
 'ci.noLoop();',
+'','',
 'recordBtn.click();',
 'playerBox.sendPoll();','','','','',
 

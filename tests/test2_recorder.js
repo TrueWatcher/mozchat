@@ -96,7 +96,7 @@
  ok=( $("medialistT").children.length===1 && $("medialistT").children[0].innerHTML.indexOf("no records") > 0 ); \
  assertTrue(ok,"Some data are present un the catalog","Catalog is empty"); ',
 
-'println("Testing clips count limit");',
+'println("Testing clip count limit");',
 'mc.utils.setSelect("chunkSelect",1); \
  assertEqualsPrim("Record", recordBtn.innerHTML, "Recorder is not ready", "Recorder ready");',
 'ci.loop();',
@@ -113,13 +113,14 @@
  i=0; \
  clip2="clips salvo 1 A"; \
  descriptionInput.value=clip2; \
+ blobKb=parseInt(blobSizeS.innerHTML); \
 ',
 'ci.loop();',
 'uploadStoredBtn.click(); i+=1; print(" "+i+" "); if (i >= toSend) { ci.inc(); };',
 'ci.noLoop();',
 'playerBox.sendPoll();',
 'free=parseInt(folderFreeInp.value); \
- assertTrue(free > blobKb, "Wrong FREE after salvo", "Free space is not limiting"); \
+ assertTrue(free > blobKb, "Wrong FREE after salvo:"+free+"/"+blobKb, "Free space is not limiting"); \
  tr=tr0().innerHTML; \
  assertNotContains(clip1, tr, "My first clip is still present", "My first clip is removed"); \
  assertContains(clip2, tr, "My next clips are missing","My next clips are there"); \

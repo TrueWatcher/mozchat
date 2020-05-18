@@ -384,6 +384,14 @@ mc.utils.getBlobByUri=function(uri,callBack) {
   oReq.send(null);
 };
 
+mc.utils.Ticker=function(onTickCb, intervalMs) {
+  var intervalHandler;
+  if ( ! intervalMs) intervalMs=1000;
+  
+  this.start=function() { intervalHandler=setInterval(onTickCb,intervalMs); };
+  this.stop=function() { clearInterval(intervalHandler); };
+}
+
 mc.utils.path=function() {
   var wl=window.location;
   var arr=wl.pathname.split("/");

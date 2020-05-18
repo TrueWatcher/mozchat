@@ -86,7 +86,7 @@
   </span>
   <button id="uploadIndBtn" title="uplink indicator" >&nbsp;</button>
   <br />
-  
+  <button id="feedbackBtn" class="hideable"></button>
   <p id="recorderAlertP"></p>
 </fieldset>
 
