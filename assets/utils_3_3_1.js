@@ -219,6 +219,8 @@ mc.utils.Indicator=function(id,states,htmlOrValue,startState) {
   var state;
   adoptState(startState);
   
+  this.getElement=function() { return el; };
+  
   this.on=function() { adoptState(1); };
   this.off=function() { adoptState(0); };
   this.z=function() { adoptState(2); };
@@ -387,6 +389,7 @@ mc.utils.getBlobByUri=function(uri,callBack) {
 mc.utils.Ticker=function(onTickCb, intervalMs) {
   var intervalHandler;
   if ( ! intervalMs) intervalMs=1000;
+  //console.log("interval:"+intervalMs);
   
   this.start=function() { intervalHandler=setInterval(onTickCb,intervalMs); };
   this.stop=function() { clearInterval(intervalHandler); };

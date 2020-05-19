@@ -93,10 +93,10 @@ a:hover {
   background-color: #fff;
 }
 
-.ye {
+.ye, .alert:hover {
   background-color: yellow; 
 }
 
-#standbyBtn.alert {
+.alert {
   background-color: #ffa;
 }

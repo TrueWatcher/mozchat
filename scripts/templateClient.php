@@ -87,6 +87,7 @@
   <button id="uploadIndBtn" title="uplink indicator" >&nbsp;</button>
   <br />
   <button id="feedbackBtn" class="hideable"></button>
+  <button id="motionDetectorBtn" class="hideable"></button>
   <p id="recorderAlertP"></p>
 </fieldset>
 
@@ -142,6 +143,7 @@
 <script src="<?php print($pathBias."assets/".version("utils.js",$pathBias)); ?>"></script>
 <script src="<?php print($pathBias."assets/".version("Connector.js",$pathBias)); ?>"></script>
 <script src="<?php print($pathBias."assets/".version("RecorderBox.js",$pathBias)); ?>"></script>
+<script src="<?php print($pathBias."assets/".version("MotionDetector.js",$pathBias)); ?>"></script>
 <script src="<?php print($pathBias."assets/".version("PlayerBox.js",$pathBias)); ?>"></script>
 <script src="<?php echo $pathBias."assets/"."rtcAdapter.js"; ?>"></script>
 <script src="<?php echo $pathBias."assets/".version("RtcBox.js",$pathBias); ?>"></script>

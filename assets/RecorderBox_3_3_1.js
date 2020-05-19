@@ -9,6 +9,7 @@ mc.rb.RecorderBox=function(connector, onBeforerecording, onAfterrecording) {
       recorder,
       recordingTimer,
       feedback,
+      motionDetector,
       userParams={},
       upConnection=connector.push,
       serverParams={}
@@ -35,9 +36,11 @@ mc.rb.RecorderBox=function(connector, onBeforerecording, onAfterrecording) {
     
     recordingTimer=new mc.rb.RecordingTimer(recorder, clipManager, viewR, userParams);
     
-    feedback=new mc.rb.Feedback(recorder.getStream, viewR.feedbackIndicator, viewR);    
+    feedback=new mc.rb.Feedback(recorder.getStream, viewR.feedbackIndicator, viewR);
+
+    motionDetector=new mc.rb.MotionDetector(recorder, this, feedback, viewR);    
     
-    viewR.setHandlers(_this.recorderInit, _this.recorderToggle, clipManager.playLocally, clipManager.uploadStoredBlob, feedback.toggle);
+    viewR.setHandlers(_this.recorderInit, _this.recorderToggle, clipManager.playLocally, clipManager.uploadStoredBlob, feedback.toggle, motionDetector.toggle);
     // keyboard events are monitored separately by KeyboardMonitor
   };
   
@@ -128,6 +131,7 @@ mc.rb.RecordingTimer=function(recorder, clipManager, viewR, userParams) {
   }
   
   this.finishRecording=function() {
+    //console.log("finishRecording");
     ticker.stop();
     timingOn=0;
     lastRecordedTime=recordingTime;
@@ -245,7 +249,7 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
         aov=userParams.audioOrVideo,
         recorderMime;
         
-    if (aov == "video") constraints.video=true;//constraints={ video: true }; //
+    if (aov == "video") constraints={ video: true }; // constraints.video=true;//
     recorderMime=mc.utils.checkRecorderMime(mc.mimeDictionary, aov);
     if ( ! recorderMime) throw new Error("Something is wrong with MIME detection");
     mime=recorderMime.chosenMime; 
@@ -327,7 +331,8 @@ mc.rb.Feedback=function(getDataCb, indicator, viewR) {
   var isOn=false,
       myElement=false,
       plr=document.getElementById("playerRoom"),
-      stream
+      stream,
+      canvas=false
       ;
   
   this.toggle=function() {
@@ -345,6 +350,15 @@ mc.rb.Feedback=function(getDataCb, indicator, viewR) {
       fail("Feedback works only in video mode, got "+aov);
       return false;
     }
+    
+    if ( ! canvas) displayStream();
+    else displayCanvas();
+    
+    indicator.on();
+    return true;
+  }
+  
+  function displayStream() {
     stream=getDataCb();
     if ( ! (stream instanceof MediaStream)) {
       fail("Feedback requested MediaStream, got "+typeof stream);
@@ -355,9 +369,13 @@ mc.rb.Feedback=function(getDataCb, indicator, viewR) {
     myElement.srcObject=stream;
     if (plr.hasChildNodes()) plr.innerHTML="";
     plr.appendChild(myElement);
-    myElement.play();
-    indicator.on();
-    return true;
+    myElement.play();    
+  }
+  
+  function displayCanvas() {
+    if ( ! canvas) fail("Attempt to display an empty canvas");
+    if (plr.hasChildNodes()) { plr.innerHTML=""; }
+    plr.appendChild(canvas);
   }
   
   function fail(err) {
@@ -371,6 +389,24 @@ mc.rb.Feedback=function(getDataCb, indicator, viewR) {
     myElement=false;
     indicator.off();
   }
+  
+  this.onMDStart=function(aCanvas) {
+    canvas=aCanvas;
+    if ( ! isOn) return;
+    displayCanvas();
+    myElement=false;
+  };
+  
+  this.onMDRedraw=function() {
+    if ( ! isOn) return;
+    displayCanvas();
+  };
+  
+  this.onMDStop=function() {
+    if ( ! isOn) { canvas=false; return; }
+    displayStream();
+    canvas=false;    
+  };
   
 }
 
@@ -397,7 +433,12 @@ mc.rb.ViewR=function() {
   );
   
   this.feedbackIndicator=new mc.utils.Indicator("feedbackBtn", 
-    [["View feedback","auto"], ["Hide feedback","recording"], ["Inactive","auto"]],
+    [["View feedback","auto"], ["Hide feedback","auto"], ["Inactive","auto"]],
+    "h", 0
+  );
+  
+   this.motionIndicator=new mc.utils.Indicator("motionDetectorBtn", 
+    [["Motion Detector","auto"], ["On alert","alert"], ["Get ready...","auto"]],
     "h", 0
   );
   
@@ -482,18 +523,20 @@ mc.rb.ViewR=function() {
     };
   };
   
-  this.setHandlers=function(initRecorder, toggleRecorder, playLocally, uploadStoredBlob, toggleFeedback) {
+  this.setHandlers=function(initRecorder, toggleRecorder, playLocally, uploadStoredBlob, toggleFeedback, toggleMotionDetector) {
     if ( ! initRecorder instanceof Function) throw new Error("Wrong initRecorder");
     if ( ! toggleRecorder instanceof Function) throw new Error("Wrong toggleRecorder");
     if ( ! playLocally instanceof Function) throw new Error("Wrong playLocally");
     if ( ! uploadStoredBlob instanceof Function) throw new Error("Wrong uploadStoredBlob");
     if ( ! toggleFeedback instanceof Function) throw new Error("Wrong toggleFeedback");
+    if ( ! toggleMotionDetector instanceof Function) throw new Error("Wrong toggleMotionDetector");
     $("audioOrVideoRad1").onchange=initRecorder;
     $("audioOrVideoRad2").onchange=initRecorder;
     $("recordBtn").onclick=toggleRecorder;
     $("playHereBtn").onclick=playLocally;
     $("uploadStoredBtn").onclick=uploadStoredBlob;
     $("feedbackBtn").onclick=toggleFeedback;
+    $("motionDetectorBtn").onclick=toggleMotionDetector;
     // keyboard events are managed at the higher level by KeyboardMonitor
     $("toggleHideableRecB").onclick=_this.toggleHideable;
   };

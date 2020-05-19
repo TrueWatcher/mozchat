@@ -502,13 +502,13 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
     if (paused) return;
     paused=true;
     if (actual) { actual.el.pause(); }
-    console.log("player paused, state="+_this.getState());
+    //console.log("player paused, state="+_this.getState());
   };
   
   this.unpause=function() {
     if ( ! paused) return;
     paused=false;
-    console.log("player unpaused");// _this.getState() here causes error
+    //console.log("player unpaused");// _this.getState() here causes error
     if (actual) { 
       if ( ! actual.el.paused) throw new Error("PAUSED set without mediaElement paused");
       actual.el.play();
