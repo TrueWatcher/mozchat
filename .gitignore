@@ -19,3 +19,4 @@ browser.log
 error.log
 /wshub/aws_ws.ini
 */aws.ini
+*.mp4

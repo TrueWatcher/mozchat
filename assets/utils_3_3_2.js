@@ -265,6 +265,13 @@ mc.utils.Indicator=function(id,states,htmlOrValue,startState) {
       el.classList.remove(states[i][1]);
     }   
   }
+  
+  this.removeAllStateClasses=function() {
+    var c;
+    for (var i=0; i < cl; i+=1) {
+      el.classList.remove(states[i][1]);
+    }
+  };
 }// end Indicator
 
 mc.utils.getScreenParams=function() {
