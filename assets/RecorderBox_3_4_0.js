@@ -10,6 +10,7 @@ mc.rb.RecorderBox=function(connector, onBeforerecording, onAfterrecording) {
       recordingTimer,
       feedback,
       motionDetector,
+      chatController,
       userParams={},
       upConnection=connector.push,
       serverParams={}
@@ -38,9 +39,11 @@ mc.rb.RecorderBox=function(connector, onBeforerecording, onAfterrecording) {
     
     feedback=new mc.rb.Feedback(recorder.getStream, viewR.feedbackIndicator, viewR);
 
-    motionDetector=new mc.rb.MotionDetector(recorder, this, feedback, viewR);    
+    motionDetector=new mc.rb.MotionDetector(recorder, this, feedback, viewR);
+
+    chatController=new mc.rb.ChatController(connector, motionDetector, this, viewR, userParams);    
     
-    viewR.setHandlers(_this.recorderInit, _this.recorderToggle, clipManager.playLocally, clipManager.uploadStoredBlob, feedback.toggle, motionDetector.toggle);
+    viewR.setHandlers(_this.recorderInit, _this.recorderToggle, clipManager.playLocally, clipManager.uploadStoredBlob, feedback.toggle, motionDetector.toggle, chatController.toggle);
     // keyboard events are monitored separately by KeyboardMonitor
   };
   
@@ -249,7 +252,7 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
         aov=userParams.audioOrVideo,
         recorderMime;
         
-    if (aov == "video") constraints.video=true;//constraints={ video: true }; //
+    if (aov == "video") constraints={ video: true }; //constraints.video=true;//
     recorderMime=mc.utils.checkRecorderMime(mc.mimeDictionary, aov);
     if ( ! recorderMime) throw new Error("Something is wrong with MIME detection");
     mime=recorderMime.chosenMime; 
@@ -462,6 +465,8 @@ mc.rb.ViewR=function() {
   
   this.showTiming=function(t) { $("timerInd").value=t; };
   
+  this.showChatPin=function(s) { $("chatPinS").innerHTML=s; };
+  
   this.showMessage=function(m) { $("recorderAlertP").innerHTML=m; };
   this.clearMessage=function(m) { $("recorderAlertP").innerHTML=""; };
   
@@ -523,13 +528,15 @@ mc.rb.ViewR=function() {
     };
   };
   
-  this.setHandlers=function(initRecorder, toggleRecorder, playLocally, uploadStoredBlob, toggleFeedback, toggleMotionDetector) {
+  this.setHandlers=function(initRecorder, toggleRecorder, playLocally, uploadStoredBlob,
+                            toggleFeedback, toggleMotionDetector, toggleChatController) {
     if ( ! initRecorder instanceof Function) throw new Error("Wrong initRecorder");
     if ( ! toggleRecorder instanceof Function) throw new Error("Wrong toggleRecorder");
     if ( ! playLocally instanceof Function) throw new Error("Wrong playLocally");
     if ( ! uploadStoredBlob instanceof Function) throw new Error("Wrong uploadStoredBlob");
     if ( ! toggleFeedback instanceof Function) throw new Error("Wrong toggleFeedback");
     if ( ! toggleMotionDetector instanceof Function) throw new Error("Wrong toggleMotionDetector");
+    if ( ! toggleChatController instanceof Function) throw new Error("Wrong toggleChatController");
     $("audioOrVideoRad1").onchange=initRecorder;
     $("audioOrVideoRad2").onchange=initRecorder;
     $("recordBtn").onclick=toggleRecorder;
@@ -537,6 +544,7 @@ mc.rb.ViewR=function() {
     $("uploadStoredBtn").onclick=uploadStoredBlob;
     $("feedbackBtn").onclick=toggleFeedback;
     $("motionDetectorBtn").onclick=toggleMotionDetector;
+    $("chatControlChkb").onchange=toggleChatController;
     // keyboard events are managed at the higher level by KeyboardMonitor
     $("toggleHideableRecB").onclick=_this.toggleHideable;
   };
@@ -547,5 +555,7 @@ mc.rb.ViewR=function() {
     };    
   }
   blurSelect();
+  
+  $("chatControlChkb").checked=false;
 
 }// end ViewR

@@ -86,8 +86,12 @@
   </span>
   <button id="uploadIndBtn" title="uplink indicator" >&nbsp;</button>
   <br />
-  <button id="feedbackBtn" class="hideable"></button>
-  <button id="motionDetectorBtn" class="hideable"></button>
+  <span class="hideable">
+    <button id="feedbackBtn"></button>
+    <button id="motionDetectorBtn"></button>
+    <label for="chatControlChkb">Chat controller</label><input type="checkbox" id="chatControlChkb" />
+    <span id="chatPinS"></span>
+  </span>
   <p id="recorderAlertP"></p>
 </fieldset>
 
@@ -134,7 +138,7 @@
 
 <div id="footer">
 &nbsp;<br />
-<a href="https://github.com/TrueWatcher/mozchat">mozchat</a>, an open source web phone and media chat by TrueWatcher 2019
+<a href="https://github.com/TrueWatcher/mozchat">mozchat</a>, an open source web phone and media chat by TrueWatcher 2019-2020
 </div>
 
 <script>

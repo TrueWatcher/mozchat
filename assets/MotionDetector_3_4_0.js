@@ -24,37 +24,44 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
     else {
       state=_this.start();
     }
-  }    
+  };  
       
   this.start=function() {
     var aov = mc.userParams.rb.audioOrVideo;
     if (aov !== "video") {
-      fail("Feedback works only in video mode, got "+aov);
+      fail("Detector works only in video mode, got "+aov);
       return false;
     }
     videoStream=recorder.getStream();
     if ( ! (videoStream instanceof MediaStream)) {
-      fail("Feedback requested MediaStream, got "+typeof videoStream);
+      fail("Detector requested MediaStream, got "+typeof videoStream);
       return false;
     }
+    if (state > 0) return state;
     
     clearAll();
     videoStream=recorder.getStream();
     videoElement=document.createElement('video');
     videoElement.muted=true;
+    
     videoElement.srcObject=videoStream;
-    //videoElement.src="outputC3.mp4";
+    // --------- DEBUG ---------------
     //videoElement.loop=true;
+    //videoElement.src="outputC3.mp4";
+    //videoElement.src="shade.mp4";
+    
     videoElement.play();
     canvas=document.createElement('canvas');
     videoElement.oncanplay=init2;
     ticker=new mc.utils.Ticker(onTick, captureIntervalMs);
     ticker.start();
     viewR.motionIndicator.z();
+    state=2;
     return 2;// the warm-up state    
   };
   
   function init2() {
+    if (analyser) return; // avoid calling again if looped 
     setCaptureSize(videoElement,canvas);
     ctx=canvas.getContext('2d');
     //ctx.scale(2.0,2.0);
@@ -68,7 +75,9 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
     viewR.motionIndicator.off();
     feedback.onMDStop();
     ticker.stop();
+    if (videoElement) videoElement.pause();
     clearAll();
+    state=0;
   };
   
   function clearAll() {
@@ -121,9 +130,6 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
       }
       else {} // all is quiet
     }
-    
-    //feedback.onMDRedraw();
-    //feedback.onMDStart(canvas);
   }
   
   function capture() {
@@ -158,26 +164,94 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
     console.log('Error: ' + err);
     viewR.showMessage('Error: ' + err);
   }
+  
+  this.set=function(paramStr) {
+    var key="", val="", res="ok", out;
+    var split=paramStr.split("=");
+    key=split[0].trim();
+    if (split[1] && split[1].trim()) val=split[1].trim();
+    switch(key) {
+    case "ci":
+      out=outRange(val,30,3600000);
+      if (out) { res=out; break; }
+      captureIntervalMs=val;
+      if (ticker) {
+        ticker.stop();
+        ticker=null;
+        ticker=new mc.utils.Ticker(onTick, captureIntervalMs);
+        ticker.start();
+      }
+      break;
+      
+    case "fu":
+      out=outRange(val,0,100);
+      if (out) { res=out; break; }
+      if ( ! analyser) { res="failed, start detector"; break; }
+      analyser.setFuzziness(val);
+      break;
+    
+    case "ac":
+      out=outRange(val,0,100);
+      if (out) { res=out; break; }
+      if ( ! analyser) { res="failed, start detector"; break; }
+      analyser.setAllowChanged(val);
+      break;
+
+    case "sf":
+      if ( ! analyser) { res="failed, start detector"; break; }
+      //alert("sf");
+      out=analyser.setSample(val);
+      if (out) res=out;
+      break;
+      
+    case "mf":
+      if ( ! analyser) { res="failed, start detector"; break; }
+      out=analyser.setRgbMetric(val);
+      if (out) res=out;
+      break;
+      
+    case "cf":
+      if ( ! analyser) { res="failed, start detector"; break; }
+      out=analyser.setCompare(val);
+      if (out) res=out;
+      break;
+      
+    case "":
+      res="give a name=value";
+      break;
+      
+    default:
+      res=key+" is not here";
+    }
+    return res;
+    
+  };
+  
+  function outRange(val, min, max) {
+    if (val < min || val > max) return "invalid value:"+val;
+    return "";
+  }
 }; // end MotionDetector
 
 mc.rb.MotionAnalyser=function(ctx, w, h) {
   var count=0,
       storedVect=false,
       fuzziness=10,
-      allowChangedPercent=20,
+      allowChangedPercent=5,
       demandUnchangedPercent=20,
       quietRgba=make1pxData(ctx,0,255,0,255),
       alertRgba=[ make1pxData(ctx,255,255,0,255), make1pxData(ctx,255,0,0,255) ],
       xyArr, newVect, sampleFn, rgbMetricFn, compareFn
   ;
   
-  sampleFn=central9;
-  rgbMetricFn=green;
-  compareFn=percent; //subtract;// 
+  sampleFn=c25; // c9; //
+  rgbMetricFn=hue; // green; //
+  compareFn=subtract;// percent; //
   xyArr=sampleFn(w, h);
   //console.log(mc.utils.dumpArray(xyArr));  
   
   this.go=function() {
+    //console.log(mc.utils.dumpArray(xyArr));
     newVect=xyToData(ctx,xyArr,rgbMetricFn);
     //console.log(mc.utils.dumpArray(newVect));
     if ( ! storedVect) {
@@ -190,7 +264,6 @@ mc.rb.MotionAnalyser=function(ctx, w, h) {
     storedVect=newVect;
     drawSensors(ctx, xyArr, diff, alertRgba[yes ? 1 : 0], quietRgba);
     return yes;
-    //return mock();
   };
   
   function mock() {
@@ -211,7 +284,7 @@ mc.rb.MotionAnalyser=function(ctx, w, h) {
         i=0;
     
     for (; i<l; i+=1) {
-      console.log(i+":"+compareFn(v1,v2,i));
+      //console.log(i+":"+compareFn(v1,v2,i));
       if (compareFn(v1,v2,i) > fuzziness) diff.push(i);
     }
     if (diff.length === 0) return false;
@@ -223,7 +296,7 @@ mc.rb.MotionAnalyser=function(ctx, w, h) {
   }
   
   function percent(v1,v2,i) {
-    var low = 5;
+    var low = 3;
     if (v2[i] < low && v1[i] < low) return 0;
     if (v1[i] < v2[i]) return Math.floor(100*(1.0 - v1[i]/v2[i]));
     else return Math.floor(100*(1.0 - v2[i]/v1[i]));
@@ -236,14 +309,24 @@ mc.rb.MotionAnalyser=function(ctx, w, h) {
     return ((diffPercent > allowChangedPercent) && (diffPercent < (100-demandUnchangedPercent)));
   }
   
-  function central9(w,h) {
+  function c9(w,h) {
+    var dd=[-1,0,1];
+    return central(w, h, dd,.28);
+  }
+  
+  function c25(w,h) {
+    var dd=[-2,-1,0,1,2];
+    return central(w, h, dd,.20);
+  }
+  
+  function central(w, h, dd, step) {
     var xc=Math.floor(w/2.0),
         yc=Math.floor(h/2.0),
-        dx=Math.floor(w*.28),
-        dy=Math.floor(h*.28),
+        dx=Math.floor(w*step),
+        dy=Math.floor(h*step),
         pixel,
         res=[],
-        dd=[-1,0,1],
+        //dd=[-1,0,1],
         i=0,
         j=0,
         l,x,y;
@@ -275,6 +358,44 @@ mc.rb.MotionAnalyser=function(ctx, w, h) {
   
   function green(r,g,b) { return g; }
   
+  function hue(r,g,b) {
+  // https://stackoverflow.com/questions/39118528/rgb-to-hsl-conversion
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    var max = Math.max(r, g, b);
+    var min = Math.min(r, g, b);
+    var c   = max - min;
+    var hue;
+    if (c == 0) {
+      hue = 0;
+    }
+    else {
+      switch(max) {
+        case r:
+          var segment = (g - b) / c;
+          var shift   = 0 / 60;       // R° / (360° / hex sides)
+          if (segment < 0) {          // hue > 180, full rotation
+            shift = 360 / 60;         // R° / (360° / hex sides)
+          }
+          hue = segment + shift;
+          break;
+        case g:
+          var segment = (b - r) / c;
+          var shift   = 120 / 60;     // G° / (360° / hex sides)
+          hue = segment + shift;
+          break;
+        case b:
+          var segment = (r - g) / c;
+          var shift   = 240 / 60;     // B° / (360° / hex sides)
+          hue = segment + shift;
+          break;
+      }
+    }
+    return Math.round(hue * 60); // hue is in [0,6], scale it up
+    //return Math.round(hue*16.66); // 0..100
+  }
+  
   function drawSensors(ctx,xyArr,diffArr,alertRgba,quietRgba) {
     var l=xyArr.length,
         i=0,
@@ -298,4 +419,140 @@ mc.rb.MotionAnalyser=function(ctx, w, h) {
     return res;
   }
   
-};
+  this.setFuzziness=function(v) {
+    if (v < 0 || v > 100) return;
+    fuzziness=v;
+    storedVect=false;
+  };
+  
+  this.setAllowChanged=function(v) {
+    if (v < 0 || v > 100) return;
+    allowChangedPercent=v;
+    storedVect=false;
+  };
+
+  this.setSample=function(v) {
+    if (v == "c9") sampleFn=c9;
+    else if (v == "c25") sampleFn=c25;
+    else return v+" is unknown so far";
+    xyArr=sampleFn(w, h);
+    storedVect=false;
+    return "setSample ok";
+  };
+  
+  this.setRgbMetric=function(v) {
+    if (v == "green") rgbMetricFn=green;
+    else if (v == "hue") rgbMetricFn=hue;
+    else return v+" is unknown so far";
+    storedVect=false;
+    return "ok";
+  };
+  
+  this.setCompare=function(v) {
+    if (v == "subtract") compareFn=subtract;
+    else if (v == "percent") compareFn=percent;
+    else return v+" is unknown so far";
+    storedVect=false;
+    return "ok";
+  };
+  
+};// end MotionAnalyser
+
+mc.rb.ChatController=function(connector, motionDetector, recorderBox, viewR, userParams) {
+  var _this=this,
+      pin=mc.utils.randomString(4),
+      isOn="new",
+      parts=[""],
+      sep=" ",
+      act="",
+      params="",
+      res=""
+  ;
+  
+  this.handleMessage=function(msg) {
+    if (isOn !== true) return;
+    
+    if (msg.pack  && msg.pack instanceof Array) {
+      msg.pack.forEach(function(m) { _this.handleMessage(m); });
+      return;
+    }
+
+    if ( ! msg.type || ! msg.target || ! msg.text || ! msg.user) return;
+    if (msg.type != "message" || msg.target != userParams.user) return;
+    //alert(msg.text);
+    parts=msg.text.trim().split(sep);
+    //alert(parts[0]);
+    if (parts[0] !== pin) { return; }
+    if (parts[1]) act=parts[1];
+    else act="";
+    if (parts[2]) params=parts[2];
+    else params="";
+    res=cli(act,params);
+    if (res) reply(res, msg.user);
+  };
+  
+  function reply(str, whom) {
+    if (str === true) str="ok";
+    var msg = {
+      text: str,
+      type: "message",
+      date: Date.now(),
+      user: userParams.user,
+      target: whom
+    };
+    connector.push.sendRelay(msg);
+  }
+  
+  function cli(act,params) {
+    var res="ok", r;
+    switch(act) {
+    case "echo":
+      res="ready";
+      break;
+    case "on":
+      recorderBox.recorderOn();
+      break;
+    case "off":
+      recorderBox.recorderOff();
+      break;
+    case "mdon":
+      r=motionDetector.start();
+      res=r > 0 ? "ok" : "failed";
+      break;
+    case "mdoff":
+      motionDetector.stop();
+      break;
+    case "mdset":
+      res=motionDetector.set(params);
+      break;
+    default:
+      res="what?";
+    }
+    return act+" "+params+" : "+res;
+  }
+  
+  this.toggle=function(event) {
+    var isChecked=event.target.checked;
+    if (isChecked) {
+      if (userParams.audioOrVideo != "video") {
+        viewR.showMessage("Turn video on");
+        event.target.checked=false;
+        return false;
+      }
+      if (isOn === "new") {
+        connector.pull.registerPullCallback(_this.handleMessage);
+      }
+      isOn=true;
+      pin=mc.utils.randomString(6);
+      viewR.showChatPin(pin);
+    }
+    else {
+      isOn=false;
+      pin=mc.utils.randomString(6);
+      viewR.showChatPin("");
+    }
+    //alert(event.target.checked);
+    return false;
+  };
+
+}
