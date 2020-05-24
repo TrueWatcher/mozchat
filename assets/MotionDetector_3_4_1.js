@@ -49,6 +49,7 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
     //videoElement.loop=true;
     //videoElement.src="outputC3.mp4";
     //videoElement.src="shade.mp4";
+    //videoElement.src="noise.mp4";
     
     videoElement.play();
     canvas=document.createElement('canvas');
@@ -166,15 +167,32 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
   }
   
   this.set=function(paramStr) {
-    var key="", val="", res="ok", out;
-    var split=paramStr.split("=");
-    key=split[0].trim();
-    if (split[1] && split[1].trim()) val=split[1].trim();
+    var res="", out, pairs, i=0;
+    if ( ! paramStr) return "give a name=value";
+    if (paramStr.indexOf(",") >= 0) {
+      pairs=paramStr.split(",");
+      for (i=0; i < pairs.length; i+=1) {
+        res=doSet(pairs[i]);
+        if (res) return res;
+      }
+      return "all "+pairs.length+" ok";
+    }
+    res=doSet(paramStr);
+    if (res) return res;
+    return "ok";
+  };
+    
+  function doSet(paramStr) {
+    var key="", val="", res="", out;
+    var keyVal=paramStr.trim().split("=");
+    key=keyVal[0].trim();
+    if (keyVal[1] && keyVal[1].trim()) val=keyVal[1].trim();
+    console.log("Motion detector parameter set: key="+key+", val="+val);
     switch(key) {
     case "ci":
       out=outRange(val,30,3600000);
       if (out) { res=out; break; }
-      captureIntervalMs=val;
+      captureIntervalMs=parseInt(val);
       if (ticker) {
         ticker.stop();
         ticker=null;
@@ -197,12 +215,18 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
       analyser.setAllowChanged(val);
       break;
 
+    case "pf":
+      if ( ! analyser) { res="failed, start detector"; break; }
+      out=analyser.setPattern(val);
+      if (out) res=out;
+      break;
+      
     case "sf":
       if ( ! analyser) { res="failed, start detector"; break; }
       //alert("sf");
-      out=analyser.setSample(val);
+      out=analyser.setSmooth(val);
       if (out) res=out;
-      break;
+      break;      
       
     case "mf":
       if ( ! analyser) { res="failed, start detector"; break; }
@@ -225,7 +249,7 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
     }
     return res;
     
-  };
+  }
   
   function outRange(val, min, max) {
     if (val < min || val > max) return "invalid value:"+val;
@@ -241,18 +265,19 @@ mc.rb.MotionAnalyser=function(ctx, w, h) {
       demandUnchangedPercent=20,
       quietRgba=make1pxData(ctx,0,255,0,255),
       alertRgba=[ make1pxData(ctx,255,255,0,255), make1pxData(ctx,255,0,0,255) ],
-      xyArr, newVect, sampleFn, rgbMetricFn, compareFn
+      xyArr, newVect, patternFn, smoothFn, rgbMetricFn, compareFn
   ;
   
-  sampleFn=c25; // c9; //
+  patternFn=c25; // c9; //
+  smoothFn=px9;
   rgbMetricFn=hue; // green; //
   compareFn=subtract;// percent; //
-  xyArr=sampleFn(w, h);
+  xyArr=patternFn(w, h);
   //console.log(mc.utils.dumpArray(xyArr));  
   
   this.go=function() {
     //console.log(mc.utils.dumpArray(xyArr));
-    newVect=xyToData(ctx,xyArr,rgbMetricFn);
+    newVect=xyToData(ctx,xyArr,rgbMetricFn,smoothFn);
     //console.log(mc.utils.dumpArray(newVect));
     if ( ! storedVect) {
       storedVect=newVect;
@@ -342,18 +367,42 @@ mc.rb.MotionAnalyser=function(ctx, w, h) {
     return res;
   }
   
-  function xyToData(ctx,xyArr,rgbMetricFn) {
+  function xyToData(ctx,xyArr,rgbMetricFn,smoothFn) {
     var l=xyArr.length,
         i=0,
         res=[],
         rgba;
     
     if ( ! rgbMetricFn instanceof Function) throw new Error("Invalid rgbMetricFn");
+    if ( ! smoothFn instanceof Function) throw new Error("Invalid smoothFn");
     for (; i<l; i+=1) {
-      rgba=ctx.getImageData(xyArr[i][0],xyArr[i][1],1,1).data;
+      rgba=smoothFn(ctx, xyArr[i][0],xyArr[i][1]);
       res.push(rgbMetricFn(rgba[0], rgba[1], rgba[2]));
     }
     return res;
+  }
+  
+  function px1(ctx,x,y) {
+    return ctx.getImageData(x,y,1,1).data;
+  }
+  
+  function px9(ctx,x,y) {
+    var side=3,
+        total=side*side,
+        dataArr,i,r=0,g=0,b=0,a=0;
+    
+    dataArr=ctx.getImageData(x,y,side,side).data;
+    for (i=0; i < total; i+=1) {
+      r += dataArr[i*4+0];
+      g += dataArr[i*4+1];
+      b += dataArr[i*4+2];
+      a += dataArr[i*4+3];
+    }
+    r=Math.round(r/total);
+    g=Math.round(g/total);
+    b=Math.round(b/total);
+    a=Math.round(a/total);
+    return [r, g, b, a];
   }
   
   function green(r,g,b) { return g; }
@@ -421,23 +470,31 @@ mc.rb.MotionAnalyser=function(ctx, w, h) {
   
   this.setFuzziness=function(v) {
     if (v < 0 || v > 100) return;
-    fuzziness=v;
+    fuzziness=parseInt(v);
     storedVect=false;
   };
   
   this.setAllowChanged=function(v) {
     if (v < 0 || v > 100) return;
-    allowChangedPercent=v;
+    allowChangedPercent=parseInt(v);
     storedVect=false;
   };
 
-  this.setSample=function(v) {
-    if (v == "c9") sampleFn=c9;
-    else if (v == "c25") sampleFn=c25;
+  this.setPattern=function(v) {
+    if (v == "c9") patternFn=c9;
+    else if (v == "c25") patternFn=c25;
     else return v+" is unknown so far";
-    xyArr=sampleFn(w, h);
+    xyArr=patternFn(w, h);
     storedVect=false;
-    return "setSample ok";
+    return "";
+  };
+  
+  this.setSmooth=function(v) {
+    if (v == "px1") smoothFn=px1;
+    else if (v == "px9") smoothFn=px9;
+    else return v+" is unknown so far";
+    storedVect=false;
+    return "";
   };
   
   this.setRgbMetric=function(v) {
@@ -445,7 +502,7 @@ mc.rb.MotionAnalyser=function(ctx, w, h) {
     else if (v == "hue") rgbMetricFn=hue;
     else return v+" is unknown so far";
     storedVect=false;
-    return "ok";
+    return "";
   };
   
   this.setCompare=function(v) {
@@ -453,7 +510,7 @@ mc.rb.MotionAnalyser=function(ctx, w, h) {
     else if (v == "percent") compareFn=percent;
     else return v+" is unknown so far";
     storedVect=false;
-    return "ok";
+    return "";
   };
   
 };// end MotionAnalyser
