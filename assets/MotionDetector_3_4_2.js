@@ -32,28 +32,21 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
       fail("Detector works only in video mode, got "+aov);
       return false;
     }
+    if (state > 0) return state;
+    
+    clearAll();
     videoStream=recorder.getStream();
     if ( ! (videoStream instanceof MediaStream)) {
       fail("Detector requested MediaStream, got "+typeof videoStream);
       return false;
     }
-    if (state > 0) return state;
-    
-    clearAll();
-    videoStream=recorder.getStream();
-    videoElement=document.createElement('video');
-    videoElement.muted=true;
-    
-    videoElement.srcObject=videoStream;
-    // --------- DEBUG ---------------
-    //videoElement.loop=true;
-    //videoElement.src="outputC3.mp4";
-    //videoElement.src="shade.mp4";
-    //videoElement.src="noise.mp4";
-    
-    videoElement.play();
     canvas=document.createElement('canvas');
-    videoElement.oncanplay=init2;
+    analyser=new mc.rb.MotionAnalyser();
+    takeStream(videoStream);
+    // --------- DEBUG ---------------
+    //takeStream("outputC3.mp4");
+    //takeStream("shade.mp4");
+    //takeStream("noise.mp4");
     ticker=new mc.utils.Ticker(onTick, captureIntervalMs);
     ticker.start();
     viewR.motionIndicator.z();
@@ -61,13 +54,31 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
     return 2;// the warm-up state    
   };
   
-  function init2() {
-    if (analyser) return; // avoid calling again if looped 
+  function takeStream(streamOrFile) {
+    videoElement=document.createElement('video');
+    videoElement.muted=true;
+    if (streamOrFile instanceof MediaStream) {
+      videoElement.srcObject=streamOrFile;
+      //alert("01");
+    }
+    else { // use mock video file
+      console.log("Using video file:"+streamOrFile);
+      videoElement.loop=true;
+      videoElement.src=streamOrFile;
+    }
+    videoElement.play();
+    videoElement.oncanplaythrough=video2ctx;
+    //alert("02");
+  }
+  
+  function video2ctx() {
+    //alert("video2ctx");
+    if (videoElement.loop && ctx) return; // avoid calling again if looped 
     setCaptureSize(videoElement,canvas);
     ctx=canvas.getContext('2d');
     //ctx.scale(2.0,2.0);
     ctx.imageSmoothingEnabled = false;
-    analyser=new mc.rb.MotionAnalyser(ctx, canvas.width, canvas.height);
+    analyser.addContext(ctx, canvas.width, canvas.height);
     feedback.onMDStart(canvas);
   }
   
@@ -93,7 +104,7 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
   }
   
   function onTick() {
-    if ( ! videoElement) { console.log("Futile tick, state="+state); return; }
+    if ( ! videoElement || ! ctx) { console.log("Futile tick, state="+state); return; }
     capture();
     var yes=analyser.go();
     
@@ -257,25 +268,32 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
   }
 }; // end MotionDetector
 
-mc.rb.MotionAnalyser=function(ctx, w, h) {
-  var count=0,
+mc.rb.MotionAnalyser=function() {
+  var ctx=false,
+      count=0,
       storedVect=false,
       fuzziness=10,
       allowChangedPercent=5,
       demandUnchangedPercent=20,
-      quietRgba=make1pxData(ctx,0,255,0,255),
-      alertRgba=[ make1pxData(ctx,255,255,0,255), make1pxData(ctx,255,0,0,255) ],
-      xyArr, newVect, patternFn, smoothFn, rgbMetricFn, compareFn
+      patternFn=c25, // c9, //
+      smoothFn=px1, // px9, //
+      rgbMetricFn=hue, // green, //
+      compareFn=subtract,// percent, //
+      w, h, quietRgba, alertRgba, xyArr, newVect
   ;
   
-  patternFn=c25; // c9; //
-  smoothFn=px9;
-  rgbMetricFn=hue; // green; //
-  compareFn=subtract;// percent; //
-  xyArr=patternFn(w, h);
-  //console.log(mc.utils.dumpArray(xyArr));  
+  this.addContext=function(aCtx, aW, aH) {
+    if ( ! aCtx) { console.log("Empty aCtx"); return; }
+    ctx=aCtx;
+    w=aW; h=aH;
+    quietRgba=make1pxData(ctx,0,255,0,255);
+    alertRgba=[ make1pxData(ctx,255,255,0,255), make1pxData(ctx,255,0,0,255) ];
+    xyArr=patternFn(w, h);
+    //console.log(mc.utils.dumpArray(xyArr));  
+  };
   
   this.go=function() {
+    if ( ! ctx) return false;
     //console.log(mc.utils.dumpArray(xyArr));
     newVect=xyToData(ctx,xyArr,rgbMetricFn,smoothFn);
     //console.log(mc.utils.dumpArray(newVect));
@@ -373,8 +391,8 @@ mc.rb.MotionAnalyser=function(ctx, w, h) {
         res=[],
         rgba;
     
-    if ( ! rgbMetricFn instanceof Function) throw new Error("Invalid rgbMetricFn");
-    if ( ! smoothFn instanceof Function) throw new Error("Invalid smoothFn");
+    if ( ! (rgbMetricFn instanceof Function)) throw new Error("Invalid rgbMetricFn");
+    if ( ! (smoothFn instanceof Function)) throw new Error("Invalid smoothFn");
     for (; i<l; i+=1) {
       rgba=smoothFn(ctx, xyArr[i][0],xyArr[i][1]);
       res.push(rgbMetricFn(rgba[0], rgba[1], rgba[2]));
@@ -484,8 +502,8 @@ mc.rb.MotionAnalyser=function(ctx, w, h) {
     if (v == "c9") patternFn=c9;
     else if (v == "c25") patternFn=c25;
     else return v+" is unknown so far";
-    xyArr=patternFn(w, h);
     storedVect=false;
+    if (ctx) xyArr=patternFn(w, h);
     return "";
   };
   
@@ -573,13 +591,17 @@ mc.rb.ChatController=function(connector, motionDetector, recorderBox, viewR, use
       recorderBox.recorderOff();
       break;
     case "mdon":
+      recorderBox.recorderOff();
       r=motionDetector.start();
       res=r > 0 ? "ok" : "failed";
+      if (res == "ok" && params) res=motionDetector.set(params);
       break;
     case "mdoff":
+      recorderBox.recorderOff();
       motionDetector.stop();
       break;
     case "mdset":
+      recorderBox.recorderOff();
       res=motionDetector.set(params);
       break;
     default:
