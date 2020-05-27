@@ -3,18 +3,18 @@
 mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
   var _this=this,
       state=0,
-      captureIntervalMs=1500,
+      captureIntervalMs=400,
       warmUpMs=3000,
       keepStillMs=2000,
       warmupCounter=0,
       isMoving=0,
       keepstillCounter=0,
-      canvas=false,
-      ctx,
-      analyser,
-      ticker,
-      videoStream,
-      videoElement;
+      canvasCapture=false,
+      ctxCapture,
+      canvasView=document.createElement('canvas'),
+      ctxView=canvasView.getContext('2d'),
+      scaleView=2,
+      analyser, ticker, videoStream, videoElement;
   
   this.toggle=function() {
     if (state > 0) {
@@ -29,7 +29,7 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
   this.start=function() {
     var aov = mc.userParams.rb.audioOrVideo;
     if (aov !== "video") {
-      fail("Detector works only in video mode, got "+aov);
+      fail("Turn video on");
       return false;
     }
     if (state > 0) return state;
@@ -40,7 +40,7 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
       fail("Detector requested MediaStream, got "+typeof videoStream);
       return false;
     }
-    canvas=document.createElement('canvas');
+    canvasCapture=document.createElement('canvas');
     analyser=new mc.rb.MotionAnalyser();
     takeStream(videoStream);
     // --------- DEBUG ---------------
@@ -73,13 +73,12 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
   
   function video2ctx() {
     //alert("video2ctx");
-    if (videoElement.loop && ctx) return; // avoid calling again if looped 
-    setCaptureSize(videoElement,canvas);
-    ctx=canvas.getContext('2d');
-    //ctx.scale(2.0,2.0);
-    ctx.imageSmoothingEnabled = false;
-    analyser.addContext(ctx, canvas.width, canvas.height);
-    feedback.onMDStart(canvas);
+    if (videoElement.loop && ctxCapture) return; // avoid calling again if looped 
+    setCanvasSize();
+    ctxCapture=canvasCapture.getContext('2d');
+    ctxCapture.imageSmoothingEnabled = false;
+    analyser.addContext(ctxCapture, canvasCapture.width, canvasCapture.height);
+    feedback.onMDStart(canvasView);
   }
   
   this.stop=function() {
@@ -87,31 +86,32 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
     viewR.motionIndicator.off();
     feedback.onMDStop();
     ticker.stop();
-    if (videoElement) videoElement.pause();
     clearAll();
     state=0;
   };
   
   function clearAll() {
     videoStream=false;
+    if (videoElement) videoElement.pause();
     videoElement=false;
     warmupCounter=0;
     keepstillCounter=0;
     isMoving=0;
-    ctx=false;
+    ctxCapture=false;
     analyser=false;
     ticker=false;
   }
   
   function onTick() {
-    if ( ! videoElement || ! ctx) { console.log("Futile tick, state="+state); return; }
+    if ( ! videoElement || ! ctxCapture) { console.log("Futile tick, state="+state); return; }
     capture();
     var yes=analyser.go();
+    copyCanvasToView();
     
     if (state == 2) { // warmup
       warmupCounter += captureIntervalMs;
       if (warmupCounter < warmUpMs) return;
-      // -> active
+      // warmUp -> active
       state=1;
       viewR.motionIndicator.on();
       warmupCounter=0;
@@ -145,10 +145,14 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
   }
   
   function capture() {
-    ctx.drawImage(videoElement,0,0,canvas.width,canvas.height);
+    ctxCapture.drawImage(videoElement,0,0,canvasCapture.width,canvasCapture.height);
   }
   
-  function setCaptureSize(videoElement,canvas) {
+  function copyCanvasToView() {
+    ctxView.drawImage(canvasCapture,0,0, canvasCapture.width*scaleView, canvasCapture.height*scaleView);
+  }
+  
+  function setCanvasSize() {
     var w=800,
         h=200,
         isPortrait=true,
@@ -167,9 +171,11 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
       scale=videoElement.videoHeight/lesserSide;
       w=Math.ceil(videoElement.videoWidth/scale);
     }
-    canvas.width = w;// videoElement.videoWidth;
-    canvas.height = h; //videoElement.videoHeight;
+    canvasCapture.width = w;// videoElement.videoWidth;
+    canvasCapture.height = h; //videoElement.videoHeight;
     //alert(w+"/"+h);
+    canvasView.width = w*scaleView;
+    canvasView.height = h*scaleView;
   }
   
   function fail(err) {
@@ -178,7 +184,7 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
   }
   
   this.set=function(paramStr) {
-    var res="", out, pairs, i=0;
+    var res="", pairs, i=0;
     if ( ! paramStr) return "give a name=value";
     if (paramStr.indexOf(",") >= 0) {
       pairs=paramStr.split(",");
@@ -194,61 +200,47 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
   };
     
   function doSet(paramStr) {
-    var key="", val="", res="", out;
+    var key="", val="", res="";
     var keyVal=paramStr.trim().split("=");
     key=keyVal[0].trim();
     if (keyVal[1] && keyVal[1].trim()) val=keyVal[1].trim();
     console.log("Motion detector parameter set: key="+key+", val="+val);
+    if ( ! analyser) return "failed, start detector";
+    
     switch(key) {
     case "ci":
-      out=outRange(val,30,3600000);
-      if (out) { res=out; break; }
-      captureIntervalMs=parseInt(val);
-      if (ticker) {
-        ticker.stop();
-        ticker=null;
-        ticker=new mc.utils.Ticker(onTick, captureIntervalMs);
-        ticker.start();
-      }
+      res=checkRange(val,30,3600000);
+      if (res) { break; }
+      restartTicker(val);
       break;
       
     case "fu":
-      out=outRange(val,0,100);
-      if (out) { res=out; break; }
-      if ( ! analyser) { res="failed, start detector"; break; }
-      analyser.setFuzziness(val);
+      res=checkRange(val,0,100);
+      if (res) { break; }
+      res=analyser.setFuzziness(val);
       break;
     
     case "ac":
-      out=outRange(val,0,100);
-      if (out) { res=out; break; }
-      if ( ! analyser) { res="failed, start detector"; break; }
-      analyser.setAllowChanged(val);
+      res=checkRange(val,0,100);
+      if (res) { break; }
+      res=analyser.setAllowChanged(val);
       break;
 
     case "pf":
-      if ( ! analyser) { res="failed, start detector"; break; }
-      out=analyser.setPattern(val);
-      if (out) res=out;
+      res=analyser.setPattern(val);
       break;
       
     case "sf":
-      if ( ! analyser) { res="failed, start detector"; break; }
       //alert("sf");
-      out=analyser.setSmooth(val);
-      if (out) res=out;
+      res=analyser.setSmooth(val);
       break;      
       
     case "mf":
-      if ( ! analyser) { res="failed, start detector"; break; }
-      out=analyser.setRgbMetric(val);
-      if (out) res=out;
+      res=analyser.setRgbMetric(val);
       break;
       
     case "cf":
-      if ( ! analyser) { res="failed, start detector"; break; }
-      out=analyser.setCompare(val);
-      if (out) res=out;
+      res=analyser.setCompare(val);
       break;
       
     case "":
@@ -262,20 +254,30 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
     
   }
   
-  function outRange(val, min, max) {
+  function checkRange(val, min, max) {
     if (val < min || val > max) return "invalid value:"+val;
     return "";
   }
+  
+  function restartTicker(newIntervalMs) {
+    captureIntervalMs=parseInt(val);
+    if ( ! ticker) return;
+    ticker.stop();
+    ticker=null;
+    ticker=new mc.utils.Ticker(onTick, captureIntervalMs);
+    ticker.start();
+  }
+  
 }; // end MotionDetector
 
 mc.rb.MotionAnalyser=function() {
-  var ctx=false,
+  var ctxCapture=false,
       count=0,
       storedVect=false,
       fuzziness=10,
       allowChangedPercent=5,
       demandUnchangedPercent=20,
-      patternFn=c25, // c9, //
+      patternFn=c25, // c9, // fr3, //
       smoothFn=px1, // px9, //
       rgbMetricFn=hue, // green, //
       compareFn=subtract,// percent, //
@@ -284,18 +286,18 @@ mc.rb.MotionAnalyser=function() {
   
   this.addContext=function(aCtx, aW, aH) {
     if ( ! aCtx) { console.log("Empty aCtx"); return; }
-    ctx=aCtx;
+    ctxCapture=aCtx;
     w=aW; h=aH;
-    quietRgba=make1pxData(ctx,0,255,0,255);
-    alertRgba=[ make1pxData(ctx,255,255,0,255), make1pxData(ctx,255,0,0,255) ];
+    quietRgba=make1pxData(ctxCapture,0,0,255,255);// blue
+    alertRgba=[ make1pxData(ctxCapture,255,0,255,255), make1pxData(ctxCapture,255,0,0,255) ];// magenta,red
     xyArr=patternFn(w, h);
     //console.log(mc.utils.dumpArray(xyArr));  
   };
   
   this.go=function() {
-    if ( ! ctx) return false;
+    if ( ! ctxCapture) return false;
     //console.log(mc.utils.dumpArray(xyArr));
-    newVect=xyToData(ctx,xyArr,rgbMetricFn,smoothFn);
+    newVect=xyToData(ctxCapture,xyArr,rgbMetricFn,smoothFn);
     //console.log(mc.utils.dumpArray(newVect));
     if ( ! storedVect) {
       storedVect=newVect;
@@ -305,7 +307,7 @@ mc.rb.MotionAnalyser=function() {
     //console.log(mc.utils.dumpArray(diff));    
     var yes=isSignificant(diff, newVect.length, allowChangedPercent,demandUnchangedPercent);
     storedVect=newVect;
-    drawSensors(ctx, xyArr, diff, alertRgba[yes ? 1 : 0], quietRgba);
+    drawSensors(ctxCapture, xyArr, diff, alertRgba[yes ? 1 : 0], quietRgba);
     return yes;
   };
   
@@ -319,7 +321,7 @@ mc.rb.MotionAnalyser=function() {
   }
   
   function countVectorDiff(v1, v2, fuzziness, compareFn) {
-    if ( ! rgbMetricFn instanceof Function) throw new Error("Invalid rgbMetricFn");
+    if ( ! (rgbMetricFn instanceof Function)) throw new Error("Invalid rgbMetricFn");
     if ( ! v1 || ! v2) { return false; }
     if (v1.length != v2.length) throw new Error("Size mismatch:"+v1.length+"/"+v2.length);
     var l=v1.length,
@@ -349,7 +351,9 @@ mc.rb.MotionAnalyser=function() {
     var diffPercent;
     if (diff === false) return false;
     diffPercent=Math.round(diff.length/l*100);
-    return ((diffPercent > allowChangedPercent) && (diffPercent < (100-demandUnchangedPercent)));
+    if (diffPercent < allowChangedPercent) return false;
+    if (diffPercent > (100-demandUnchangedPercent)) return false;
+    return true;
   }
   
   function c9(w,h) {
@@ -367,15 +371,11 @@ mc.rb.MotionAnalyser=function() {
         yc=Math.floor(h/2.0),
         dx=Math.floor(w*step),
         dy=Math.floor(h*step),
-        pixel,
         res=[],
-        //dd=[-1,0,1],
-        i=0,
-        j=0,
-        l,x,y;
-    
-    l=dd.length;
-    for (; i<l; i+=1) {
+        l=dd.length,
+        i,j,x,y;
+        
+    for (i=0; i<l; i+=1) {
       for (j=0; j<l; j+=1) {
         x=xc+dx*dd[i];
         y=yc+dy*dd[j];
@@ -385,7 +385,36 @@ mc.rb.MotionAnalyser=function() {
     return res;
   }
   
-  function xyToData(ctx,xyArr,rgbMetricFn,smoothFn) {
+  function fr3(w,h) {
+    var dd=[-4,-3,-2,-1,0,1,2,3,4], dd2=[-3,-2,-1,0,1,2,3], res;
+    res=fr(w, h, dd,.105);
+    res=res.concat(fr(w, h, dd,.08));
+    res=res.concat(fr(w, h, dd2,.07));
+    return res;
+  }
+  
+  function fr(w, h, dd, step) {
+    var xc=Math.floor(w/2.0),
+        yc=Math.floor(h/2.0),
+        dx=Math.floor(w*step),
+        dy=Math.floor(h*step),
+        res=[],
+        l=dd.length,
+        i,j,x,y,inc;
+        
+    for (i=0; i<l; i+=1) {
+      if (i == 0 || i == l-1) { inc=1; }
+      else { inc = l-1; }
+      for (j=0; j<l; j+=inc) {
+        x=xc+dx*dd[i];
+        y=yc+dy*dd[j];
+        res.push([x, y]);
+      }
+    }
+    return res;
+  }
+  
+  function xyToData(ctxCapture,xyArr,rgbMetricFn,smoothFn) {
     var l=xyArr.length,
         i=0,
         res=[],
@@ -394,22 +423,23 @@ mc.rb.MotionAnalyser=function() {
     if ( ! (rgbMetricFn instanceof Function)) throw new Error("Invalid rgbMetricFn");
     if ( ! (smoothFn instanceof Function)) throw new Error("Invalid smoothFn");
     for (; i<l; i+=1) {
-      rgba=smoothFn(ctx, xyArr[i][0],xyArr[i][1]);
+      rgba=smoothFn(ctxCapture, xyArr[i][0],xyArr[i][1]);
       res.push(rgbMetricFn(rgba[0], rgba[1], rgba[2]));
     }
     return res;
   }
   
-  function px1(ctx,x,y) {
-    return ctx.getImageData(x,y,1,1).data;
+  function px1(ctxCapture,x,y) {
+    return ctxCapture.getImageData(x,y,1,1).data;
   }
   
-  function px9(ctx,x,y) {
+  function px9(ctxCapture,x,y) {
     var side=3,
         total=side*side,
-        dataArr,i,r=0,g=0,b=0,a=0;
+        r=0,g=0,b=0,a=0,
+        dataArr,i;
     
-    dataArr=ctx.getImageData(x,y,side,side).data;
+    dataArr=ctxCapture.getImageData(x,y,side,side).data;
     for (i=0; i < total; i+=1) {
       r += dataArr[i*4+0];
       g += dataArr[i*4+1];
@@ -433,52 +463,48 @@ mc.rb.MotionAnalyser=function() {
     var max = Math.max(r, g, b);
     var min = Math.min(r, g, b);
     var c   = max - min;
-    var hue;
-    if (c == 0) {
-      hue = 0;
-    }
+    var hue,segment,shift;
+    if (c == 0) { hue = 0; }
     else {
       switch(max) {
         case r:
-          var segment = (g - b) / c;
-          var shift   = 0 / 60;       // R° / (360° / hex sides)
+          segment = (g - b) / c;
+          shift   = 0 / 60;       // R° / (360° / hex sides)
           if (segment < 0) {          // hue > 180, full rotation
             shift = 360 / 60;         // R° / (360° / hex sides)
           }
-          hue = segment + shift;
           break;
         case g:
-          var segment = (b - r) / c;
-          var shift   = 120 / 60;     // G° / (360° / hex sides)
-          hue = segment + shift;
+          segment = (b - r) / c;
+          shift   = 120 / 60;     // G° / (360° / hex sides)
           break;
         case b:
-          var segment = (r - g) / c;
-          var shift   = 240 / 60;     // B° / (360° / hex sides)
-          hue = segment + shift;
+          segment = (r - g) / c;
+          shift   = 240 / 60;     // B° / (360° / hex sides)
           break;
       }
+      hue = segment + shift;
     }
     return Math.round(hue * 60); // hue is in [0,6], scale it up
     //return Math.round(hue*16.66); // 0..100
   }
   
-  function drawSensors(ctx,xyArr,diffArr,alertRgba,quietRgba) {
-    var l=xyArr.length,
-        i=0,
-        j=0;
+  function drawSensors(ctxCapture,xyArr,diffArr,alertRgba,quietRgba) {
+    var l=xyArr.length, i, j;
         
-    for (; i<l; i+=1) {
-      ctx.putImageData(quietRgba, xyArr[i][0], xyArr[i][1]);
+    // paint all sensor points with quiet color
+    for (i=0; i<l; i+=1) {
+      ctxCapture.putImageData(quietRgba, xyArr[i][0], xyArr[i][1]);
     }
+    // repaint the changed points with alert color
     if ( ! diffArr) return;
     diffArr.forEach(function(j) {
-      ctx.putImageData(alertRgba, xyArr[j][0], xyArr[j][1]);
+      ctxCapture.putImageData(alertRgba, xyArr[j][0], xyArr[j][1]);
     });    
   }
   
-  function make1pxData(ctx,r,g,b,a) {
-    var res=ctx.createImageData(1,1);
+  function make1pxData(ctxCapture,r,g,b,a) {
+    var res=ctxCapture.createImageData(1,1);
     res.data[0]=r;
     res.data[1]=g;
     res.data[2]=b;
@@ -501,9 +527,10 @@ mc.rb.MotionAnalyser=function() {
   this.setPattern=function(v) {
     if (v == "c9") patternFn=c9;
     else if (v == "c25") patternFn=c25;
+    else if (v == "fr3") patternFn=fr3;
     else return v+" is unknown so far";
     storedVect=false;
-    if (ctx) xyArr=patternFn(w, h);
+    if (ctxCapture) xyArr=patternFn(w, h);
     return "";
   };
   
@@ -555,7 +582,11 @@ mc.rb.ChatController=function(connector, motionDetector, recorderBox, viewR, use
     if ( ! msg.type || ! msg.target || ! msg.text || ! msg.user) return;
     if (msg.type != "message" || msg.target != userParams.user) return;
     //alert(msg.text);
-    parts=msg.text.trim().split(sep);
+    // pin command [key=val[,key2=val2,key3=val3]]
+    // 123456 on
+    // 123456 mdset mf=hue,fu=15,ci=300,pf=fr3,sf=px9,mf=subtract
+    // 123456 mdset mf=green,fu=8,ci=200,pf=c9,sf=px9,mf=subtract
+    parts=msg.text.trim().replace(/\s+/g,sep).split(sep);
     //alert(parts[0]);
     if (parts[0] !== pin) { return; }
     if (parts[1]) act=parts[1];
@@ -575,7 +606,8 @@ mc.rb.ChatController=function(connector, motionDetector, recorderBox, viewR, use
       user: userParams.user,
       target: whom
     };
-    connector.push.sendRelay(msg);
+    if (mc.serverParams.wsOn) { connector.pull.sendRelay(msg); }
+    else { connector.push.sendRelay(msg); }
   }
   
   function cli(act,params) {
