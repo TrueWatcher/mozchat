@@ -237,8 +237,11 @@ function checkFields($input) {
 
 function checkBlob($files,$pr) {
   $r=true;
+  $allowedMiB=ceil($pr->g("maxBlobBytes")/1048576);
   if ( ! isset($files["blob"])) $r="Missing the file";
-  else if ( $files["blob"]["size"] > $pr->g("maxBlobBytes") ) $r="File is bigger than ".b2kb($pr->g("maxBlobBytes"));
+  else if ( $allowedMiB > intval(ini_get('upload_max_filesize')) ) $r="Parameter in .ini is bigger than upload_max_filesize in php.ini:".$allowedMiB."/".ini_get('upload_max_filesize');
+  else if ( $allowedMiB > intval(ini_get('post_max_size')) ) $r="Parameter in .ini is bigger than post_max_size in php.ini:".$allowedMiB."/".ini_get('post_max_size');
+  else if ( $files["blob"]["size"] > $pr->g("maxBlobBytes") ) $r="File is too big, server allows only ".b2kb($pr->g("maxBlobBytes"));
   if ($r !== true) throw new DataException($r);
 }
 
