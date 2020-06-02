@@ -4,7 +4,6 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
   var _this=this,
       state=0,
       captureIntervalMs=400,
-      diffBlurRad=2,
       warmUpMs=3000,
       keepStillMs=2000,
       warmupCounter=0,
@@ -81,7 +80,7 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
     setCanvasSize();
     ctxCapture=canvasCapture.getContext('2d');
     ctxCapture.imageSmoothingEnabled = false;
-    analyser.addContext(ctxCapture, canvasCapture.width, canvasCapture.height);
+    analyser.addContext(canvasCapture, canvasCapture.width, canvasCapture.height);
     feedback.onMDStart(canvasView);
   }
   
@@ -109,8 +108,7 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
   function onTick() {
     if ( ! videoElement || ! ctxCapture) { console.log("Futile tick, state="+state); return; }
     //console.time();
-    captureNStore();//capture();
-    var yes=analyser.go();
+    var yes=analyser.go(videoElement);
     copyCanvasToView();
     //console.timeEnd();
     
@@ -150,41 +148,9 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
     }
   }
   
-  function capture() {
-    ctxCapture.drawImage(videoElement,0,0,canvasCapture.width,canvasCapture.height);
-  }
-  
-  function captureNStore() {
-    if ( ! canvasBuf) return capture();
-    ctxCapture.globalCompositeOperation = "copy";
-    ctxCapture.filter="none";
-    ctxCapture.drawImage(canvasBuf,0,0,canvasCapture.width,canvasCapture.height);
-    ctxCapture.globalCompositeOperation = "difference";
-    canvasBuf.getContext('2d').drawImage(videoElement,0,0,canvasCapture.width,canvasCapture.height);
-    ctxCapture.drawImage(canvasBuf,0,0,canvasCapture.width,canvasCapture.height);
-    //ctxCapture.filter="blur("+diffBlurRad+"px)";// does not blur drawn image
-    StackBlur.canvasRGBA(canvasCapture,0,0,canvasCapture.width,canvasCapture.height, diffBlurRad);
-    //ctxCapture.globalCompositeOperation = "copy";
-  }
-  
-  function initCanvasBuf() {
-    canvasBuf=document.createElement('canvas');
-    canvasBuf.width=canvasCapture.width;
-    canvasBuf.height=canvasCapture.height;
-    canvasBuf.getContext('2d').imageSmoothingEnabled = false;
-    var script=document.createElement('script');
-    script.src="stackblur.min.js";
-    document.body.appendChild(script);
-    analyser.setRgbMetric("green");
-    analyser.setFuzziness(20);
-    analyser.setAllowChanged("20");
-  }
-  
   function copyCanvasToView() {
-    ctxView.drawImage(canvasCapture,0,0, canvasCapture.width*scaleView, canvasCapture.height*scaleView);    
-    //ctxView.font = "20px Arial"; //Arial
-    //ctxView.fillStyle = "#ffffff";
-    //ctxView.fillText(">"+analyser.getWeight() , 0, 22); // 
+    if ( ! ctxView || ! canvasCapture) { return; }
+    ctxView.drawImage(canvasCapture,0,0, canvasCapture.width*scaleView, canvasCapture.height*scaleView);     
   }
   
   function setCanvasSize() {
@@ -211,8 +177,6 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
     //alert(w+"/"+h);
     canvasView.width = w*scaleView;
     canvasView.height = h*scaleView;
-    
-    initCanvasBuf();
   }
   
   function fail(err) {
@@ -254,7 +218,7 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
     case "br":
       res=checkRange(val,0,100);
       if (res) { break; }
-      diffBlurRad=val;
+      analyser.setDiffBlurRad=val;
       break;
       
     case "fu":
@@ -314,31 +278,62 @@ mc.rb.MotionDetector=function(recorder, recorderBox, feedback, viewR) {
 }; // end MotionDetector
 
 mc.rb.MotionAnalyser=function() {
-  var ctxCapture=false,
+  var canvasCapture=false,
+      ctxCapture=false,
+      canvasBuf=false,      
       count=0,
       storedVect=false,
+      weight=0,
       fuzziness=10,
-      allowChangedPercent=5,
-      demandUnchangedPercent=20,
-      patternFn=c25, // c9, // fr3, //
+      diffBlurRad=2,
+      allowChanged=5,
+      demandUnchanged=20,
+      patternFn="dbh", // "dbdh", // c25, // c9, // fr3, // dbdh
       smoothFn=px1, // px9, //
       rgbMetricFn=hue, // green, //
       compareFn=subtract,// percent, //
-      w, h, quietRgba, alertRgba, xyArr, newVect, weight
+      w, h, quietRgba, alertRgba, xyArr, newVect
   ;
   
-  this.addContext=function(aCtx, aW, aH) {
-    if ( ! aCtx) { console.log("Empty aCtx"); return; }
-    ctxCapture=aCtx;
+  if (patternFn instanceof Function) {
+    rgbMetricFn=hue;
+    fuzziness=10;
+    allowChanged=5;
+  }
+  else {
+    rgbMetricFn=green;
+    fuzziness=20;
+    allowChanged=20;
+  }
+  
+  this.addContext=function(aCanvasCapture, aW, aH) {
+    if ( ! aCanvasCapture) { console.log("Empty aCtx"); return; }
+    canvasCapture=aCanvasCapture;
+    ctxCapture=canvasCapture.getContext("2d");
     w=aW; h=aH;
     quietRgba=make1pxData(ctxCapture,0,0,255,255);// blue
     alertRgba=[ make1pxData(ctxCapture,255,0,255,255), make1pxData(ctxCapture,255,0,0,255) ];// magenta,red
-    xyArr=patternFn(w, h);
-    //console.log(mc.utils.dumpArray(xyArr));  
+    if (patternFn instanceof Function) {
+      xyArr=patternFn(w, h);
+      //console.log(mc.utils.dumpArray(xyArr));
+      this.go=processSpots;
+    }
+    else {
+      canvasBuf=document.createElement('canvas');
+      canvasBuf.width=canvasCapture.width;
+      canvasBuf.height=canvasCapture.height;
+      canvasBuf.getContext('2d').imageSmoothingEnabled = false;
+      var script=document.createElement('script');
+      script.src="assets/stackblur.min.js";
+      document.body.appendChild(script);
+      this.go=process2d;
+    }
   };
   
-  this.go__=function() {
+  function processSpots(videoElement) {
+    var yes, diff;
     if ( ! ctxCapture) return false;
+    capture(videoElement);
     //console.log(mc.utils.dumpArray(xyArr));
     newVect=xyToData(ctxCapture,xyArr,rgbMetricFn,smoothFn);
     //console.log(mc.utils.dumpArray(newVect));
@@ -346,32 +341,38 @@ mc.rb.MotionAnalyser=function() {
       storedVect=newVect;
       return false;
     }  
-    var diff=countVectorDiff(newVect, storedVect, fuzziness, compareFn);
+    diff=countVectorDiff(newVect, storedVect, fuzziness, compareFn);
     //console.log(mc.utils.dumpArray(diff));    
-    var yes=isSignificant(diff, newVect.length, allowChangedPercent,demandUnchangedPercent);
+    yes=isSignificant(diff, newVect.length, allowChanged,demandUnchanged);
     storedVect=newVect;
     drawSensors(ctxCapture, xyArr, diff, alertRgba[yes ? 1 : 0], quietRgba);
     return yes;
   };
   
-  this.go=function() {
+  function process2d(videoElement) {
+    var yes, diff;
     if ( ! ctxCapture) return false;
-    newVect=histogram(ctxCapture, rgbMetricFn, w, h);
+    captureNStore(videoElement);
+    newVect=histogram(ctxCapture, green, w, h);
     //console.log(mc.utils.dumpArray(newVect));
     if ( ! storedVect) {
       storedVect=newVect;
       return false;
-    }  
-    var diff=subtractHistograms(newVect, storedVect);
-    //console.log(mc.utils.dumpArray(diff));
-    weight=weightHead(diff,fuzziness);
+    }
+    if (patternFn === "dbh") {
+      weight=weightHead(newVect,fuzziness);
+    }
+    else if (patternFn === "dbdh") {
+      diff=subtractHistograms(newVect, storedVect);
+      //console.log(mc.utils.dumpArray(diff));
+      weight=weightHead(diff,fuzziness);
+    }
+    else throw new Error("Unknow patternFn:"+patternFn);
     //console.log("weight:"+weight);    
-    var yes=(weight > allowChangedPercent*100);
-    yes=yes && ( weight < allowChangedPercent*100*100 );
+    yes=(weight > allowChanged*100);
+    yes=yes && ( weight < allowChanged*100*50 );
     storedVect=newVect;
-    ctxCapture.font = "12px Arial";
-    ctxCapture.fillStyle = yes ? "#ff0000" : "#ff00ff";
-    ctxCapture.fillText(">"+weight, 0, 15);
+    drawWeight(ctxCapture, weight, yes ? "#ff0000" : "#ff00ff");
     return yes;
   };
   
@@ -384,6 +385,12 @@ mc.rb.MotionAnalyser=function() {
       if (count > 20000) count=0;
     }
     return false;    
+  }
+      
+  function capture(videoElement) {
+    ctxCapture.globalCompositeOperation = "copy";
+    ctxCapture.filter="none";
+    ctxCapture.drawImage(videoElement,0,0,canvasCapture.width,canvasCapture.height);
   }
   
   function countVectorDiff(v1, v2, fuzziness, compareFn) {
@@ -413,12 +420,12 @@ mc.rb.MotionAnalyser=function() {
     else return Math.floor(100*(1.0 - v2[i]/v1[i]));
   }
   
-  function isSignificant(diff,l,allowChangedPercent,demandUnchangedPercent) {
+  function isSignificant(diff,l,allowChanged,demandUnchanged) {
     var diffPercent;
     if (diff === false) return false;
     diffPercent=Math.round(diff.length/l*100);
-    if (diffPercent < allowChangedPercent) return false;
-    if (diffPercent > (100-demandUnchangedPercent)) return false;
+    if (diffPercent < allowChanged) return false;
+    if (diffPercent > (100-demandUnchanged)) return false;
     return true;
   }
   
@@ -480,6 +487,8 @@ mc.rb.MotionAnalyser=function() {
     return res;
   }
   
+  function dummyFn() {}
+  
   function xyToData(ctxCapture,xyArr,rgbMetricFn,smoothFn) {
     var l=xyArr.length,
         i=0,
@@ -495,9 +504,22 @@ mc.rb.MotionAnalyser=function() {
     return res;
   }
   
+  function captureNStore(videoElement) {
+    if ( ! canvasBuf) return capture();
+    ctxCapture.globalCompositeOperation = "copy";
+    ctxCapture.filter="none";
+    ctxCapture.drawImage(canvasBuf,0,0,canvasCapture.width,canvasCapture.height);
+    ctxCapture.globalCompositeOperation = "difference";
+    canvasBuf.getContext('2d').drawImage(videoElement,0,0,canvasCapture.width,canvasCapture.height);
+    ctxCapture.drawImage(canvasBuf,0,0,canvasCapture.width,canvasCapture.height);
+    //ctxCapture.filter="blur("+diffBlurRad+"px)";// does not blur drawn image
+    StackBlur.canvasRGBA(canvasCapture,0,0,canvasCapture.width,canvasCapture.height, diffBlurRad);
+    //ctxCapture.globalCompositeOperation = "copy";
+  }
+  
   function histogram(ctxCapture,rgbMetricFn,w,h) {
     var res=[], rgba, value, i, j;
-    for (i=0; i<=360; i+=1) { res[i]=0; }
+    for (i=0; i<=255; i+=1) { res[i]=0; }
     
     for (i=0; i<w; i+=1) {
       for (j=0; j<h; j+=1) {
@@ -589,9 +611,9 @@ mc.rb.MotionAnalyser=function() {
       }
       hue = segment + shift;
     }
-    return Math.round(hue * 60); // hue is in [0,6], scale it up
+    //return Math.round(hue * 60); // hue is in [0,6], scale it up
     //return Math.round(hue*16.66); // 0..100
-    //return Math.round(hue*42.5); // 0..255
+    return Math.round(hue*42.5); // 0..255
   }
   
   function drawSensors(ctxCapture,xyArr,diffArr,alertRgba,quietRgba) {
@@ -617,6 +639,12 @@ mc.rb.MotionAnalyser=function() {
     return res;
   }
   
+  function drawWeight(ctxCapture, weight, color) {
+    ctxCapture.font = "12px Arial";
+    ctxCapture.fillStyle = color;
+    ctxCapture.fillText(">"+Math.round(weight/100), 0, 15);
+  }
+  
   this.setFuzziness=function(v) {
     if (v < 0 || v > 100) return;
     fuzziness=parseInt(v);
@@ -625,7 +653,7 @@ mc.rb.MotionAnalyser=function() {
   
   this.setAllowChanged=function(v) {
     if (v < 0 || v > 100) return;
-    allowChangedPercent=parseInt(v);
+    allowChanged=parseInt(v);
     storedVect=false;
   };
 
@@ -633,9 +661,10 @@ mc.rb.MotionAnalyser=function() {
     if (v == "c9") patternFn=c9;
     else if (v == "c25") patternFn=c25;
     else if (v == "fr3") patternFn=fr3;
+    else if (v == "dbdh" || v == "dbh") patternFn=v;
     else return v+" is unknown so far";
     storedVect=false;
-    if (ctxCapture) xyArr=patternFn(w, h);
+    if (ctxCapture && (patternFn instanceof Function)) xyArr=patternFn(w, h);
     return "";
   };
   
@@ -662,6 +691,8 @@ mc.rb.MotionAnalyser=function() {
     storedVect=false;
     return "";
   };
+  
+  this.setDiffBlurRad=function(v) { diffBlurRad=v; };
   
 };// end MotionAnalyser
 
