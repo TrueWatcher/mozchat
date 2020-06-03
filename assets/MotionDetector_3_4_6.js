@@ -305,6 +305,7 @@ mc.rb.MotionAnalyser=function() {
     fuzziness=20;
     allowChanged=20;
   }
+  loadStackblur();
   
   this.addContext=function(aCanvasCapture, aW, aH) {
     if ( ! aCanvasCapture) { console.log("Empty aCtx"); return; }
@@ -313,22 +314,26 @@ mc.rb.MotionAnalyser=function() {
     w=aW; h=aH;
     quietRgba=make1pxData(ctxCapture,0,0,255,255);// blue
     alertRgba=[ make1pxData(ctxCapture,255,0,255,255), make1pxData(ctxCapture,255,0,0,255) ];// magenta,red
+    canvasBuf=document.createElement('canvas');
+    canvasBuf.width=canvasCapture.width;
+    canvasBuf.height=canvasCapture.height;
+    canvasBuf.getContext('2d').imageSmoothingEnabled = false;
     if (patternFn instanceof Function) {
       xyArr=patternFn(w, h);
       //console.log(mc.utils.dumpArray(xyArr));
       this.go=processSpots;
     }
     else {
-      canvasBuf=document.createElement('canvas');
-      canvasBuf.width=canvasCapture.width;
-      canvasBuf.height=canvasCapture.height;
-      canvasBuf.getContext('2d').imageSmoothingEnabled = false;
-      var script=document.createElement('script');
-      script.src="assets/stackblur.min.js";
-      document.body.appendChild(script);
       this.go=process2d;
     }
   };
+  
+  function loadStackblur() {
+    if (typeof StackBlur !== "undefined") return;
+    var script=document.createElement('script');
+    script.src="assets/stackblur.min.js";
+    document.body.appendChild(script);
+  }
   
   function processSpots(videoElement) {
     var yes, diff;
@@ -355,23 +360,13 @@ mc.rb.MotionAnalyser=function() {
     captureNStore(videoElement);
     newVect=histogram(ctxCapture, green, w, h);
     //console.log(mc.utils.dumpArray(newVect));
-    if ( ! storedVect) {
-      storedVect=newVect;
-      return false;
-    }
     if (patternFn === "dbh") {
-      weight=weightHead(newVect,fuzziness);
-    }
-    else if (patternFn === "dbdh") {
-      diff=subtractHistograms(newVect, storedVect);
-      //console.log(mc.utils.dumpArray(diff));
-      weight=weightHead(diff,fuzziness);
+      weight=weightHead(newVect,allowChanged);
     }
     else throw new Error("Unknow patternFn:"+patternFn);
     //console.log("weight:"+weight);    
-    yes=(weight > allowChanged*100);
-    yes=yes && ( weight < allowChanged*100*50 );
-    storedVect=newVect;
+    yes=(weight > fuzziness*100);
+    yes=yes && ( weight < (100-demandUnchanged)*100 );
     drawWeight(ctxCapture, weight, yes ? "#ff0000" : "#ff00ff");
     return yes;
   };
@@ -518,15 +513,13 @@ mc.rb.MotionAnalyser=function() {
   }
   
   function histogram(ctxCapture,rgbMetricFn,w,h) {
-    var res=[], rgba, value, i, j;
+    var res=[], rgba, value, i, total=w*h*4;
     for (i=0; i<=255; i+=1) { res[i]=0; }
     
-    for (i=0; i<w; i+=1) {
-      for (j=0; j<h; j+=1) {
-        rgba=px1(ctxCapture, i, j);
-        value=Math.round(rgbMetricFn(rgba[0], rgba[1], rgba[2]));
-        res[value] += 1;
-      }
+    rgba=ctxCapture.getImageData(0,0,w,h).data;// reading by one pixel is very slow   
+    for (i=0; i<total; i+=4) {
+      value=Math.round(rgbMetricFn(rgba[i+0], rgba[i+1], rgba[i+2]));
+      res[value] += 1;
     }
     return res;
   }
@@ -647,7 +640,8 @@ mc.rb.MotionAnalyser=function() {
   
   this.setFuzziness=function(v) {
     if (v < 0 || v > 100) return;
-    fuzziness=parseInt(v);
+    if (v < 1) fuzziness=v;
+    else fuzziness=parseInt(v);
     storedVect=false;
   };
   
@@ -661,10 +655,17 @@ mc.rb.MotionAnalyser=function() {
     if (v == "c9") patternFn=c9;
     else if (v == "c25") patternFn=c25;
     else if (v == "fr3") patternFn=fr3;
-    else if (v == "dbdh" || v == "dbh") patternFn=v;
+    else if (v == "dbh") patternFn=v;
     else return v+" is unknown so far";
     storedVect=false;
-    if (ctxCapture && (patternFn instanceof Function)) xyArr=patternFn(w, h);
+    if (patternFn instanceof Function) {
+      if (ctxCapture) xyArr=patternFn(w, h);
+      //console.log(mc.utils.dumpArray(xyArr));
+      this.go=processSpots;
+    }
+    else {
+      this.go=process2d;
+    }
     return "";
   };
   
