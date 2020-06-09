@@ -366,7 +366,7 @@ mc.rb.MotionAnalyser=function() {
     else throw new Error("Unknow patternFn:"+patternFn);
     //console.log("weight:"+weight);    
     yes=(weight > fuzziness*100);
-    yes=yes && ( weight < (100-demandUnchanged)*100 );
+    yes=yes && ( weight < w*h*(100-demandUnchanged)*100 );
     drawWeight(ctxCapture, weight, yes ? "#ff0000" : "#ff00ff");
     return yes;
   };
