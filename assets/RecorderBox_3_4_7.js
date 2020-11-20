@@ -251,10 +251,11 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
     var constraints={ audio: true },
         aov=userParams.audioOrVideo,
         recorderMime;
-        
-    if (aov == "video") constraints={ video: true }; //constraints.video=true;//
+    
+    if (aov == "video") constraints.video=true;//constraints={ video: true }; //constraints.video=true;//
     recorderMime=mc.utils.checkRecorderMime(mc.mimeDictionary, aov);
     if ( ! recorderMime) throw new Error("Something is wrong with MIME detection");
+    console.log("chosen:"+mc.utils.dumpArray(recorderMime));
     mime=recorderMime.chosenMime; 
     ext=recorderMime.chosenExtension;
     params=recorderMime.chosenParams;

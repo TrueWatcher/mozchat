@@ -276,6 +276,7 @@ abstract class MimeDecoder {
    "audio/webm;codecs=opus"=>["webm",["audioBitsPerSecond"=>24576]], 
    "audio/wav"=>["wav",[]],
    "video/webm;codecs=vp8"=>["webm",[]],
+   "video/webm;codecs=vp8,opus"=>["webm",[]],
    "video/webm;codecs=h264"=>["webm",[]]
  ];
   
