@@ -371,15 +371,15 @@ mc.rb.Feedback=function(getDataCb, indicator, viewR) {
     myElement=document.createElement('video');
     myElement.muted=true;
     myElement.srcObject=stream;
-    if (plr.hasChildNodes()) plr.innerHTML="";
-    plr.appendChild(myElement);
+    if (canvas && plr.contains(canvas)) plr.removeChild(canvas);
+    plr.prepend(myElement);
     myElement.play();    
   }
   
   function displayCanvas() {
     if ( ! canvas) fail("Attempt to display an empty canvas");
-    if (plr.hasChildNodes()) { plr.innerHTML=""; }
-    plr.appendChild(canvas);
+    if (myElement && plr.contains(myElement)) plr.removeChild(myElement);
+    plr.prepend(canvas);
   }
   
   function fail(err) {
@@ -389,7 +389,8 @@ mc.rb.Feedback=function(getDataCb, indicator, viewR) {
   
   function off() {
     if (myElement) myElement.pause();
-    if (plr.hasChildNodes()) plr.innerHTML="";
+    if (myElement && plr.contains(myElement)) plr.removeChild(myElement);
+    if (canvas && plr.contains(canvas)) plr.removeChild(canvas);
     myElement=false;
     indicator.off();
   }

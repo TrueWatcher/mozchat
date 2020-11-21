@@ -170,7 +170,7 @@ mc.pb.PlayerBox=function(connector) {
 
   this.isVideo=function(id) { return inventory.isVideo(id); };
   
-  this.clear=function() { serialPlayer.stop(); viewP.clearClips(); };
+  this.clear=function() { serialPlayer.stop(); };
   
   this.pause=function() { serialPlayer.pause(); };
   
@@ -437,8 +437,8 @@ mc.pb.ViewP=function() {
   this.showFreeSpace=function(b) { folderFreeInp.value=mc.utils.b2kb(b); };
   this.showUsers=function(s) { usersS.innerHTML=s; };
   
-  _this.showClip=function(a) { playerRoom.appendChild(a); };
-  _this.clearClips=function() { playerRoom.innerHTML=""; };
+  _this.showClip=function(a) { playerRoom.prepend(a); };
+  _this.clearClip=function(a) { if (a && playerRoom.contains(a.el)) playerRoom.removeChild(a.el); };
   _this.replaceClip=function(newc,oldc) { playerRoom.replaceChild(newc,oldc); };
     
   this.setHandlers=function(listClicked, dom2userParams, stopAfter, clear, standby) {    
@@ -539,9 +539,10 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
   this.stop=function() {
     if (actual.id) viewP.highlightLine(actual.id,"n");
     if (next.id) viewP.highlightLine(next.id,"n");
+    viewP.clearClip(actual);
+    viewP.clearClip(next);
     actual=false;
     next=false;
-    viewP.clearClips();
     //console.log("player stopped by user");   
   };
   
@@ -574,7 +575,7 @@ mc.pb.SerialPlayer=function(urlprefix, getNextClip, getType, viewP, errorHandler
       if (actual.mime == "video") { viewP.replaceClip(next.el, actual.el); }
       else { viewP.showClip(next.el); }
     }
-    else if (actual.mime == "video") { viewP.clearClips(); }
+    else if (actual.mime == "video") { viewP.clearClip(actual); }
     // play() after appendChild() is important for Chromium and unimportant for FF
     if (next && ! stopping && ! next.error) { 
       next.el.play();

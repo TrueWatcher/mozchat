@@ -234,8 +234,8 @@ mc.TopManager=function() {
       mc.utils.addCss("video { max-width: 100%; }");
     }
     else {// landscape -- normally desktop
+      videoWidth=Math.floor(screenParams.width*0.46);//0.85
       $("playerRoom").style="position: fixed; bottom:5px; right:5px";
-      videoWidth=Math.floor(screenParams.width*0.85);
       mc.utils.addCss("video { max-width:"+videoWidth+"px; }");
     }
     videoHeight=Math.floor(screenParams.height-15);

@@ -314,7 +314,7 @@ mc.utils.toggleHideable=function(hideable,getShowMore,setShowMore) {
 
 mc.utils.play=function(url,audioOrVideo,playerRoom,errorHandler) {    
   var a, plr;
-  if ( playerRoom instanceof HTMLElement) plr=playerRoom=document.getElementById(playerRoom);
+  if ( playerRoom instanceof HTMLElement) plr=playerRoom;//=document.getElementById(playerRoom);
   else plr=document.getElementById(playerRoom);
   if ( ! plr) throw new Error("Wrong PLAYERROOM");
   if ( ! url) { console.log("Empty url"); return; }
@@ -328,12 +328,12 @@ mc.utils.play=function(url,audioOrVideo,playerRoom,errorHandler) {
   if (errorHandler && typeof errorHandler != "function") throw new Error("Invalid ERRORHANDLER");
   a.src=url;
   a.controls="controls";
-  if (plr.hasChildNodes()) plr.innerHTML="";
-  plr.appendChild(a);
+  plr.prepend(a);
+  //plr.appendChild(a);
   a.play();
   
   a.onended=function(){ 
-    setTimeout( function() { plr.innerHTML=""; }, 1 ); 
+    setTimeout( function() { plr.removeChild(a); a=null; }, 1 ); 
   };
   
   if (errorHandler) a.onerror=function() { errorHandler(a.error.message); return false; };
