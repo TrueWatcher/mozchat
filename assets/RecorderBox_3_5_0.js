@@ -323,7 +323,7 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
     //console.timeEnd("make blob");
     return {
       mime : mime,
-      ext : ext,
+      ext  : ext,
       size : blob.size,
       blob : blob
     };

@@ -29,6 +29,7 @@ class CallLogger {
       $this->logAccept($input);
       break;
     case "hang-up";
+    case "rejectCall";
       $this->logHangup($input, $user);
       break;
     default:

@@ -5,8 +5,7 @@
 //  https://raw.githubusercontent.com/mdn/samples-server/master/s/webrtc-from-chat/index.html
 //
 mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
-  var isVideoAllowed=false;
-  var mediaConstraints = { audio: true, video: isVideoAllowed };
+  var mediaConstraints = { audio: true, video: false };
   var myPeerConnection = null;    // RTCPeerConnection
 
   // To work both with and without addTrack() we need to note
@@ -71,6 +70,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
         target: up.targetUsername,
         sid : up.sid,
         type: "video-offer",
+        video: view.getVideoCx(),
         sdp: adjustSdp(myPeerConnection.localDescription)
       });
     })
@@ -89,8 +89,8 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
   // RTCRtpTransceiver    transceiver
   function handleTrackEvent(event) {
     cb.log("*** Track event");
-    if (mediaConstraints.video) document.getElementById("received_video").srcObject = event.streams[0];
-    else document.getElementById("received_audio").srcObject = event.streams[0];
+    if (mediaConstraints.video) view.setVideoSrcObj(event.streams[0]);//{ remoteVideo.srcObject = event.streams[0]; } 
+    else view.setAudioSrcObj(event.streams[0]);//document.getElementById("received_audio").srcObject = event.streams[0];
   }
 
   // Called by the WebRTC layer when a stream starts arriving from the
@@ -98,8 +98,8 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
   // example.
   function handleAddStreamEvent(event) {
     cb.log("*** Stream added");
-    if (mediaConstraints.video) document.getElementById("received_video").srcObject = event.stream;
-    else document.getElementById("received_audio").srcObject = event.stream;
+    if (mediaConstraints.video) view.setVideoSrcObj(event.stream);//{ remoteVideo.srcObject = event.stream; } 
+    else view.setAudioSrcObj(event.stream);//document.getElementById("received_audio").srcObject = event.stream;
   }
 
   // An event handler which is called when the remote end of the connection
@@ -189,8 +189,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
   // when the user hangs up, the other user hangs up, or if a connection
   // failure is detected.
   function closeVideoCall() {
-    var remoteVideo = document.getElementById("received_video");
-    var localVideo = document.getElementById("local_video");
+    var localVideo = false;//document.getElementById("local_video");
 
     cb.log("Closing the call");
     cb.addToChat("Talking with "+up.targetUsername+" is over");
@@ -214,23 +213,22 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
       myPeerConnection.onnotificationneeded = null;
 
       // Stop the videos
-      if (remoteVideo && remoteVideo.srcObject) {
-        remoteVideo.srcObject.getTracks().forEach(track => track.stop());
-      }
-      if (localVideo && localVideo.srcObject) {
-        localVideo.srcObject.getTracks().forEach(track => track.stop());
-      }
-      if (remoteVideo && remoteVideo.src) remoteVideo.src = null;
-      if (localVideo && localVideo.src) localVideo.src = null;
+      //if (remoteVideo && remoteVideo.srcObject) {
+      //  remoteVideo.srcObject.getTracks().forEach(track => track.stop());
+      //}
+      //if (localVideo && localVideo.srcObject) {
+      //  localVideo.srcObject.getTracks().forEach(track => track.stop());
+      //}
+      //if (remoteVideo && remoteVideo.src) remoteVideo.src = null;
+      //if (localVideo && localVideo.src) localVideo.src = null;
 
       // Close the peer connection
       myPeerConnection.close();
       myPeerConnection = null;
     }
 
-    // Disable the hangup button
-    cb.disableHangUp();
-
+    view.clearVideo();
+    view.disableHangUp();
     up.targetUsername = null;
     up.sid="";
     cb.setState("ready");
@@ -265,7 +263,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
   // the callee here -- calling RTCPeerConnection.addStream() issues
   // a |notificationneeded| event, so we'll let our handler for that
   // make the offer.
-  function startCall() {
+  function startCall(isVideo) {
     // Call createPeerConnection() to create the RTCPeerConnection.
     cb.log("Setting up connection to invite user: " + up.targetUsername);
     
@@ -275,12 +273,21 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
     // Now configure and create the local stream, attach it to the
     // "preview" box (id "local_video"), and add it to the
     // RTCPeerConnection.
-    cb.log("Requesting webcam access...");
+    if (isVideo && isVideo == "video" && view.getVideoCx() == "video") {
+      cb.log("Requesting webcam access...");
+      mediaConstraints.video=true;
+      view.createVideo();
+    }
+    else {
+      cb.log("Requesting microphone access...");
+      mediaConstraints.video=false;
+    }
 
     navigator.mediaDevices.getUserMedia(mediaConstraints)
     .then(function(localStream) {
       cb.log("-- Local video stream obtained");
-      if (mediaConstraints.video) document.getElementById("local_video").srcObject = localStream;
+      
+      //if (mediaConstraints.video) document.getElementById("local_video").srcObject = localStream;
       //document.getElementById("received_audio").srcObject = localStream;
 
       if (hasAddTrack) {
@@ -295,7 +302,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
       // Autoplay is required, modern browsers allow it after getUserMedia, the older ones do not
       mc.utils.checkAutoplay( view.audios.open.src );
     })
-    .catch(handleGetUserMediaError);
+    .catch(handleOpenGetUserMediaError);
   }
 
   // Accept an offer to video chat. We configure our local settings,
@@ -310,6 +317,17 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
     // We need to set the remote description to the received SDP offer
     // so that our local WebRTC layer knows how to talk to the caller.
     var desc = new RTCSessionDescription(msg.sdp);
+    
+    cb.log("video: "+msg.video);
+    if (msg.video && msg.video == "video" && view.getVideoCx() == "video") {
+      cb.log("Requesting webcam access");
+      mediaConstraints.video=true;
+      view.createVideo();
+    }
+    else { 
+      cb.log("Requesting microphone access");
+      mediaConstraints.video=false;
+    }
 
     myPeerConnection.setRemoteDescription(desc).then(function () {
       cb.log("Setting up the local media stream...");
@@ -318,7 +336,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
     .then(function(stream) {
       cb.log("-- Local video stream obtained");
       localStream = stream;
-      if (mediaConstraints.video) document.getElementById("local_video").srcObject = localStream;
+      //if (mediaConstraints.video) document.getElementById("local_video").srcObject = localStream;
 
       if (hasAddTrack) {
         cb.log("-- Adding tracks to the RTCPeerConnection");
@@ -361,7 +379,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
         sdp: adjustSdp(myPeerConnection.localDescription)
       });
     })
-    .catch(handleGetUserMediaError);
+    .catch(handleReplyGetUserMediaError);
   }
 
   // Responds to the "video-answer" message sent to the caller
@@ -394,25 +412,52 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
   // or that they declined to share their equipment when prompted. If
   // they simply opted not to share their media, that's not really an
   // error, so we won't present a message in that situation.
-  function handleGetUserMediaError(e) {
-    cb.log(e);
-    switch(e.name) {
-      case "NotFoundError":
-        alert("Unable to open your call because no camera and/or microphone" +
-              "were found.");
-        break;
-      case "SecurityError":
-      case "PermissionDeniedError":
-        // Do nothing; this is the same as the user canceling the call.
-        break;
-      default:
-        alert("Error opening your camera and/or microphone: " + e.message);
-        break;
-    }
-
-    // Make sure we shut down our end of the RTCPeerConnection so we're
-    // ready to try again.
+  function handleOpenGetUserMediaError(e) {
+    var note=e.name;
+    cb.log("Sending rejectCall to "+up.targetUsername+":"+note);
+    rejectCall(up.targetUsername,note);
     closeVideoCall();
+    notifyError(e);
+  }
+  
+  function handleReplyGetUserMediaError(e) {
+    var note=e.name;
+    if (mediaConstraints.video) note += ", try audio call";
+    cb.log("Sending rejectCall to "+up.targetUsername+":"+note);
+    rejectCall(up.targetUsername,note);
+    closeVideoCall();
+    notifyError(e);
+  }
+  
+  function notifyError(e) {
+    //cb.log(e);
+    switch(e.name) {
+    case "NotFoundError":
+      alert("Unable to open your call because no camera and/or microphone" +
+            "were found.");
+      break;
+    case "SecurityError":
+    case "PermissionDeniedError":
+      // Do nothing; this is the same as the user canceling the call.
+      break;
+    default:
+      alert("Error opening your camera and/or microphone: " + e.message);
+      throw e;
+      break;
+    }
+  }
+  
+  function rejectCall(aTargetUsername, alert) {
+    if (alert === undefined) alert="";
+    cb.log("Rejected a call from "+aTargetUsername+" "+alert);
+    var msg={
+      user: up.user,
+      target: aTargetUsername,
+      sid : up.sid,
+      type: "rejectCall"
+    };
+    if (alert) msg.alert=alert;
+    signallingConnection.sendLogNRelay(msg);
   }
 
   // Handles reporting errors. Currently, we just dump stuff to console but

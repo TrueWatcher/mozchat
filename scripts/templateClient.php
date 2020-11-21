@@ -26,6 +26,7 @@
   
   <input type="text" id="peerInp" size="15" maxlength="30" placeholder="Peer username" />
   <input type="button" id="callBtn" value="Call" />
+  <label for="videoCx">video</label><input type="checkbox" id="videoCx" />,
   <input type="button" id="hangupBtn" value="Hang up" disabled />
   <br />
   <button id="stateIndBtn" title="device state" >not ready</button>
@@ -38,6 +39,7 @@
   <input type="button" id="sendBtn" name="send" value="Send" disabled>
   <p id="alertP"></p>
   <div id="chatText" style="width: 90%; max-width: 50em; height: 7em; overflow: scroll; border: 1px gray solid;"></div>
+  <audio id="received_audio" autoplay></audio>
 </fieldset>
 
 <div id="playerRoom"></div>
@@ -130,9 +132,9 @@
 
 <div class="flexChild" id="camera-container">
   <div class="camera-box">
-    <video id="received_video" style="display: none;" autoplay></video>
+    <!--<video id="received_video" style="display: none;" autoplay></video>
     <video id="local_video" style="display: none;" autoplay muted></video>
-    <audio id="received_audio" autoplay></audio>
+    <audio id="received_audio" autoplay></audio>-->
   </div>
 </div>
 

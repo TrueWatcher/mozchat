@@ -46,6 +46,8 @@ mc.rtcb.ViewW=function() {
 
   this.getPeerName=function() { return $("peerInp").value; };
   this.setPeerName=function(name) { $("peerInp").value=name; };
+  
+  this.getVideoCx=function() { return $("videoCx").checked ? "video" : "audio" ; };
 
   this.getTextInp=function() { return $("textInp").value; };
   this.clearTextInp=function() { $("textInp").value=""; };
@@ -99,6 +101,28 @@ mc.rtcb.ViewW=function() {
     }
     if (content) $("peerInp").value=content;
   };
+  
+  var receivedVideo;
+  
+  this.createVideo=function() {
+    receivedVideo=document.createElement("VIDEO");
+    receivedVideo.autoplay=true;
+    document.getElementById("playerRoom").prepend(receivedVideo);
+  };
+  
+  this.setVideoSrcObj=function(data) { receivedVideo.srcObject=data; };
+  
+  this.clearVideo=function() {
+    if (receivedVideo && receivedVideo.srcObject) {
+      receivedVideo.srcObject.getTracks().forEach(track => track.stop());
+    }
+    if (receivedVideo && receivedVideo.src) receivedVideo.src = null;
+    if (receivedVideo && receivedVideo.parentNode) receivedVideo.parentNode.removeChild(receivedVideo);
+    receivedVideo=null;
+    document.getElementById("received_audio").srcObject=null;
+  };
+  
+  this.setAudioSrcObj=function(data) { document.getElementById("received_audio").srcObject=data; };
   
 };// end ViewW
 
@@ -187,12 +211,13 @@ var handleMessage=function handleMessage(msg) {
     if ( ! stateIs("outCall")) { logAMismatch(mtype); break; }
     if ( ! msg.sid) { console.log("An ACCEPT without SID"); }
     up.sid=msg.sid;
-    peerBox.startCall();
+    peerBox.startCall(vw.getVideoCx());
     break;
 
-  case "rejectCall": // The other peer is busy
-    if ( ! stateIs("outCall")) { logAMismatch(mtype); break; }
-    text = mc.utils.escapeHtml(msg.user) + " is busy";
+  case "rejectCall": // The other peer is busy or produces errors
+    if ( ! stateIs("outCall") && ! stateIs("preparing") && ! stateIs("inCall")) { logAMismatch(mtype); break; }
+    text = msg.alert || "is busy";
+    text = mc.utils.escapeHtml(msg.user) + " " + text;
     handleHangUpMsg(msg);
     break;
   
@@ -352,13 +377,16 @@ function setUsername() {
   });
 }
 
-function rejectCall(aTargetUsername) {
-  log("Rejected a call from "+aTargetUsername);
-  signallingConnection.sendRelay({
+function rejectCall(aTargetUsername, alert) {
+  if (alert === undefined) alert="";
+  log("Rejected a call from "+aTargetUsername+" "+alert);
+  var msg={
     user: up.user,
     target: aTargetUsername,
     type: "rejectCall"
-  });
+  };
+  if (alert) msg.alert=alert;
+  signallingConnection.sendRelay(msg);
 }
 
 function onCallClicked() {
@@ -385,17 +413,25 @@ function onCallClicked() {
     user: up.user,
     id: up.clientID,
     target: up.targetUsername,
-    type: "invite"
+    type: "invite",
+    video: vw.getVideoCx()
   });
 }
 
 function handleInviteMsg(msg) {
   var attempting=msg.user;
+  var alert;
+  
   if ( ! stateIs("ready")) {
     rejectCall(attempting);
     vw.addToChat("Rejected a call from "+attempting);
     return;
-  }  
+  }
+  if ( msg.video && msg.video == "video" && vw.getVideoCx() != "video") {
+    rejectCall(attempting, "video is off, try audio call");
+    vw.addToChat("Rejected a call from "+attempting);
+    return;
+  }
   
   if (vw.getRingCx()) { 
     // produce ring sound
@@ -492,7 +528,7 @@ var _this={
   handleClick : handleClick,
   handleKey : handleKey,
   // message handler for transport callback
-  handleMessage : handleMessage
+  handleMessage : handleMessage,
 }
 
 return _this;
