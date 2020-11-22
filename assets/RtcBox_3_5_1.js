@@ -215,10 +215,17 @@ var handleMessage=function handleMessage(msg) {
     break;
 
   case "rejectCall": // The other peer is busy or produces errors
-    if ( ! stateIs("outCall") && ! stateIs("preparing") && ! stateIs("inCall")) { logAMismatch(mtype); break; }
-    text = msg.alert || "is busy";
-    text = mc.utils.escapeHtml(msg.user) + " " + text;
-    handleHangUpMsg(msg);
+    if ( ! targetIsMe(msg)) break;
+    if (stateIs("outCall")) {
+      text = msg.alert || "is busy";
+      text = mc.utils.escapeHtml(msg.user) + " " + text;
+      handleHangUpMsg(msg);
+    }
+    else if (stateIs("preparing") || stateIs("inCall")) { 
+      text = mc.utils.escapeHtml(msg.user) + " " + msg.alert;
+      processedByPeerBox=peerBox.handleMessage(msg);
+    }
+    else { logAMismatch(mtype); break; }
     break;
   
   case "hang-up":
@@ -475,12 +482,17 @@ function acceptInvite(msg) {
     callerId: msg.id,
     sid: up.sid,
     target: up.targetUsername,
+    video: msg.video,
     type: "accept"
   });
 }
 
 function handleHangUpMsg(msg) {
-  setState("ready");
+  view.clearVideo();
+  view.disableHangUp();
+  up.targetUsername = null;
+  up.sid="";
+  cb.setState("ready");
 }
 
 function setState(aState) {

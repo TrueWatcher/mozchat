@@ -5,7 +5,7 @@ class CallLogger {
   const myFileName="calls.csv";
   const SEP=";";
   const NL="\n";
-  const fields=["started", "ts", "A", "IPa", "B", "IPb", "sid", "secs" , "state"];
+  const fields=["started", "ts", "A", "IPa", "B", "IPb", "video", "sid", "secs" , "state"];
   private $buf="";
   private $fullTarget="";
   private $shouldLogPolls=1;
@@ -26,11 +26,16 @@ class CallLogger {
     if ( ! isset($input['type']) ) throw new DataException("Missing TYPE (act=".$input['act'].")");
     switch ( $input['type'] ) {
     case "accept":
+      //error_log("accept");
       $this->logAccept($input);
       break;
     case "hang-up";
-    case "rejectCall";
+      //error_log("hang-up");
       $this->logHangup($input, $user);
+      break;
+    case "rejectCall";
+      //error_log("rejectCall ".$input['alert']);
+      $this->logHangup($input, $user, $input['alert']);
       break;
     default:
       throw new DataException( "Wrong TYPE=".$input['type'] );
@@ -77,7 +82,7 @@ class CallLogger {
     $IPb=$_SERVER['REMOTE_ADDR'];
     $line=[
       "started"=>date(DATE_ATOM), "ts"=>time(), "A"=>$input['target'], "IPa"=>"?", "B"=>$input['user'], "IPb"=>$IPb,
-      "sid"=>$input['sid'], "secs"=>0, "state"=>"new"
+      "video"=>$input['video'], "sid"=>$input['sid'], "secs"=>0, "state"=>"new"
     ];
     $this->readBuf();
     $this->buf[]=implode(self::SEP,$line).self::NL;
@@ -99,9 +104,9 @@ class CallLogger {
     $this->processLine($input, $user, $doLogPoll);
   }
   
-  private function logHangup($input, $user) {
-    $doLogHangup=function ($line, $input, $user) {
-      $line['state'] = "off";
+  private function logHangup($input, $user, $outcome="off") {
+    $doLogHangup=function ($line, $input, $user) use ($outcome) {
+      $line['state'] = $outcome;
       $line['secs'] = time()-$line['ts'];
       return $line;
     };

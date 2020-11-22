@@ -25,20 +25,20 @@
   <p class="flexChild" id="userlistP"></p>
   
   <input type="text" id="peerInp" size="15" maxlength="30" placeholder="Peer username" />
-  <input type="button" id="callBtn" value="Call" />
-  <label for="videoCx">video</label><input type="checkbox" id="videoCx" />,
+  <input type="button" id="callBtn" value="Call" /> &nbsp;
+  <label for="videoCx">video</label><input type="checkbox" id="videoCx" /> &nbsp;
   <input type="button" id="hangupBtn" value="Hang up" disabled />
   <br />
   <button id="stateIndBtn" title="device state" >not ready</button>
   <input type="checkbox" id="answerCx" checked />
-  <label for="answerCx">answer immediately</label>
+  <label for="answerCx">auto answer</label>
   <input type="checkbox" id="ringCx" checked />
   <label for="ringCx">ring</label>
   <br />
-  <input type="text" id="textInp" name="text" size="80" maxlength="256" placeholder="Chat blah-blah" autocomplete="off" disabled>
+  <input type="text" id="textInp" name="text" style="width: 90%; max-width: 30em;" maxlength="256" placeholder="Chat blah-blah" autocomplete="off" disabled>
   <input type="button" id="sendBtn" name="send" value="Send" disabled>
   <p id="alertP"></p>
-  <div id="chatText" style="width: 90%; max-width: 50em; height: 7em; overflow: scroll; border: 1px gray solid;"></div>
+  <div id="chatText" style="width: 90%; max-width: 30em; height: 7em; overflow: scroll; border: 1px gray solid;"></div>
   <audio id="received_audio" autoplay></audio>
 </fieldset>
 
@@ -129,14 +129,6 @@
     <label for="skipMineChkb">only from others</label><input type="checkbox" id="skipMineChkb" checked="checked" />
   </span>
 </fieldset>
-
-<div class="flexChild" id="camera-container">
-  <div class="camera-box">
-    <!--<video id="received_video" style="display: none;" autoplay></video>
-    <video id="local_video" style="display: none;" autoplay muted></video>
-    <audio id="received_audio" autoplay></audio>-->
-  </div>
-</div>
 
 <div id="footer">
 &nbsp;<br />
@@ -234,7 +226,12 @@ mc.TopManager=function() {
       //console.log("portrait screen");
       $("playerRoom").style="display: table-cell; padding:5px; width: 95%";
       mc.utils.addCss("video { max-width: 100%; }");
-    }
+      //$("textInp").style.width=Math.floor(screenParams.width*0.85)+"px";
+      //$("chatText").style.width=Math.floor(screenParams.width*0.85)+"px";
+      $("rtcPanel").style.width=Math.floor(screenParams.width*0.85)+"px";
+      $("textInp").style.width="95%";
+      $("chatText").style.width="95%";
+    }  
     else {// landscape -- normally desktop
       videoWidth=Math.floor(screenParams.width*0.46);//0.85
       $("playerRoom").style="position: fixed; bottom:5px; right:5px";

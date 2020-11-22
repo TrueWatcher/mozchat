@@ -111,7 +111,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
   // don't happen.
   function handleRemoveStreamEvent(event) {
     cb.log("*** Stream removed");
-    closeVideoCall();
+    closeCall();
   }
 
   // Handles |icecandidate| events by forwarding the specified
@@ -145,7 +145,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
     case "closed":
     case "failed":
     case "disconnected":
-      closeVideoCall();
+      closeCall();
       break;
     case "connected":
       cb.setState("speak");
@@ -166,7 +166,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
     
     switch(sigState) {
     case "closed":
-      closeVideoCall();
+      closeCall();
       break;
     }
   }
@@ -188,7 +188,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
   // make or receive another call if they wish. This is called both
   // when the user hangs up, the other user hangs up, or if a connection
   // failure is detected.
-  function closeVideoCall() {
+  function closeCall() {
     var localVideo = false;//document.getElementById("local_video");
 
     cb.log("Closing the call");
@@ -239,7 +239,13 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
   function handleHangUpMsg(msg) {
     if ( ! targetIsMe(msg)) return;
     cb.log("*** Received hang up notification from other peer");
-    closeVideoCall();
+    closeCall();
+  }
+  
+  function handleRejectMsg(msg) {
+    if ( ! targetIsMe(msg)) return;
+    cb.log("*** Received error notification from other peer:"+msg.alert);
+    closeCall();
   }
   
   // Hang up the call by closing our end of the connection, then
@@ -248,14 +254,14 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
   // the other peer that the connection should be terminated and the UI
   // returned to the "no call in progress" state.
   function hangUpCall() {
-    // closeVideoCall(); // clears targetUsername, so sending message is futile
+    // closeCall(); // clears targetUsername, so sending message is futile
     signallingConnection.sendLogNRelay({
       user: up.user,
       target: up.targetUsername,
       sid : up.sid,
       type: "hang-up",
     });
-    closeVideoCall();
+    closeCall();
   }
   
   // Handle a click on an item in the user list by inviting the clicked
@@ -273,15 +279,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
     // Now configure and create the local stream, attach it to the
     // "preview" box (id "local_video"), and add it to the
     // RTCPeerConnection.
-    if (isVideo && isVideo == "video" && view.getVideoCx() == "video") {
-      cb.log("Requesting webcam access...");
-      mediaConstraints.video=true;
-      view.createVideo();
-    }
-    else {
-      cb.log("Requesting microphone access...");
-      mediaConstraints.video=false;
-    }
+    prepareVideo(isVideo);
 
     navigator.mediaDevices.getUserMedia(mediaConstraints)
     .then(function(localStream) {
@@ -318,21 +316,16 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
     // so that our local WebRTC layer knows how to talk to the caller.
     var desc = new RTCSessionDescription(msg.sdp);
     
-    cb.log("video: "+msg.video);
-    if (msg.video && msg.video == "video" && view.getVideoCx() == "video") {
-      cb.log("Requesting webcam access");
-      mediaConstraints.video=true;
-      view.createVideo();
-    }
-    else { 
-      cb.log("Requesting microphone access");
-      mediaConstraints.video=false;
-    }
+    prepareVideo(msg.video);
 
-    myPeerConnection.setRemoteDescription(desc).then(function () {
+    myPeerConnection
+    .setRemoteDescription(desc)
+    
+    .then(function () {
       cb.log("Setting up the local media stream...");
       return navigator.mediaDevices.getUserMedia(mediaConstraints);
     })
+    
     .then(function(stream) {
       cb.log("-- Local video stream obtained");
       localStream = stream;
@@ -351,6 +344,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
       
       mc.utils.checkAutoplay( view.audios.open.src );
     })
+    
     .then(function() {      
       cb.log("------> Creating answer");
       // Now that we've successfully set the remote description, we need to
@@ -359,6 +353,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
       // information, options agreed upon, and so forth.
       return myPeerConnection.createAnswer();
     })
+    
     .then(function(answer) {
       cb.log("------> Setting local description after creating answer");
       // We now have our answer, so establish that as the local description.
@@ -366,6 +361,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
       // specified in the SDP.
       return myPeerConnection.setLocalDescription(answer);
     })
+    
     .then(function() {
       // We've configured our end of the call now. Time to send our
       // answer back to the caller so they know that we want to talk
@@ -379,7 +375,21 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
         sdp: adjustSdp(myPeerConnection.localDescription)
       });
     })
+    
     .catch(handleReplyGetUserMediaError);
+  }
+  
+  function prepareVideo(isVideo) {
+    cb.log("video: "+isVideo);
+    if (isVideo && isVideo == "video" && view.getVideoCx() == "video") {
+      cb.log("Requesting webcam access");
+      mediaConstraints.video=true;
+      view.createVideo();
+    }
+    else { 
+      cb.log("Requesting microphone access");
+      mediaConstraints.video=false;
+    }
   }
 
   // Responds to the "video-answer" message sent to the caller
@@ -416,7 +426,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
     var note=e.name;
     cb.log("Sending rejectCall to "+up.targetUsername+":"+note);
     rejectCall(up.targetUsername,note);
-    closeVideoCall();
+    closeCall();
     notifyError(e);
   }
   
@@ -425,7 +435,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
     if (mediaConstraints.video) note += ", try audio call";
     cb.log("Sending rejectCall to "+up.targetUsername+":"+note);
     rejectCall(up.targetUsername,note);
-    closeVideoCall();
+    closeCall();
     notifyError(e);
   }
   
@@ -442,21 +452,20 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
       break;
     default:
       alert("Error opening your camera and/or microphone: " + e.message);
-      throw e;
       break;
     }
   }
   
-  function rejectCall(aTargetUsername, alert) {
-    if (alert === undefined) alert="";
-    cb.log("Rejected a call from "+aTargetUsername+" "+alert);
+  function rejectCall(aTargetUsername, note) {
+    if (note === undefined) note="";
+    cb.log("Rejected a call from "+aTargetUsername+" "+note);
     var msg={
       user: up.user,
       target: aTargetUsername,
       sid : up.sid,
       type: "rejectCall"
     };
-    if (alert) msg.alert=alert;
+    if (note) msg.alert=note;
     signallingConnection.sendLogNRelay(msg);
   }
 
@@ -470,7 +479,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
   // should be done to both offer and answer
   // handleNegotiationNeededEvent(), handleVideoOfferMsg()
   // apparently unsuccessful for FF and Cr
-  function adjustSdp(description) {
+  function _adjustSdp(description) {
     //return description;// DEBUG
     var myAudioBitrate=30;// sdp b:AS in kbits/s
     var copy=JSON.parse(JSON.stringify(description));
@@ -481,26 +490,25 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
     return copy;
     //return JSON.stringify(copy);
   }
+  function adjustSdp(description) { return description; }
     
   function handleMessage(msg) {
-    
     switch (msg.type) {
     case "video-offer":  // Invitation and offer to chat
       handleVideoOfferMsg(msg);
       break;
-
     case "video-answer":  // Callee has answered our offer
       handleVideoAnswerMsg(msg);
       break;
-
     case "new-ice-candidate": // A new ICE candidate has been received
       handleNewICECandidateMsg(msg);
       break;
-
     case "hang-up": // The other peer has hung up the call
       handleHangUpMsg(msg);
+      break;
+    case "rejectCall": // Failed to establish the call
+      handleRejectMsg(msg);
       break;      
-      
     default:
       return false;
     }
@@ -522,7 +530,7 @@ mc.rtcb.PeerBox=function(signallingConnection, view, cb, up) {
     handleMessage : handleMessage,
     startCall : startCall,
     hangUpCall : hangUpCall,
-    closeCall : closeVideoCall
+    closeCall : closeCall
   };
   return _this;
 }
