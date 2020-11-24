@@ -3,7 +3,11 @@
 mc.rtcb={};
 
 mc.rtcb.ViewW=function() {
-
+  this.serverParams2Dom=function(params) {
+    if ( ! params.allowVideo) { $("videoCx").style.display="none"; }
+    if (params.videoOn && params.allowVideo) { $("videoCx").checked="checked"; }
+  };
+  
   this.setClickHandlers=function(controller) {
     //alert(document.getElementById("name").type);
     //$("loginBtn").onclick=controller.handleClick;
@@ -133,6 +137,7 @@ var vw,
     signallingConnection;
 
 var up=mc.userParams.rtcb;
+var sp=mc.serverParams;
 var state="zero";
 var states=[ "inactive", "ready", "outCall", "inCall", "preparing", "speak" ];
 
@@ -405,7 +410,7 @@ function onCallClicked() {
   }
   // Don't allow users to call themselves, because weird.
   if (clickedUsername === up.user) {
-    alert("I'm afraid I can't let you talk to yourself. That would be weird.");
+    alert("Sorry, talking to oneself is not supported in the free version :)");
     return;
   }
   
@@ -415,13 +420,14 @@ function onCallClicked() {
   vw.addToChat("Calling "+up.targetUsername);
   setState("outCall");
   vw.enableHangUp();
+  var requestVideo=sp.allowVideo && vw.getVideoCx();
   
   signallingConnection.sendRelay({
     user: up.user,
     id: up.clientID,
     target: up.targetUsername,
     type: "invite",
-    video: vw.getVideoCx()
+    video: requestVideo
   });
 }
 
@@ -434,10 +440,12 @@ function handleInviteMsg(msg) {
     vw.addToChat("Rejected a call from "+attempting);
     return;
   }
-  if ( msg.video && msg.video == "video" && vw.getVideoCx() != "video") {
-    rejectCall(attempting, "video is off, try audio call");
-    vw.addToChat("Rejected a call from "+attempting);
-    return;
+  if ( msg.video && msg.video == "video" ) {
+    if ( ! sp.allowVideo || (vw.getVideoCx() != "video")) {
+      rejectCall(attempting, "video is off, try audio call");
+      vw.addToChat("Rejected a call from "+attempting);
+      return;
+    }  
   }
   
   if (vw.getRingCx()) { 
@@ -518,6 +526,7 @@ function getSignallingConnection(connector,WsOrAjax) {
 
 function init(connector) {
   vw=new mc.rtcb.ViewW();
+  vw.serverParams2Dom(mc.serverParams);
   vw.loadAudio();
   signallingConnection = getSignallingConnection(connector,mc.serverParams.wsOn);
   signallingConnection.init(_this.handleMessage);

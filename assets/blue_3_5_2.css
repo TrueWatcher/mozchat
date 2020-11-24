@@ -3,6 +3,12 @@ body {
   color: #444;
 }
 
+body {
+  margin: 0;
+  padding: 0;
+  width: 96%;
+}
+
 * {
   font-family: Arial,sans-serif;
   font-size: 100%;
@@ -83,6 +89,25 @@ p#userlistP span:hover {
   border-collapse: separate;
 }
 
+#textInp {
+  width: 90%;
+  max-width: 30em; 
+}
+
+#chatText {
+  width: 98%; 
+  max-width: 30em; 
+  height: 7em; 
+  overflow: scroll; 
+  border: 1px gray solid;
+}
+
+fieldset {
+  margin: 0.5em;
+  padding: 1 em;
+  width: 100%
+}
+
 a,a:link,a:visited {
   color: #000;
   text-decoration: underline;
@@ -100,3 +125,5 @@ a:hover {
 .alert {
   background-color: #ffa;
 }
+
+

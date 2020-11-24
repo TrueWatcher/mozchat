@@ -35,10 +35,10 @@
   <input type="checkbox" id="ringCx" checked />
   <label for="ringCx">ring</label>
   <br />
-  <input type="text" id="textInp" name="text" style="width: 90%; max-width: 30em;" maxlength="256" placeholder="Chat blah-blah" autocomplete="off" disabled>
+  <input type="text" id="textInp" name="text" maxlength="256" placeholder="Chat blah-blah" autocomplete="off" disabled>
   <input type="button" id="sendBtn" name="send" value="Send" disabled>
   <p id="alertP"></p>
-  <div id="chatText" style="width: 90%; max-width: 30em; height: 7em; overflow: scroll; border: 1px gray solid;"></div>
+  <div id="chatText"></div>
   <audio id="received_audio" autoplay></audio>
 </fieldset>
 
@@ -191,7 +191,7 @@ mc.TopManager=function() {
     
     $("userInput").value=sp.user;
     $("realmInput").value=sp.realm;
-    $("accountBottomAlertP").innerHTML="Registration Ok";
+    $("accountBottomAlertP").innerHTML="Registration OK";
     
     var found=mc.utils.checkBrowser();
     console.log(mc.utils.dumpArray(found));
@@ -226,11 +226,10 @@ mc.TopManager=function() {
       //console.log("portrait screen");
       $("playerRoom").style="display: table-cell; padding:5px; width: 95%";
       mc.utils.addCss("video { max-width: 100%; }");
-      //$("textInp").style.width=Math.floor(screenParams.width*0.85)+"px";
-      //$("chatText").style.width=Math.floor(screenParams.width*0.85)+"px";
-      $("rtcPanel").style.width=Math.floor(screenParams.width*0.85)+"px";
+      mc.utils.addCss("fieldset { margin: 0; padding: 0.2em; }");
+      document.body.style.width=Math.floor(screenParams.width*0.95)+"px";
       $("textInp").style.width="95%";
-      $("chatText").style.width="95%";
+      //$("chatText").style.width="98%";
     }  
     else {// landscape -- normally desktop
       videoWidth=Math.floor(screenParams.width*0.46);//0.85

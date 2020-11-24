@@ -449,7 +449,7 @@ INSTRUCTION
        php mozchat/wshub/wshub.php
     and leave it open
 5a) or run it like a daemon:
-       (php mozchat/wshub/wshub.php >null)&
+       (php mozchat/wshub/wshub.php >/dev/null)&
 6)  if your cert is self-signed, client must first visit https://your_domain.com:8080 and create a security exception
 7)  profit!!!
 */

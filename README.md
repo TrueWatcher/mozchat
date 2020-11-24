@@ -49,7 +49,7 @@ Frequent polling of Apache/PHP is popularily believed to be a bad idea, but uplo
 If your hosting provider allows for installing PHP extensions and running your own PHP processes, you may improve the downlink performance by using our Websockets module. It's based on Ratchet, so you'll have to install Composer and Ratchet framework. The module itself is wshub/wshub.php and must be started as a separate PHP program:
   php wshub/wshub.php 
     if you'd like to see it working in terminal, or 
-  (php wshub/wshub.php >null)&
+  (php wshub/wshub.php >/dev/null)&
     to run as a daemon
 There are a few important parameters in ws.ini:
   wsOn must be set to non-zero to enable Websockets in other scripts
