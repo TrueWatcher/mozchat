@@ -375,9 +375,16 @@ function isSecure($uri) {
 
 function getIniParams($pathBias) {
   $params=parse_ini_file($pathBias."ws.ini", true, INI_SCANNER_RAW);
-  $params["server"]["wsPort"]=getPort($params["common"]["wsServerUri"]);
   $params["server"]["commandPort"]=getPort($params["common"]["wsCommandUri"]);
-  $params["server"]["isWss"]=isSecure($params["common"]["wsServerUri"]);
+  if (array_key_exists("wsLocalPort",$params["server"]) && $params["server"]["wsLocalPort"]) {
+    // wss-to-ws proxying via the webserver: wss:wsServerUri <-> ws://localhost:wsLocalPort
+    $params["server"]["wsPort"]=$params["server"]["wsLocalPort"];
+    $params["server"]["isWss"]=false;
+  }
+  else {
+    $params["server"]["wsPort"]=getPort($params["common"]["wsServerUri"]);
+    $params["server"]["isWss"]=isSecure($params["common"]["wsServerUri"]);
+  }
   return $params;
 }
 
