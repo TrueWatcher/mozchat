@@ -308,4 +308,42 @@ abstract class MimeDecoder {
     if (array_key_exists($mime,self::$lookup)) return self::$lookup[$mime][1];
     return false;
   }
+  
+  /*private static $videoPresetsNames=[
+    "auto resolution",
+    "640x480@15",
+    "800x600@20",
+    "1280x720@15"
+  ];
+  
+  private static $videoPresets=[
+    [true,0],
+    [["width"=>640,"height"=>480,"framerate"=>15],  500000],
+    [["width"=>800,"height"=>600,"framerate"=>20], 1000000],
+    [["width"=>1280,"height"=>720,"framerate"=>15],1300000]
+  ];
+  
+  static function getVideoPresets() {  
+    $r=[];
+    foreach(self::$videoPresets as $i=>$vp) {
+      $line=[];
+      $line[]=self::$videoPresetsNames[$i];
+      $line[]=json_encode($vp);
+      $r[]=$line;
+    }
+    return $r;
+  } */
+  
+  private static $videoPresets=[
+    ["auto resolution",'[true,0]'],
+    ["640x480@15", '[{"width":640,"height":480,"frameRate":15}, 500000]'],
+    ["640x480@30", '[{"width":640,"height":480,"frameRate":30}, 1000000]'],
+    ["800x600@20", '[{ "width":800, "height":600, "frameRate":20 }  ,1100000]'],
+    ["1280x720@15",'[{ "width":1280, "height":720, "frameRate":15 } ,1300000]'],
+    ["1280x720@30",'[{ "width":1280, "height":720, "frameRate":30 } ,2500000]']
+  ];
+  
+  static function getVideoPresets() {
+    return self::$videoPresets;
+  }
 }

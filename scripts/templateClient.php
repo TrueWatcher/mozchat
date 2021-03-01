@@ -89,6 +89,7 @@
   <button id="uploadIndBtn" title="uplink indicator" >&nbsp;</button>
   <br />
   <span class="hideable">
+    <select id="presetSel"></select>
     <button id="feedbackBtn"></button>
     <button id="motionDetectorBtn"></button>
     <label for="chatControlChkb">Chat controller</label><input type="checkbox" id="chatControlChkb" />
@@ -154,6 +155,9 @@ mc.mimeDictionary=JSON.parse(mc.mimeDictionary);
 mc.serverParams='<?php print(json_encode($serverParams)); ?>';
 mc.serverParams=JSON.parse(mc.serverParams);
 <?php if (isset($pr) && $pr->checkNotEmpty("iceString")) echo "mc.serverParams.iceString='".$pr->g("iceString")."'";// breaks if printed with other params?>
+
+mc.videoPresets=<?php print(json_encode(MimeDecoder::getVideoPresets())); ?>;
+//mc.videoPresets=JSON.parse(mc.videoPresets);
 
 var ur={ user: mc.serverParams.user, realm: mc.serverParams.realm };
 var rtcb={ user: mc.serverParams.user, realm: mc.serverParams.realm, targetUsername: "", clientID: "", sid: "" };

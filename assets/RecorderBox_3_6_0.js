@@ -252,7 +252,6 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
         aov=userParams.audioOrVideo,
         recorderMime;
     
-    if (aov == "video") constraints.video=true;//constraints={ video: true }; //constraints.video=true;//
     recorderMime=mc.utils.checkRecorderMime(mc.mimeDictionary, aov);
     if ( ! recorderMime) throw new Error("Something is wrong with MIME detection");
     console.log("chosen:"+mc.utils.dumpArray(recorderMime));
@@ -260,6 +259,14 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
     ext=recorderMime.chosenExtension;
     params=recorderMime.chosenParams;
     params.mimeType=mime;
+    if (aov == "video") {
+      constraints.video=true;//constraints={ video: true }; //constraints.video=true;//
+      if (userParams.videoPreset) {
+        if (userParams.videoPreset[0]) constraints.video=userParams.videoPreset[0];
+        if (userParams.videoPreset[1]) params.videoBitsPerSecond=userParams.videoPreset[1];
+        //alert(userParams.videoPreset[0]);
+      }
+    }  
     navigator.mediaDevices.getUserMedia(constraints).then(operate).catch(logError);    
   };
   
@@ -269,9 +276,13 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
   }
   
   function operate(stream) {
+    console.log("video settings: "+mc.utils.dumpArray(stream.getTracks()[1].getSettings()));
+    
     var mediaRecorder;
     if (params) mediaRecorder=new MediaRecorder(stream,params);
     else mediaRecorder=new MediaRecorder(stream);
+    
+    //alert(MediaRecorder.videoBitsPerSecond);
     
     myStream=stream;
     
@@ -488,6 +499,7 @@ mc.rb.ViewR=function() {
       $("audioOrVideoS").style.display="";
       //alert(sp.videoOn+" "+mc.utils.getRadio("audioOrVideoRad"));
       if (sp.videoOn) mc.utils.setRadio("audioOrVideoRad","video");
+      mc.utils.fillSelect("presetSel",mc.videoPresets,0);
     }
     else { $("audioOrVideoS").style.display="none"; }
     if (sp.maxClipSizeSec) {
@@ -518,6 +530,9 @@ mc.rb.ViewR=function() {
       }
     }
     else { $("chunkInp").value=""; }
+    var videoPreset=mc.utils.getSelect("presetSel");
+    if (videoPreset) videoPreset=JSON.parse(videoPreset);
+    
     document.activeElement.blur();
     return {
       user : $("userInput").value,
@@ -526,7 +541,8 @@ mc.rb.ViewR=function() {
       onrecorded : mc.utils.getRadio("onrecordedRad"),
       description : $("descriptionInput").value,
       chunkSizeS : chunkSizeS,
-      holdPlayWhileRec : $("holdPlayWhileRecChkb").checked
+      holdPlayWhileRec : $("holdPlayWhileRecChkb").checked,
+      videoPreset: videoPreset
     };
   };
   
@@ -541,6 +557,7 @@ mc.rb.ViewR=function() {
     if ( ! toggleChatController instanceof Function) throw new Error("Wrong toggleChatController");
     $("audioOrVideoRad1").onchange=initRecorder;
     $("audioOrVideoRad2").onchange=initRecorder;
+    $("presetSel").onchange=initRecorder;
     $("recordBtn").onclick=toggleRecorder;
     $("playHereBtn").onclick=playLocally;
     $("uploadStoredBtn").onclick=uploadStoredBlob;

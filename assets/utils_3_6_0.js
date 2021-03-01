@@ -42,6 +42,7 @@ mc.utils.checkRecorderMime=function(te, audioOrVideo) {
   for(t in mimes.video) { if (MediaRecorder.isTypeSupported(mimes.video[t])) recorderMimes.video.push(mimes.video[t]); }
   tex=new mc.utils.TypesExtensions(te, audioOrVideo);
   for(t in recorderMimes[audioOrVideo]) { 
+    if ( ! (recorderMimes[audioOrVideo].hasOwnProperty(t))) continue;
     mime=recorderMimes[audioOrVideo][t]
     ext=tex.mime2ext(mime);
     if (ext) {
@@ -180,6 +181,7 @@ mc.utils.setRadio=function(name,value) {
 
 mc.utils.getSelect=function(id) {
   var el=document.getElementById(id);
+  if (el.selectedIndex === null) return null;
   var v=el.options[el.selectedIndex].value;
   return v;  
 };
@@ -190,6 +192,22 @@ mc.utils.setSelect=function(id,value) {
   el.value=value;
   if (el.selectedIndex < 0) throw new Error("Invalid value="+value+" for "+id);
   document.activeElement.blur();// otherwise it will catch onkeypressed
+};
+
+mc.utils.fillSelect=function(id,options,selectedIndex) {
+  var i=0,o,
+      el=document.getElementById(id);
+  if ( ! el) throw new Error("Wrong id="+id);
+  for (; i<options.length; i+=1) {
+    o=document.createElement("OPTION");
+    if ( ! (typeof options[i][0] === "string")) throw new Error("Non-string name:"+options[i][0]);
+    if ( ! (typeof options[i][1] === "string")) throw new Error("Non-string value:"+options[i][1]);
+    o.innerHTML=options[i][0];
+    o.value=options[i][1];
+    if (i == selectedIndex) o.selected="selected";
+    el.appendChild(o);
+    o=null;
+  }
 };
 
 mc.utils.setCheckbox=function(id,value) {
