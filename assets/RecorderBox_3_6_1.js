@@ -276,8 +276,10 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
   }
   
   function operate(stream) {
+    //stream.getTracks()[1].applyConstraints(
+    //  {advanced: [{exposureMode: "continuous",exposureTime: 300}]} );// does not work
     console.log("video settings: "+mc.utils.dumpArray(stream.getTracks()[1].getSettings()));
-    
+      
     var mediaRecorder;
     if (params) mediaRecorder=new MediaRecorder(stream,params);
     else mediaRecorder=new MediaRecorder(stream);

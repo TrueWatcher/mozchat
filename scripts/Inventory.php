@@ -276,7 +276,9 @@ abstract class MimeDecoder {
    "audio/webm;codecs=opus"=>["webm",["audioBitsPerSecond"=>24576]], 
    "audio/wav"=>["wav",[]],
    "video/webm;codecs=vp8"=>["webm",[]],
+   "video/webm;codecs=vp9"=>["webm",[]],
    "video/webm;codecs=vp8,opus"=>["webm",[]],
+   "video/webm;codecs=vp9,opus"=>["webm",[]],
    "video/webm;codecs=h264"=>["webm",[]]
  ];
   
@@ -309,38 +311,14 @@ abstract class MimeDecoder {
     return false;
   }
   
-  /*private static $videoPresetsNames=[
-    "auto resolution",
-    "640x480@15",
-    "800x600@20",
-    "1280x720@15"
-  ];
-  
-  private static $videoPresets=[
-    [true,0],
-    [["width"=>640,"height"=>480,"framerate"=>15],  500000],
-    [["width"=>800,"height"=>600,"framerate"=>20], 1000000],
-    [["width"=>1280,"height"=>720,"framerate"=>15],1300000]
-  ];
-  
-  static function getVideoPresets() {  
-    $r=[];
-    foreach(self::$videoPresets as $i=>$vp) {
-      $line=[];
-      $line[]=self::$videoPresetsNames[$i];
-      $line[]=json_encode($vp);
-      $r[]=$line;
-    }
-    return $r;
-  } */
-  
   private static $videoPresets=[
     ["auto resolution",'[true,0]'],
-    ["640x480@15", '[{"width":640,"height":480,"frameRate":15}, 500000]'],
-    ["640x480@30", '[{"width":640,"height":480,"frameRate":30}, 1000000]'],
-    ["800x600@20", '[{ "width":800, "height":600, "frameRate":20 }  ,1100000]'],
-    ["1280x720@15",'[{ "width":1280, "height":720, "frameRate":15 } ,1300000]'],
-    ["1280x720@30",'[{ "width":1280, "height":720, "frameRate":30 } ,2500000]']
+    ["640x480@15", '[{"width":{"exact":640},"height":{"exact":480},"frameRate":15}, 500000]'],
+    ["640x480@30", '[{"width":{"exact":640},"height":{"exact":480},"frameRate":30}, 1000000]'],
+    ["800x600@30", '[{ "width":{"exact":800}, "height":{"exact":600}, "frameRate":30 }  ,1100000]'],
+    ["1280x720@15",'[{ "width":{"exact":1280}, "height":{"exact":720}, "frameRate":15 } ,1300000]'],
+    ["1280x720@30",'[{ "width":{"exact":1280}, "height":{"exact":720}, "frameRate":30 } ,2500000]'],
+    ["ladder",'[{"optional":[{"minWidth":640},{"minWidth":800},{"minWidth":900},{"minWidth":1024},{"minWidth":1280}]},1500000]']
   ];
   
   static function getVideoPresets() {
