@@ -11,6 +11,8 @@
 /mediaChat/media
 /mediaChat/media*
 /test0/media
+/mc/media*
+/st/media*
 */catalog.json
 */users.json
 */calls.csv

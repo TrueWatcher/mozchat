@@ -266,7 +266,8 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
         if (userParams.videoPreset[1]) params.videoBitsPerSecond=userParams.videoPreset[1];
         //alert(userParams.videoPreset[0]);
       }
-    }  
+    } 
+    viewR.showMessage('');
     navigator.mediaDevices.getUserMedia(constraints).then(operate).catch(logError);    
   };
   

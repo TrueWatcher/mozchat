@@ -313,11 +313,11 @@ abstract class MimeDecoder {
   
   private static $videoPresets=[
     ["auto resolution",'[true,0]'],
-    ["640x480@15", '[{"width":{"exact":640},"height":{"exact":480},"frameRate":15}, 500000]'],
-    ["640x480@30", '[{"width":{"exact":640},"height":{"exact":480},"frameRate":30}, 1000000]'],
-    ["800x600@30", '[{ "width":{"exact":800}, "height":{"exact":600}, "frameRate":30 }  ,1100000]'],
-    ["1280x720@15",'[{ "width":{"exact":1280}, "height":{"exact":720}, "frameRate":15 } ,1300000]'],
-    ["1280x720@30",'[{ "width":{"exact":1280}, "height":{"exact":720}, "frameRate":30 } ,2500000]'],
+    ["640x480@15 0.50", '[{ "width":{"exact":640},  "height":{"exact":480}, "frameRate":15 },  500000]'],
+    ["640x480@30 1.0",  '[{ "width":{"exact":640},  "height":{"exact":480}, "frameRate":30 }, 1000000]'],
+    ["800x600@30 1.5",  '[{ "width":{"exact":800},  "height":{"exact":600}, "frameRate":30 }, 1500000]'],
+    ["960x720@30 2.0",  '[{ "width":{"exact":960},  "height":{"exact":720}, "frameRate":30 }, 2000000]'],
+    ["1280x720@30 2.5", '[{ "width":{"exact":1280}, "height":{"exact":720}, "frameRate":30 }, 2500000]'],
     ["ladder",'[{"optional":[{"minWidth":640},{"minWidth":800},{"minWidth":900},{"minWidth":1024},{"minWidth":1280}]},1500000]']
   ];
   
