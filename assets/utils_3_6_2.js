@@ -31,7 +31,7 @@ mc.utils.checkRecorderMime=function(te, audioOrVideo) {
       "audio/webm", "audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mpeg3", "audio/mpeg", "audio/midi", "audio/wav", "audio/flac"
     ],
     video : [
-      "video/webm", "video/webm;codecs=vp8,opus", "video/webm;codecs=vp8", "video/webm;codecs=vp9", "video/webm;codecs=h264", "video/mpeg"
+      "video/webm", "video/webm;codecs=vp9", "video/webm;codecs=vp8,opus", "video/webm;codecs=vp8", "video/webm;codecs=h264", "video/mpeg", "video/mp4"
     ]
   };
   var recorderMimes = { audio:[], video:[] }, t;

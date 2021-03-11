@@ -1,6 +1,7 @@
 <?php
 
 class Inventory {
+  const EMPTY="[]";
   private $targetPath="";
   private $mediaFolderName="media";
   private static $myFileName="catalog.json";
@@ -55,10 +56,19 @@ class Inventory {
       if (empty($this->data)) return;// to avoid rewriting and changing modtime
       $this->data=[];
       $this->total=0;
-      file_put_contents($myFile,"[]");
+      file_put_contents($myFile,self::EMPTY);
       return;
     }
-    $this->data=json_decode(file_get_contents($myFile));
+    if ( ! file_exists($myFile)) { 
+      $myFileContent=self::EMPTY;
+      file_put_contents($myFile,$myFileContent);
+    }
+    else { 
+      $myFileContent=file_get_contents($myFile);
+      if ( ! is_string($myFileContent) || empty($myFileContent)) $myFileContent=self::EMPTY;
+    }
+    $this->data=json_decode($myFileContent);
+    if ( ! is_array($this->data)) throw new DataException("Non-array DATA");
     $this->checkCatalog($filesFound);
     $this->sumUpBytes();
   }
@@ -70,6 +80,7 @@ class Inventory {
   
   private function checkCatalog($scanned) {
     $scannedLength=count($scanned);
+    if ( ! is_array($this->data)) throw new DataException("Non-array DATA");
     $myLength=count($this->data);
     if ($myLength != $scannedLength) { 
       var_dump($scanned);
@@ -94,7 +105,7 @@ class Inventory {
     $bytestotal = 0;
     $path = realpath($path);
     if ($path!==false && $path!='' && file_exists($path)) {
-        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS)) as $object){
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS)) as $object) {
             $bytestotal += $object->getSize();
         }
     }
@@ -279,7 +290,8 @@ abstract class MimeDecoder {
    "video/webm;codecs=vp9"=>["webm",[]],
    "video/webm;codecs=vp8,opus"=>["webm",[]],
    "video/webm;codecs=vp9,opus"=>["webm",[]],
-   "video/webm;codecs=h264"=>["webm",[]]
+   "video/webm;codecs=h264"=>["webm",[]],
+   "video/mp4"=>["mp4",[]]
  ];
   
   static function getLookup() { return self::$lookup; }

@@ -263,7 +263,11 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
       constraints.video=true;//constraints={ video: true }; //constraints.video=true;//
       if (userParams.videoPreset) {
         if (userParams.videoPreset[0]) constraints.video=userParams.videoPreset[0];
-        if (userParams.videoPreset[1]) params.videoBitsPerSecond=userParams.videoPreset[1];
+        if (userParams.videoPreset[1]) { 
+          params.videoBitsPerSecond=userParams.videoPreset[1];
+          params.audioBitsPerSecond=30000;
+          params.bitsPerSecond=userParams.videoPreset[1]+50000;
+        }
         //alert(userParams.videoPreset[0]);
       }
     } 
@@ -277,15 +281,13 @@ mc.rb.RecorderMR=function(receiveBlob, indicator, viewR) {
   }
   
   function operate(stream) {
-    //stream.getTracks()[1].applyConstraints(
-    //  {advanced: [{exposureMode: "continuous",exposureTime: 300}]} );// does not work
-    console.log("video settings: "+mc.utils.dumpArray(stream.getTracks()[1].getSettings()));
+    console.log("video GUM settings: "+mc.utils.dumpArray(stream.getTracks()[1].getSettings()));
       
     var mediaRecorder;
     if (params) mediaRecorder=new MediaRecorder(stream,params);
     else mediaRecorder=new MediaRecorder(stream);
     
-    //alert(MediaRecorder.videoBitsPerSecond);
+    console.log("recorder params: "+mc.utils.dumpArray(params)+" / "+mediaRecorder.videoBitsPerSecond+","+mediaRecorder.audioBitsPerSecond);
     
     myStream=stream;
     
