@@ -15,7 +15,7 @@ mc.Connector=function(serverParams, userParams) {
   
   this.echo="echo";
       
-  this.push=new mc.Connector.PushLink(serverParams.serverPath+serverParams.pathBias+"upload.php", pushCallAllBack, viewC.onHang,  serverParams, userParams, viewC.uploadIndicatorR);
+  this.push=new mc.Connector.PushLink(serverParams.pathBias+"upload.php", pushCallAllBack, viewC.onHang,  serverParams, userParams, viewC.uploadIndicatorR);
 
   this.push.registerPushCallback=function(cb) {
     if ( ! cb instanceof Function) throw new Error("Wrong CB type="+(typeof cb));
@@ -292,6 +292,9 @@ mc.utils.Ajaxer=function (responderUrl,onDataReceived,indicator,onTimeout) { //N
       //alert ("Unparsable server response:"+responseText);
       console.log("Unparsable server response:"+responseText);
       return responseText;
+    }
+    if (typeof responseObj === 'string' || responseObj instanceof String) {
+      responseObj={alert: responseObj};
     }
     responseObj.lag=lag;
     return responseObj;
